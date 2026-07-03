@@ -15,7 +15,7 @@ import {
  * define their own sets exactly like this.
  */
 
-const CONTENT_TYPES = ["heading", "text", "button", "columns"];
+const CONTENT_TYPES = ["heading", "text", "button", "columns", "section"];
 
 export const pageRootBlock = defineBlock<{ backgroundColor: string; padding: number }>({
     type: "page-root",

@@ -94,6 +94,34 @@ describe("renderEmail", () => {
         expect(html).toContain("height:24px"); // spacer
     });
 
+    it("renders nested sections and columns inside sections", async () => {
+        let document = buildDemoEmail();
+        const outerSection = document.blocks[document.rootId].children.main[0];
+
+        const inner = insertBlock(
+            document,
+            { type: "section", at: { parentId: outerSection, container: "content", index: 0 } },
+            registry,
+        );
+        document = inner.document;
+        const innerText = insertBlock(
+            document,
+            { type: "text", at: { parentId: inner.blockId, container: "content", index: 0 } },
+            registry,
+        );
+        document = updateProps(innerText.document, { id: innerText.blockId, patch: { text: "Nested section copy" } });
+        document = insertBlock(
+            document,
+            { type: "columns", at: { parentId: outerSection, container: "content", index: 1 } },
+            registry,
+        ).document;
+
+        expect(validateDocument(document, registry)).toEqual([]);
+        const { html } = await renderEmail(document);
+        expect(html).toContain("Nested section copy");
+        expect(html).toContain("width:50%"); // columns rendered from inside the section
+    });
+
     it("images without a src render nothing", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];

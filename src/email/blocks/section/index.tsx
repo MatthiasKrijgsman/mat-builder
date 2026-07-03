@@ -3,7 +3,7 @@ import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { emailSectionDefaults, emailSectionStyles, type EmailSectionProps } from "./styles.ts";
 
-/** Leaf types every content container accepts — includes blocks that land in later phases. */
+/** Leaf types (no containers of their own) — what column cells accept. */
 export const EMAIL_LEAF_TYPES = ["heading", "text", "button", "image", "divider", "spacer"];
 
 export const sectionBlock = defineBlock<EmailSectionProps>({
@@ -14,7 +14,14 @@ export const sectionBlock = defineBlock<EmailSectionProps>({
     keywords: ["block", "group", "wrapper"],
     defaultProps: emailSectionDefaults,
     containers: [
-        { name: "content", layout: "vertical", accepts: EMAIL_LEAF_TYPES, placeholder: "Drop content here" },
+        {
+            name: "content",
+            layout: "vertical",
+            // Sections nest (padded/background groupings) and host columns;
+            // only column CELLS are restricted to leaves — see columns/index.tsx.
+            accepts: [...EMAIL_LEAF_TYPES, "section", "columns"],
+            placeholder: "Drop content here",
+        },
     ],
     editRender: ({ props, containers }) => (
         <section style={emailSectionStyles(props)}>{containers.content}</section>

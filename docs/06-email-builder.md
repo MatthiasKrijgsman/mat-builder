@@ -24,7 +24,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 | `divider` | — | `Hr` | color, thickness, spacing |
 | `spacer` | — | fixed-height `Section` | height |
 
-The valid hierarchy is rigid (root → section/columns → leaves) — expressed entirely through container `accepts` rules, e.g. `email-root.main` accepts `["section", "columns"]`; `columns.col-*` accepts leaf types + nothing that would create nested columns. The generic builder enforces it; no email-specific code in the core.
+The hierarchy is expressed entirely through container `accepts` rules — the generic builder enforces it; no email-specific code in the core. `email-root.main` accepts `["section", "columns"]`; `section.content` accepts the leaves **plus `section` and `columns`** (sections nest as padded/background groupings and can wrap a column layout — a UX-feedback revision of the originally rigid root → section/columns → leaves plan); `columns.col-*` accepts leaf types only, so column layouts never nest.
 
 ## Two renders per block (D2), organized for parity
 
