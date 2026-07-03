@@ -21,9 +21,9 @@ export default tseslint.config([
     },
   },
   {
-    // Library entry barrel mixes component and function exports by design;
-    // fast refresh does not apply to the package entry point.
-    files: ['src/index.tsx'],
+    // Library entry barrels mix component and function exports by design;
+    // fast refresh does not apply to package entry points.
+    files: ['src/index.tsx', 'src/email/index.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

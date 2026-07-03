@@ -45,6 +45,9 @@ importers:
       '@matthiaskrijgsman/mat-ui':
         specifier: ^0.0.55
         version: 0.0.55(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
+      '@react-email/render':
+        specifier: ^2.0.10
+        version: 2.0.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tabler/icons-react':
         specifier: ^3.34.1
         version: 3.44.0(react@19.2.7)

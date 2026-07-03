@@ -47,8 +47,11 @@ export default defineConfig({
     rollupOptions: {
       external: isExternal,
       output: {
-        // "use client" on everything except the server-safe render entry.
-        banner: (chunk) => (chunk.name === 'email/render' ? '' : '"use client";'),
+        // "use client" only on the client ENTRY chunks. Shared chunks (e.g. a
+        // block's styles.ts used by both an entry and email/render) must stay
+        // bannerless — the server-safe render entry imports them, and only the
+        // module a consumer imports needs to mark the client boundary.
+        banner: (chunk) => (chunk.name === 'index' || chunk.name === 'email' ? '"use client";' : ''),
         assetFileNames: (assetInfo) => {
           if (assetInfo.name && assetInfo.name.endsWith('.css')) {
             return 'style.css';

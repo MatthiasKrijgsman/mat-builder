@@ -62,12 +62,16 @@
   },
   "peerDependencies": {
     "@matthiaskrijgsman/mat-ui": "^0.0.55",
+    "@react-email/render": "^2.0.10",
     "@tabler/icons-react": "^3.34.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-email": "^6.0.0"
   },
   "peerDependenciesMeta": {
+    "@react-email/render": {
+      "optional": true
+    },
     "react-email": {
       "optional": true
     }
@@ -75,6 +79,7 @@
   "devDependencies": {
     "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.0.0",
     "@eslint/js": "^9.33.0",
+    "@react-email/render": "^2.0.10",
     "@matthiaskrijgsman/mat-ui": "^0.0.55",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.12",

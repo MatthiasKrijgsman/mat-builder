@@ -4,7 +4,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 
 ## react-email status (verified July 2026)
 
-- Current version: **`react-email` 6.x** — v6 unified everything into the single `react-email` package. `@react-email/components` is legacy; `render`/`pretty` and all components import from `react-email` now.
+- Current version: **`react-email` 6.x** — v6 unified the components into the single `react-email` package (`@react-email/components` is legacy). **Correction (verified against 6.6.6 while implementing):** the root package exports only the components — `render`/`pretty` still come from **`@react-email/render`**, which is therefore a second optional peer dependency alongside `react-email`.
 - `render()` is **async**, returns the HTML string; `{ plainText: true }` produces the text variant. Runs in Next.js server code (route handlers, server actions).
 - Layout is table-based: `Container` (centered, classic 600 px wrapper) → `Section` → `Row` → `Column` (`<td>`). This survives Outlook's Word rendering engine.
 - The `Tailwind` component compiles `className` utilities into **inline styles at render time**; use `pixelBasedPreset` (rem → px). Media-query utilities need `<Head>`; complex selectors don't inline.
@@ -101,7 +101,7 @@ Used from a Next.js route handler / server action: load document JSON → `rende
 
 ## Preview mode
 
-The canvas shows `editRender`; the Toolbar's preview toggle shows the truth:
+The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry (a Toolbar `PreviewToggle` can wrap it later — hosts currently swap `<Canvas/>` for `<EmailPreview/>` themselves, see `site/app/email/page.tsx`):
 
 - Debounced call to `renderEmail(doc)` (client-side is fine — `render` works in the browser) → `<iframe srcDoc={html} />`.
 - The iframe isolates the email from the app's Tailwind preflight/global CSS — rendering the output HTML inline in the app DOM would be contaminated by it, which is why preview uses an iframe even though the editing canvas doesn't.

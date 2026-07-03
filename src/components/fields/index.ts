@@ -5,6 +5,7 @@
  */
 
 export { TextField, type TextFieldProps } from "./TextField.tsx";
+export { TextAreaField, type TextAreaFieldProps } from "./TextAreaField.tsx";
 export { NumberField, type NumberFieldProps } from "./NumberField.tsx";
 export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./SelectField.tsx";
 export { ColorField, type ColorFieldProps } from "./ColorField.tsx";
