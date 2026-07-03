@@ -38,7 +38,7 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 
 ### Canvas
 
-- A scroll container (auto-scroll attached — see 05) with a centered "artboard" whose width is configurable (email: 600 px; plus device-width presets from the Toolbar).
+- A centered, rounded "artboard" (react-email-preview style) with a fixed, user-resizable size: rounded bars on each edge drag-resize it symmetrically per axis (`artboardWidth`/`artboardHeight` props set the initial size; email default 600 px wide). Content taller than the artboard scrolls *inside* it — the inner scroll container (which is also the DnD auto-scroll target, see 05) is clipped by the rounded frame so corners stay round.
 - Renders the root block, which recursively renders children through `BlockFrame` + `ContainerSlot`.
 - Click on empty canvas area → deselect. `Escape` → select parent, then deselect at root.
 - **Canvas is `editRender` only** (D2). A separate **preview mode** (Toolbar toggle) swaps the artboard for the real output — for email, an `<iframe srcDoc>` of the rendered HTML (see 06). Preview is read-only; no DnD or selection.
@@ -52,6 +52,7 @@ Internal wrapper the package controls fully — this is where "we control how th
 - **Selected**: strong outline + floating action bar (name, duplicate, delete — implemented; the whole frame is the drag surface until inline text editing needs a dedicated handle, see 05 §1).
 - **Dragging**: source block dims (`opacity-40`); custom drag preview shows icon + label chip rather than a screenshot of the block (cheap, and consistent between palette and canvas drags).
 - Chrome is layered via an absolutely-positioned overlay sibling of `editRender`, not by wrapping styles onto the block's own element.
+- **Clipping rules** (the artboard scroller is a rounded `overflow-hidden` frame): the root's chrome is drawn by the Canvas on the artboard frame itself (ring outside the clipping context, name tag in the canvas gutter) — selecting the root *is* selecting the artboard. Non-root tags flip inside the block's corner when the block sits within tag-height of the scroll-content top (a static layout fact, measured per chrome render). If per-block chrome needs keep growing, the escalation path is a dedicated overlay layer: a portal above the artboard drawing all chrome from measured rects (Figma-style), fully outside any clipping context — costs rect-syncing on scroll/resize/content change, so only when justified.
 - All chrome pieces are themable: a `components`/`classNames` prop on the provider (shadcn-style slot overrides) lets the host replace the name tag, action bar, outline styles, and indicators without forking.
 
 ### ContainerSlot

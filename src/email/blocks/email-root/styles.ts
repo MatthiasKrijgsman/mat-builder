@@ -14,6 +14,8 @@ export interface EmailRootProps {
     contentBackground: string;
     /** Content width in px (~600 survives every client) */
     contentWidth: number;
+    /** Vertical space above/below the content container, in px */
+    padding: number;
     fontFamily: string;
     /** Inbox preview snippet (hidden in the email body) */
     previewText: string;
@@ -23,6 +25,7 @@ export const emailRootDefaults: EmailRootProps = {
     backgroundColor: "#f4f4f5",
     contentBackground: "#ffffff",
     contentWidth: 600,
+    padding: 24,
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     previewText: "",
 };
@@ -31,7 +34,7 @@ export const emailRootBodyStyles = (props: EmailRootProps): CSSProperties => ({
     backgroundColor: props.backgroundColor,
     fontFamily: props.fontFamily,
     margin: 0,
-    padding: "24px 0",
+    padding: `${props.padding}px 0`,
 });
 
 export const emailRootContainerStyles = (props: EmailRootProps): CSSProperties => ({

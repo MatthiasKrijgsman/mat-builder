@@ -31,6 +31,7 @@ const initialDocument: BuilderDocument = {
                 backgroundColor: "#f4f4f5",
                 contentBackground: "#ffffff",
                 contentWidth: 600,
+                padding: 24,
                 fontFamily:
                     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                 previewText: "Your July invoice is ready",

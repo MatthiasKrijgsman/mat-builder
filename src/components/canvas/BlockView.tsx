@@ -6,7 +6,7 @@ import {
     type Edge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { IconCopy, IconTrash } from "@tabler/icons-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { canDropAt } from "../../core/commands.ts";
 import type { BlockId, BlockLocation, ContainerDef } from "../../core/types.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
@@ -118,7 +118,9 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
     return (
         <div
             ref={ref}
-            className={`relative ${isDragSource ? "opacity-40" : ""}`}
+            // The root is the page: it stretches to fill the artboard so its background
+            // paints the whole frame (taller content still grows and scrolls).
+            className={`relative ${isRoot ? "flex min-h-full flex-col *:grow" : ""} ${isDragSource ? "opacity-40" : ""}`}
             data-block-id={id}
             // stopPropagation everywhere: the innermost block under the pointer wins
             onClick={(event) => {
@@ -139,12 +141,14 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
             ) : (
                 <MissingBlock type={node.type} />
             )}
-            {(isSelected || (isHovered && !isRoot)) && !isDragSource && (
+            {/* Root chrome is drawn by the Canvas on the artboard frame itself — inside the
+                scroller it would clip against the rounded overflow-hidden frame */}
+            {!isRoot && (isSelected || isHovered) && !isDragSource && (
                 <BlockChrome
                     label={label}
                     selected={isSelected}
                     onDuplicate={location ? () => actions.duplicateBlock(id) : undefined}
-                    onDelete={!isRoot && definition?.canDelete !== false ? () => actions.removeBlock(id) : undefined}
+                    onDelete={definition?.canDelete !== false ? () => actions.removeBlock(id) : undefined}
                 />
             )}
             {closestEdge && <EdgeIndicator edge={closestEdge} />}
@@ -159,21 +163,47 @@ interface BlockChromeProps {
     onDelete?: () => void;
 }
 
+/** Room the tag needs above a block; blocks closer than this to the scroll-content top get the tag inside. */
+const TAG_CLEARANCE = 20;
+
 /**
  * Selection/hover overlay. When selected, the name tag grows into a small
  * action bar (docs/04 §BlockFrame): label + duplicate + delete. The overlay
  * itself is pointer-transparent; only the bar accepts clicks.
+ *
+ * The tag normally sits above the block's top edge. That position clips when
+ * the block is within tag-height of the scroll CONTENT top (a static layout
+ * fact — scrolled-away tags just scroll like content), so we measure once per
+ * chrome render and flip the tag inside the block's corner when needed.
  */
 function BlockChrome({ label, selected, onDuplicate, onDelete }: BlockChromeProps) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [tagInside, setTagInside] = useState(false);
+
+    // Intentionally no deps: any document edit can move this block, and the
+    // same-value setState bails out, so re-measuring every render is safe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useLayoutEffect(() => {
+        const block = ref.current?.parentElement;
+        const scroller = ref.current?.closest(".mat-builder-artboard-scroll");
+        if (!block || !scroller) return;
+        const offsetFromContentTop =
+            block.getBoundingClientRect().top - (scroller.getBoundingClientRect().top - scroller.scrollTop);
+        setTagInside(offsetFromContentTop < TAG_CLEARANCE);
+    });
+
     const color = selected ? "var(--mat-builder-color-selection)" : "var(--mat-builder-color-hover)";
     return (
         <div
+            ref={ref}
             className="pointer-events-none absolute inset-0 z-10"
             style={{ boxShadow: `inset 0 0 0 ${selected ? 2 : 1}px ${color}` }}
         >
             {selected && (
                 <span
-                    className="pointer-events-auto absolute left-0 top-0 flex -translate-y-full items-stretch rounded-t text-[10px] font-medium leading-none"
+                    className={`pointer-events-auto absolute left-0 top-0 flex items-stretch text-[10px] font-medium leading-none ${
+                        tagInside ? "rounded-br" : "-translate-y-full rounded-t"
+                    }`}
                     style={{ backgroundColor: color, color: "var(--mat-builder-color-chrome-tag-fg)" }}
                 >
                     <span className="px-1.5 py-0.5">{label}</span>

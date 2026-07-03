@@ -14,7 +14,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 
 | Block | Containers | Output mapping (react-email) | Key props |
 |---|---|---|---|
-| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, fontFamily, previewText |
+| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, padding, fontFamily, previewText |
 | `section` | `content` (vertical) | `Section` | padding, background, borderRadius |
 | `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
 | `heading` | — | `Heading` | text, level, align, color |
@@ -111,7 +111,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 ## Editor-canvas styling notes
 
-- The canvas artboard mimics the email frame: root props (background color, content width) applied to the artboard so `editRender` context matches output geometry — same 600 px width, same paddings — keeping WYSIWYG honest despite D2.
+- The canvas artboard mimics the email frame: the root block stretches to fill the whole artboard (generic BlockView behavior), so the root's background/padding/content-width paint the full frame and `editRender` context matches output geometry — keeping WYSIWYG honest despite D2.
 - `editRender` uses flex/grid freely (it never ships in the email); only `styles.ts` values must stay email-safe. Keep the shared style objects to email-safe CSS (no flex properties in them) as a lint-able convention.
 - Text editing: v1 uses inspector fields for text content; inline editing on canvas (contentEditable or a minimal Tiptap in the Text block's `editRender`) is the highest-value v2 upgrade. The new `@react-email/editor` (Tiptap-based, from React Email 6) is worth evaluating *inside* the Text block at that point — not as a replacement for the builder.
 
