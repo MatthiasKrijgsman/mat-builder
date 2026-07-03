@@ -86,12 +86,12 @@ export default function PlaygroundPage() {
             <div className="flex h-screen flex-col">
                 <Topbar />
                 <div className="flex min-h-0 flex-1">
-                    <aside className="flex w-60 flex-col divide-y divide-gray-200 border-r border-gray-200 bg-white">
+                    <aside className="flex w-[400px] shrink-0 flex-col divide-y divide-gray-200 border-r border-gray-200 bg-white">
                         <Palette className="min-h-0 flex-1 overflow-y-auto" />
                         <LayersPanel className="h-2/5 shrink-0" />
                     </aside>
                     <Canvas className="min-w-0 flex-1" artboardWidth={640} />
-                    <Inspector className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />
+                    <Inspector className="w-[400px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />
                 </div>
             </div>
         </BuilderProvider>

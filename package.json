@@ -61,9 +61,12 @@
     "zustand": "^5.0.5"
   },
   "peerDependencies": {
+    "@lexical/markdown": "^0.45.0",
+    "@lexical/react": "^0.45.0",
     "@matthiaskrijgsman/mat-ui": "^0.0.55",
     "@react-email/render": "^2.0.10",
     "@tabler/icons-react": "^3.34.1",
+    "lexical": "^0.45.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-email": "^6.0.0"
@@ -79,7 +82,10 @@
   "devDependencies": {
     "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.0.0",
     "@eslint/js": "^9.33.0",
+    "@lexical/markdown": "0.45.0",
+    "@lexical/react": "0.45.0",
     "@react-email/render": "^2.0.10",
+    "lexical": "0.45.0",
     "@matthiaskrijgsman/mat-ui": "^0.0.55",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.12",

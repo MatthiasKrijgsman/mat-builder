@@ -21,3 +21,15 @@ export const emailTextStyles = (props: EmailTextProps): CSSProperties => ({
     color: props.color,
     margin: "0 0 12px",
 });
+
+/**
+ * Per-element styles for the markdown render. Lists need explicit inline
+ * styles: on the canvas the app's Tailwind preflight strips bullets/padding
+ * (the preview iframe is isolated from it, emails have their own resets) —
+ * inline styles win everywhere.
+ */
+export const emailTextMarkdownStyles: Record<string, CSSProperties> = {
+    ul: { listStyleType: "disc", paddingLeft: 24, margin: "0 0 12px" },
+    ol: { listStyleType: "decimal", paddingLeft: 24, margin: "0 0 12px" },
+    li: { margin: "4px 0" },
+};

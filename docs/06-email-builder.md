@@ -18,7 +18,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 | `section` | `content` (vertical) | `Section` | padding, background, borderRadius |
 | `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
 | `heading` | — | `Heading` | text, level, align, color |
-| `text` | — | `Text` | rich-ish text (bold/italic/link), align, size, color |
+| `text` | — | `Markdown` (both renders — parity for free) | text as **markdown** (bold/italic/links/lists via the inspector's Lexical editor), align, size, color |
 | `button` | — | `Button` (padded `<a>`) | label, href, colors, radius, align, fullWidth |
 | `image` | — | `Img` (+ optional `Link` wrapper) | src, alt, width, align, href |
 | `divider` | — | `Hr` | color, thickness, spacing |
@@ -113,7 +113,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 - The canvas artboard mimics the email frame: the root block stretches to fill the whole artboard (generic BlockView behavior), so the root's background/padding/content-width paint the full frame and `editRender` context matches output geometry — keeping WYSIWYG honest despite D2.
 - `editRender` uses flex/grid freely (it never ships in the email); only `styles.ts` values must stay email-safe. Keep the shared style objects to email-safe CSS (no flex properties in them) as a lint-able convention.
-- Text editing: v1 uses inspector fields for text content; inline editing on canvas (contentEditable or a minimal Tiptap in the Text block's `editRender`) is the highest-value v2 upgrade. The new `@react-email/editor` (Tiptap-based, from React Email 6) is worth evaluating *inside* the Text block at that point — not as a replacement for the builder.
+- Text editing: the Text block's inspector hosts mat-ui's `InputLexical` via the `RichTextField` helper — a markdown-sync plugin inside the editor converts both ways (`@lexical/markdown`), the block stores **markdown** in its props, and both renders draw it with react-email's `<Markdown>`. This adds `lexical`/`@lexical/react`/`@lexical/markdown` peer deps (mat-ui's root entry already required lexical in the consumer's graph). Inline editing *on canvas* remains the v2 upgrade — the markdown prop model already supports it.
 
 ## Form builder (sanity check, not designed here)
 

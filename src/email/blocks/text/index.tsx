@@ -1,20 +1,26 @@
 import { IconTypography } from "@tabler/icons-react";
+import { Markdown } from "react-email";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
-import { emailTextDefaults, emailTextStyles, type EmailTextProps } from "./styles.ts";
+import { emailTextDefaults, emailTextMarkdownStyles, emailTextStyles, type EmailTextProps } from "./styles.ts";
 
 export const textBlock = defineBlock<EmailTextProps>({
     type: "text",
     label: "Text",
     icon: IconTypography,
     category: "Content",
-    keywords: ["paragraph", "copy", "body"],
+    keywords: ["paragraph", "copy", "body", "markdown"],
     defaultProps: emailTextDefaults,
-    getDisplayName: (props) => props.text.slice(0, 24) || undefined,
-    editRender: ({ props }) => <p style={emailTextStyles(props)}>{props.text}</p>,
+    getDisplayName: (props) => props.text.replace(/[#*_[\]()`>]/g, "").trim().slice(0, 24) || undefined,
+    // Same <Markdown> as the output render — markdown parity for free
+    editRender: ({ props }) => (
+        <Markdown markdownContainerStyles={emailTextStyles(props)} markdownCustomStyles={emailTextMarkdownStyles}>
+            {props.text}
+        </Markdown>
+    ),
     inspector: ({ props, update }) => (
         <>
-            <Fields.TextAreaField label="Text" value={props.text} onChange={(text) => update({ text })} />
+            <Fields.RichTextField label="Text" value={props.text} onChange={(text) => update({ text })} />
             <Fields.SelectField
                 label="Align"
                 value={props.align}

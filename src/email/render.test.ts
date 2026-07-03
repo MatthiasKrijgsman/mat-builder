@@ -95,6 +95,35 @@ describe("renderEmail", () => {
         expect(html).toContain("height:24px"); // spacer
     });
 
+    it("renders text-block markdown (bold, links) into the output", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        document = updateProps(document, {
+            id: textId,
+            patch: { text: "Plain, **bold** and a [link](https://example.com/md)." },
+        });
+
+        const { html, text } = await renderEmail(document);
+        expect(html).toMatch(/<strong[^>]*>bold<\/strong>/);
+        expect(html).toContain('href="https://example.com/md"');
+        expect(text).toContain("bold");
+        expect(text).not.toContain("**"); // markdown is rendered, not passed through
+    });
+
+    it("renders markdown lists with explicit inline list styles", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        document = updateProps(document, { id: textId, patch: { text: "- D\n- E\n- F" } });
+
+        const { html } = await renderEmail(document);
+        // Inline styles so bullets survive the canvas preflight and email-client resets alike
+        expect(html).toMatch(/<ul[^>]*list-style-type:disc/);
+        expect(html).toMatch(/<ul[^>]*padding-left:24px/);
+        expect(html).toMatch(/<li[^>]*>[\s\S]*D/);
+    });
+
     it("renders nested sections and columns inside sections", async () => {
         let document = buildDemoEmail();
         const outerSection = document.blocks[document.rootId].children.main[0];

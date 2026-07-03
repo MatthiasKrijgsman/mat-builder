@@ -42,6 +42,12 @@ importers:
       '@eslint/js':
         specifier: ^9.33.0
         version: 9.39.4
+      '@lexical/markdown':
+        specifier: 0.45.0
+        version: 0.45.0
+      '@lexical/react':
+        specifier: 0.45.0
+        version: 0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31)
       '@matthiaskrijgsman/mat-ui':
         specifier: ^0.0.55
         version: 0.0.55(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
@@ -78,6 +84,9 @@ importers:
       globals:
         specifier: ^16.3.0
         version: 16.5.0
+      lexical:
+        specifier: 0.45.0
+        version: 0.45.0
       react:
         specifier: ^19.1.1
         version: 19.2.7
@@ -112,6 +121,9 @@ importers:
         specifier: 0.45.0
         version: 0.45.0
       '@lexical/list':
+        specifier: 0.45.0
+        version: 0.45.0
+      '@lexical/markdown':
         specifier: 0.45.0
         version: 0.45.0
       '@lexical/react':
