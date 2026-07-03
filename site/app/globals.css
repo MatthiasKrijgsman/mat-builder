@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Library styles */
+@import "@matthiaskrijgsman/mat-ui/style";
+@import "@matthiaskrijgsman/mat-builder/style";

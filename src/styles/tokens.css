@@ -1,0 +1,25 @@
+:root {
+    /* ─────────────────────────────────────────────────────────────
+     * mat-builder design tokens.
+     *
+     * Same philosophy as mat-ui's tokens.css: every color and every
+     * structural value the editor chrome uses lives here as a CSS
+     * custom property, so consuming projects retheme the editor
+     * without forking components. Prefix: --mat-builder-*.
+     *
+     * Placeholder set — grows with the components (phase 2+).
+     * ───────────────────────────────────────────────────────────── */
+
+    /* Selection & hover chrome (BlockFrame) */
+    --mat-builder-color-selection: #3b82f6;
+    --mat-builder-color-hover: color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+
+    /* Drag and drop indicators */
+    --mat-builder-color-drop-indicator: var(--mat-builder-color-selection);
+    --mat-builder-color-drop-blocked: #f59e0b;
+    --mat-builder-drop-indicator-thickness: 2px;
+
+    /* Canvas */
+    --mat-builder-color-canvas-bg: #f4f4f5;
+    --mat-builder-color-artboard-bg: #ffffff;
+}

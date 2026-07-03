@@ -1,0 +1,98 @@
+{
+  "name": "@matthiaskrijgsman/mat-builder",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "import": "./dist/email.js",
+      "default": "./dist/email.js"
+    },
+    "./email/render": {
+      "types": "./dist/email/render.d.ts",
+      "import": "./dist/email/render.js",
+      "default": "./dist/email/render.js"
+    },
+    "./style": {
+      "default": "./dist/style.css"
+    },
+    "./style.css": {
+      "default": "./dist/style.css"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "dev:watch": "vite build --watch",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "build:types": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "vite build && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "site": "pnpm --filter @matthiaskrijgsman/mat-builder-site dev",
+    "site:build": "pnpm --filter @matthiaskrijgsman/mat-builder-site build"
+  },
+  "dependencies": {
+    "@atlaskit/pragmatic-drag-and-drop": "^2.0.1",
+    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^3.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-flourish": "^3.0.1",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^2.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-live-region": "^2.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^4.1.0",
+    "immer": "^10.1.1",
+    "nanoid": "^5.1.5",
+    "zustand": "^5.0.5"
+  },
+  "peerDependencies": {
+    "@matthiaskrijgsman/mat-ui": "^0.0.55",
+    "@tabler/icons-react": "^3.34.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-email": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-email": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.0.0",
+    "@eslint/js": "^9.33.0",
+    "@matthiaskrijgsman/mat-ui": "^0.0.55",
+    "@tabler/icons-react": "^3.34.1",
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-email": "^6.0.0",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.62.1",
+    "vite": "^7.1.5",
+    "vitest": "^4.1.9"
+  }
+}
