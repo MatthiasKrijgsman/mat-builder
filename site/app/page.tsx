@@ -3,21 +3,20 @@
 import {
     BuilderProvider,
     Canvas,
-    canDropAt,
-    findAncestors,
     Inspector,
-    useBuilderState,
+    LayersPanel,
+    Palette,
     useEditor,
     type BuilderDocument,
 } from "@matthiaskrijgsman/mat-builder";
-import { Button, ButtonIconSquare } from "@matthiaskrijgsman/mat-ui";
+import { ButtonIconSquare } from "@matthiaskrijgsman/mat-ui";
 import { IconArrowBackUp, IconArrowForwardUp } from "@tabler/icons-react";
 import { playgroundBlocks } from "./blocks";
 
 /*
- * Kitchen-sink builder (build order phase 2): provider + canvas + inspector,
- * with a minimal topbar (undo/redo) and click-to-add strip standing in for
- * the phase-3 Palette.
+ * Kitchen-sink builder: provider + palette + canvas + inspector + layers.
+ * Palette items drag onto the canvas (or click to add); blocks reorder and
+ * reparent by dragging on the canvas or in the layers tree.
  */
 
 const initialDocument: BuilderDocument = {
@@ -87,9 +86,12 @@ export default function PlaygroundPage() {
             <div className="flex h-screen flex-col">
                 <Topbar />
                 <div className="flex min-h-0 flex-1">
-                    <AddBlockStrip />
-                    <Canvas className="flex-1" artboardWidth={640} />
-                    <Inspector className="w-80 overflow-y-auto border-l border-gray-200 bg-white" />
+                    <aside className="flex w-60 flex-col divide-y divide-gray-200 border-r border-gray-200 bg-white">
+                        <Palette className="min-h-0 flex-1 overflow-y-auto" />
+                        <LayersPanel className="h-2/5 shrink-0" />
+                    </aside>
+                    <Canvas className="min-w-0 flex-1" artboardWidth={640} />
+                    <Inspector className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />
                 </div>
             </div>
         </BuilderProvider>
@@ -124,47 +126,3 @@ function Topbar() {
     );
 }
 
-/** Click-to-add stand-in for the phase-3 Palette: inserts into the nearest accepting container. */
-function AddBlockStrip() {
-    const editor = useEditor();
-    const document = useBuilderState((s) => s.document);
-
-    const addBlock = (type: string) => {
-        const candidates = editor.selectedId
-            ? [editor.selectedId, ...findAncestors(document, editor.selectedId)]
-            : [document.rootId];
-        for (const parentId of candidates) {
-            const node = document.blocks[parentId];
-            const definition = node && editor.registry.getDefinition(node.type);
-            for (const container of definition?.containers ?? []) {
-                const at = { parentId, container: container.name, index: (node.children[container.name] ?? []).length };
-                if (canDropAt(document, editor.registry, type, at)) {
-                    editor.insertBlock(type, at);
-                    return;
-                }
-            }
-        }
-    };
-
-    return (
-        <aside className="flex w-52 flex-col gap-2 border-r border-gray-200 bg-white p-3">
-            <p className="text-xs font-medium text-gray-400">Add block</p>
-            {playgroundBlocks
-                .filter((definition) => !definition.hidden)
-                .map((definition) => (
-                    <Button
-                        key={definition.type}
-                        variant="secondary"
-                        size="sm"
-                        Icon={definition.icon as never}
-                        onClick={() => addBlock(definition.type)}
-                    >
-                        {definition.label}
-                    </Button>
-                ))}
-            <p className="mt-auto text-[11px] leading-snug text-gray-400">
-                Inserts into the selection&rsquo;s nearest accepting container. Drag and drop lands in phase 3.
-            </p>
-        </aside>
-    );
-}

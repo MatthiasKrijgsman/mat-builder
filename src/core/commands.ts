@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import { migrateDocument, validateDocument } from "./document.ts";
 import { materializeBlock } from "./materialize.ts";
 import { containerAccepts, type BlockRegistry } from "./registry.ts";
-import { findLocation, isDescendant } from "./traversal.ts";
+import { findAncestors, findLocation, isDescendant } from "./traversal.ts";
 import type { BlockId, BlockLocation, BuilderDocument } from "./types.ts";
 
 /*
@@ -80,6 +80,30 @@ export function canDropAt(
     movingId?: BlockId,
 ): boolean {
     return getDropError(document, registry, childType, at, movingId) === null;
+}
+
+/**
+ * Where a click-to-add insert of `type` should land: the end of the nearest
+ * accepting container walking up from `fromId` (usually the selection) to the
+ * root; null when nothing in the chain accepts it. Used by the Palette.
+ */
+export function findInsertLocation(
+    document: BuilderDocument,
+    registry: BlockRegistry,
+    type: string,
+    fromId?: BlockId | null,
+): BlockLocation | null {
+    const candidates =
+        fromId && document.blocks[fromId] ? [fromId, ...findAncestors(document, fromId)] : [document.rootId];
+    for (const parentId of candidates) {
+        const node = document.blocks[parentId];
+        const definition = node && registry.getDefinition(node.type);
+        for (const container of definition?.containers ?? []) {
+            const at = { parentId, container: container.name, index: (node.children[container.name] ?? []).length };
+            if (canDropAt(document, registry, type, at)) return at;
+        }
+    }
+    return null;
 }
 
 export interface InsertBlockPayload {

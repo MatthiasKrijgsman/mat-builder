@@ -1,26 +1,68 @@
-import type { CSSProperties } from "react";
+import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { canDropAt } from "../../core/commands.ts";
 import type { BlockId, ContainerDef } from "../../core/types.ts";
+import { isBuilderDrag } from "../../dnd/drag-data.ts";
+import { dragBlockType } from "../../dnd/resolve.ts";
+import { useBuilderContext } from "../../react/context.ts";
 import { BlockView } from "./BlockView.tsx";
 
 /*
- * ContainerSlot — renders one named container of a block (docs/04).
- * The block's editRender decides WHERE the slot sits; the slot decides how
- * children stack (the container's layout in editor space). Empty containers
- * show a dashed placeholder — phase 3 turns it into a full-surface drop target.
+ * ContainerSlot — renders one named container of a block (docs/04) and is
+ * the "into me" drop target (docs/05 §2b): appends at the end, makes empty
+ * containers droppable, and gives forgiving drop-in-the-padding behavior.
+ * Not sticky (per Atlassian's tree example — avoids stale highlights); the
+ * ring highlight shows only while this slot is the innermost target.
  */
 
 export function ContainerSlot(props: { parentId: BlockId; container: ContainerDef; childIds: BlockId[] }) {
     const { parentId, container, childIds } = props;
+    const { store, registry, instanceId } = useBuilderContext();
+    const ref = useRef<HTMLDivElement>(null);
+    const [isOver, setIsOver] = useState(false);
+
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+        return dropTargetForElements({
+            element,
+            canDrop: ({ source }) => {
+                if (!isBuilderDrag(source.data, instanceId)) return false;
+                const { document } = store.getState();
+                const type = dragBlockType(document, source.data);
+                if (!type) return false;
+                const movingId = source.data.kind === "move-block" ? source.data.blockId : undefined;
+                const index = (document.blocks[parentId]?.children[container.name] ?? []).length;
+                return canDropAt(document, registry, type, { parentId, container: container.name, index }, movingId);
+            },
+            getIsSticky: () => false,
+            getData: () => ({ targetKind: "container", parentId, container: container.name }),
+            onDrag: ({ location }) => {
+                const innermost = location.current.dropTargets[0]?.element === element;
+                setIsOver((current) => (current === innermost ? current : innermost));
+            },
+            onDragLeave: () => setIsOver(false),
+            onDrop: () => setIsOver(false),
+        });
+    }, [store, registry, instanceId, parentId, container.name]);
+
+    const highlight: CSSProperties | undefined = isOver
+        ? { boxShadow: `inset 0 0 0 var(--mat-builder-drop-indicator-thickness) var(--mat-builder-color-drop-indicator)` }
+        : undefined;
 
     if (childIds.length === 0) {
         return (
             <div
+                ref={ref}
                 data-container={container.name}
                 data-parent-id={parentId}
                 className="flex min-h-12 items-center justify-center rounded border border-dashed p-2 text-xs"
                 style={{
-                    borderColor: "var(--mat-builder-color-placeholder-border)",
+                    borderColor: isOver
+                        ? "var(--mat-builder-color-drop-indicator)"
+                        : "var(--mat-builder-color-placeholder-border)",
                     color: "var(--mat-builder-color-placeholder-fg)",
+                    ...highlight,
                 }}
             >
                 {container.placeholder ?? "Drop content here"}
@@ -29,16 +71,30 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
     }
 
     let className = "";
-    let style: CSSProperties | undefined;
+    let layoutStyle: CSSProperties | undefined;
     if (container.layout === "horizontal") className = "flex flex-row";
     else if (container.layout === "grid") {
-        style = { display: "grid", gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))` };
+        layoutStyle = {
+            display: "grid",
+            gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))`,
+        };
     }
 
     return (
-        <div data-container={container.name} data-parent-id={parentId} className={className} style={style}>
-            {childIds.map((childId) => (
-                <BlockView key={childId} id={childId} />
+        <div
+            ref={ref}
+            data-container={container.name}
+            data-parent-id={parentId}
+            className={className}
+            style={{ ...layoutStyle, ...highlight }}
+        >
+            {childIds.map((childId, index) => (
+                <BlockView
+                    key={childId}
+                    id={childId}
+                    location={{ parentId, container: container.name, index }}
+                    layout={container.layout}
+                />
             ))}
         </div>
     );

@@ -42,6 +42,9 @@ export type { EditorState, EditorActions } from "./react/store.ts";
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
+export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
+export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";
 export * as Fields from "./components/fields/index.ts";
+export type { DragState } from "./react/store.ts";
 
-// TODO(phase 3): drag and drop (docs/05-drag-and-drop.md), Palette, LayersPanel, Toolbar
+// TODO(phase 4): email preset (docs/06-email-builder.md), Toolbar

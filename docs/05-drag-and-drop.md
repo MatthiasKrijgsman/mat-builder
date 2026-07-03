@@ -22,12 +22,13 @@ Multiple builder instances can coexist on a page (and other DnD features may too
 
 ```ts
 type DragPayload =
-  | { instanceId: symbol; kind: "new-block";  blockType: string }                  // palette
-  | { instanceId: symbol; kind: "move-block"; blockId: BlockId; from: Location };  // canvas or layers
+  | { instanceId: symbol; kind: "new-block";  blockType: string }   // palette
+  | { instanceId: symbol; kind: "move-block"; blockId: BlockId };   // canvas or layers
 ```
 
+- The move payload carries only the `blockId` — the source location is recomputed at drop time (`findLocation`), so mid-drag document changes can't corrupt a drop.
 - Palette items: `draggable({ getInitialData: () => ({ instanceId, kind: "new-block", blockType }) })`. The palette item itself never moves — a new node is created on drop.
-- Canvas blocks: `draggable` on the `BlockFrame` element with `dragHandle` set to the floating handle (keeps text selection usable inside blocks). `canDrag` honors the definition's `canDrag` and always blocks the root.
+- Canvas blocks: the whole `BlockFrame` element is the `draggable` for now — inline text editing is deferred (see 06), so there's no text selection to protect yet; the floating drag handle arrives with the selected-block action bar. `canDrag` honors the definition's `canDrag` and always blocks the root.
 - Layer rows: a second `draggable` for the same block id — identical payload, so drops resolve uniformly.
 
 Type-guard helpers (`isBuilderDrag(data, instanceId)`) gate every `canDrop`/`canMonitor`.
@@ -106,7 +107,7 @@ monitorForElements({
 });
 ```
 
-`resolveLocation` uses the hitbox package's `getReorderDestinationIndex` for the same-container edge math instead of hand-rolling it.
+`resolveDropLocation` (src/dnd/resolve.ts) does **not** need `getReorderDestinationIndex`: it emits pre-move indexes (edge top/left → target's index, bottom/right → index + 1, both measured with the dragged block still in place — exactly what the hitboxes see), and `moveBlock` itself owns the same-container removal adjustment (docs/03 §3). One index convention end to end, one place that adjusts it.
 
 ## 5. Indicators & previews
 

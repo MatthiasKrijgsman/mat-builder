@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createRegistry, setDocument, type AnyBlockDefinition } from "../core/index.ts";
 import type { BlockId, BuilderDocument } from "../core/types.ts";
+import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
 import { createEditorStore, syncExternalDocument, type EditorCallbacks } from "./store.ts";
 
@@ -34,12 +35,15 @@ export function BuilderProvider(props: BuilderProviderProps) {
         }
         const callbacks: EditorCallbacks = {};
         const store = createEditorStore({ registry, document: setDocument(initial, registry), callbacks });
-        return { store, registry, callbacks };
+        return { store, registry, callbacks, instanceId: Symbol("mat-builder-instance") };
     });
 
     // Reassigned every render so store actions always call the latest handlers
     instance.callbacks.onChange = onChange;
     instance.callbacks.onSelectionChange = onSelectionChange;
+
+    // One monitor per provider performs all DnD mutations (docs/05 §4)
+    useDndMonitor(instance);
 
     // Controlled sync: a `value` we did not emit is an external replacement.
     // (Values passed back from onChange are reference-equal and skipped.)

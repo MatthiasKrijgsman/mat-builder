@@ -3,6 +3,7 @@ import {
     canDropAt,
     createHistory,
     duplicateBlock,
+    findAncestors,
     findLocation,
     insertBlock,
     moveBlock,
@@ -32,9 +33,21 @@ export interface EditorCallbacks {
     onSelectionChange?: (id: BlockId | null) => void;
 }
 
+/** Live during a drag (source only — drop targets keep their own edge state). */
+export type DragState =
+    | { kind: "new-block"; blockType: string }
+    | { kind: "move-block"; blockId: BlockId };
+
 export interface EditorActions {
     select(id: BlockId | null): void;
     hover(id: BlockId | null): void;
+    /** Drag lifecycle — set by the provider's DnD monitor */
+    setDrag(drag: DragState | null): void;
+    /** Layers tree expand state */
+    setExpanded(id: BlockId, expanded: boolean): void;
+    toggleExpanded(id: BlockId): void;
+    /** Expands all ancestors so the block's layers row is visible */
+    revealBlock(id: BlockId): void;
     /** Inserts a new block and selects it; null when the location is invalid */
     insertBlock(type: string, at: BlockLocation): BlockId | null;
     moveBlock(id: BlockId, to: BlockLocation): boolean;
@@ -54,8 +67,9 @@ export interface EditorState {
     document: BuilderDocument;
     selectedId: BlockId | null;
     hoveredId: BlockId | null;
-    /** Layers tree expand state (consumed from phase 3) */
+    /** Layers tree expand state */
     expanded: Set<BlockId>;
+    drag: DragState | null;
     history: HistoryState;
     actions: EditorActions;
 }
@@ -104,13 +118,35 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             document: options.document,
             selectedId: null,
             hoveredId: null,
-            expanded: new Set<BlockId>(),
+            // Everything starts expanded; newly created parents auto-expand (docs/04 §LayersPanel)
+            expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
+            drag: null,
             history: createHistory(),
 
             actions: {
                 select,
                 hover: (id) => {
                     if (get().hoveredId !== id) set({ hoveredId: id });
+                },
+                setDrag: (drag) => {
+                    // A drag also clears hover — the hover chrome must not fight drop indicators
+                    set(drag ? { drag, hoveredId: null } : { drag });
+                },
+                setExpanded: (id, expanded) => {
+                    const current = get().expanded;
+                    if (current.has(id) === expanded) return;
+                    const next = new Set(current);
+                    if (expanded) next.add(id);
+                    else next.delete(id);
+                    set({ expanded: next });
+                },
+                toggleExpanded: (id) => {
+                    get().actions.setExpanded(id, !get().expanded.has(id));
+                },
+                revealBlock: (id) => {
+                    const ancestors = findAncestors(get().document, id);
+                    if (ancestors.every((ancestorId) => get().expanded.has(ancestorId))) return;
+                    set({ expanded: new Set([...get().expanded, ...ancestors]) });
                 },
 
                 insertBlock: (type, at) => {
@@ -119,6 +155,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                     const history = recordHistory(state.history, snapshot(), { timestamp: now() });
                     const { document, blockId } = insertBlock(state.document, { type, at }, registry);
                     commitDocument(document, history);
+                    set({ expanded: new Set([...get().expanded, blockId]) }); // new parents start expanded
                     select(blockId);
                     return blockId;
                 },
@@ -126,7 +163,17 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                 moveBlock: (id, to) => {
                     const state = get();
                     const node = state.document.blocks[id];
-                    if (!node || !findLocation(state.document, id)) return false;
+                    const from = findLocation(state.document, id);
+                    if (!node || !from) return false;
+                    // Same-position drop: succeed without a commit or history entry
+                    // (to.index is pre-move, so both "before self" and "after self" match)
+                    if (
+                        from.parentId === to.parentId &&
+                        from.container === to.container &&
+                        (to.index === from.index || to.index === from.index + 1)
+                    ) {
+                        return true;
+                    }
                     if (!canDropAt(state.document, registry, node.type, to, id)) return false;
                     const history = recordHistory(state.history, snapshot(), { timestamp: now() });
                     commitDocument(moveBlock(state.document, { id, to }, registry), history);
@@ -174,6 +221,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                     const document = setDocument(next, registry);
                     const history = recordHistory(get().history, snapshot(), { timestamp: now() });
                     commitDocument(document, history);
+                    set({ expanded: new Set(Object.keys(document.blocks)) });
                     if (get().selectedId && !document.blocks[get().selectedId as BlockId]) select(null);
                 },
 
@@ -200,5 +248,6 @@ export function syncExternalDocument(store: EditorStore, next: BuilderDocument, 
         history: createHistory(),
         selectedId: selectedId && document.blocks[selectedId] ? selectedId : null,
         hoveredId: null,
+        expanded: new Set(Object.keys(document.blocks)),
     });
 }
