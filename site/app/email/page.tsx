@@ -31,7 +31,8 @@ const initialDocument: BuilderDocument = {
                 backgroundColor: "#f4f4f5",
                 contentBackground: "#ffffff",
                 contentWidth: 600,
-                padding: 24,
+                paddingY: 24,
+                paddingX: 12,
                 fontFamily:
                     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                 previewText: "Your July invoice is ready",
@@ -110,7 +111,7 @@ function Topbar() {
 }
 
 function MainArea() {
-    const [mode, setMode] = useState<"edit" | "desktop" | "mobile">("edit");
+    const [mode, setMode] = useState<"edit" | "preview">("edit");
 
     return (
         <div className="flex min-h-0 flex-1">
@@ -122,8 +123,8 @@ function MainArea() {
                 <div className="flex justify-center border-b border-gray-200 bg-white px-4 py-1.5">
                     <TabButtons
                         size="sm"
-                        tabs={(["edit", "desktop", "mobile"] as const).map((value) => ({
-                            label: { edit: "Edit", desktop: "Desktop", mobile: "Mobile" }[value],
+                        tabs={(["edit", "preview"] as const).map((value) => ({
+                            label: value === "edit" ? "Edit" : "Preview",
                             active: mode === value,
                             onClick: () => setMode(value),
                         }))}
@@ -132,7 +133,7 @@ function MainArea() {
                 {mode === "edit" ? (
                     <Canvas className="min-h-0 flex-1" artboardWidth={640} />
                 ) : (
-                    <EmailPreview className="min-h-0 flex-1" width={mode === "desktop" ? 600 : 375} />
+                    <EmailPreview className="min-h-0 flex-1" initialWidth={640} />
                 )}
             </div>
             <Inspector className="w-80 shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />

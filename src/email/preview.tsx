@@ -1,22 +1,26 @@
 import { useEffect, useState } from "react";
+import { Artboard } from "../components/canvas/Artboard.tsx";
 import { useBuilderState } from "../react/hooks.ts";
 import { renderEmail } from "./render.ts";
 
 /*
  * EmailPreview — see docs/06 §Preview mode. Shows the truth: the real
  * react-email output, debounce-rendered client-side into an <iframe srcDoc>.
- * The iframe isolates the email from the app's Tailwind preflight/global CSS.
+ * The iframe isolates the email from the app's Tailwind preflight/global CSS,
+ * and sits in the same resizable Artboard frame as the editing canvas.
  * Read-only; render inside <BuilderProvider> (usually swapped with <Canvas>).
  */
 
 export interface EmailPreviewProps {
     className?: string;
-    /** Viewport width in px — 600 desktop, 375 mobile presets */
-    width?: number;
+    /** Initial artboard width in px */
+    initialWidth?: number;
+    /** Initial artboard height in px */
+    initialHeight?: number;
     debounceMs?: number;
 }
 
-export function EmailPreview({ className, width = 600, debounceMs = 300 }: EmailPreviewProps) {
+export function EmailPreview({ className, initialWidth = 600, initialHeight = 720, debounceMs = 300 }: EmailPreviewProps) {
     const document = useBuilderState((s) => s.document);
     const [html, setHtml] = useState<string>("");
 
@@ -38,16 +42,12 @@ export function EmailPreview({ className, width = 600, debounceMs = 300 }: Email
     }, [document, debounceMs]);
 
     return (
-        <div
-            className={`mat-builder-email-preview flex justify-center overflow-auto p-8 ${className ?? ""}`}
-            style={{ backgroundColor: "var(--mat-builder-color-canvas-bg)" }}
+        <Artboard
+            className={`mat-builder-email-preview ${className ?? ""}`}
+            initialWidth={initialWidth}
+            initialHeight={initialHeight}
         >
-            <iframe
-                title="Email preview"
-                srcDoc={html}
-                className="h-full shrink-0 border-0 shadow-sm"
-                style={{ width, backgroundColor: "var(--mat-builder-color-artboard-bg)" }}
-            />
-        </div>
+            <iframe title="Email preview" srcDoc={html} className="h-full w-full border-0" />
+        </Artboard>
     );
 }

@@ -4,8 +4,9 @@
     {
       "name": "site",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["site"],
-      "port": 6007
+      "runtimeArgs": ["--filter", "@matthiaskrijgsman/mat-builder-site", "exec", "next", "dev"],
+      "port": 6007,
+      "autoPort": true
     }
   ]
 }

@@ -41,6 +41,7 @@ export type { EditorState, EditorActions } from "./react/store.ts";
 
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
+export { Artboard, type ArtboardProps } from "./components/canvas/Artboard.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
 export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
 export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";

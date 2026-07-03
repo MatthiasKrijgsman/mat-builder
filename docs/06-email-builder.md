@@ -14,7 +14,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 
 | Block | Containers | Output mapping (react-email) | Key props |
 |---|---|---|---|
-| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, padding, fontFamily, previewText |
+| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, paddingY, paddingX (keeps page bg visible on narrow screens), fontFamily, previewText |
 | `section` | `content` (vertical) | `Section` | padding, background, borderRadius |
 | `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
 | `heading` | — | `Heading` | text, level, align, color |
@@ -105,7 +105,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 - Debounced call to `renderEmail(doc)` (client-side is fine — `render` works in the browser) → `<iframe srcDoc={html} />`.
 - The iframe isolates the email from the app's Tailwind preflight/global CSS — rendering the output HTML inline in the app DOM would be contaminated by it, which is why preview uses an iframe even though the editing canvas doesn't.
-- Device-width presets (600 px desktop / 375 px mobile) resize the iframe.
+- The iframe sits in the same freely resizable `Artboard` frame as the editing canvas (drag the edge bars to any width/height — this replaces fixed device-width presets; drag to ~375 px for a mobile check).
 - Plain-text tab shows the `plainText` render.
 - Browser preview ≠ Outlook: for real client coverage, pipe the exported HTML to Litmus/Email on Acid manually or in CI. Also surface a size warning in the toolbar when the HTML approaches ~100 KB (Gmail clipping).
 

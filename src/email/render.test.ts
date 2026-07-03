@@ -48,7 +48,7 @@ describe("renderEmail", () => {
         expect(html).toContain("Buy now");
         expect(html).toContain('href="https://example.com/buy"');
         expect(html).toContain("Preview snippet");
-        expect(html).toContain("padding:24px 0"); // root padding control
+        expect(html).toContain("padding:24px 12px"); // root paddingY/paddingX controls
         // Table-based layout (react-email Container/Section), not flex
         expect(html).toContain("<table");
         expect(html).not.toContain("display:flex");

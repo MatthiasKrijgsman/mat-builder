@@ -39,12 +39,20 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
                 onChange={(contentWidth) => update({ contentWidth })}
             />
             <Fields.NumberField
-                label="Padding"
-                description="Vertical space around the content"
-                value={props.padding}
+                label="Vertical padding"
+                description="Space above/below the content"
+                value={props.paddingY}
                 min={0}
                 max={96}
-                onChange={(padding) => update({ padding })}
+                onChange={(paddingY) => update({ paddingY })}
+            />
+            <Fields.NumberField
+                label="Horizontal padding"
+                description="Keeps page background visible on narrow screens"
+                value={props.paddingX}
+                min={0}
+                max={96}
+                onChange={(paddingX) => update({ paddingX })}
             />
             <Fields.TextField
                 label="Font family"

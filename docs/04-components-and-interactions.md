@@ -39,6 +39,7 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 ### Canvas
 
 - A centered, rounded "artboard" (react-email-preview style) with a fixed, user-resizable size: rounded bars on each edge drag-resize it symmetrically per axis (`artboardWidth`/`artboardHeight` props set the initial size; email default 600 px wide). Content taller than the artboard scrolls *inside* it — the inner scroll container (which is also the DnD auto-scroll target, see 05) is clipped by the rounded frame so corners stay round.
+- The frame + dotted work surface is the exported `Artboard` component — shared with preview surfaces (`EmailPreview` renders its iframe in the same frame) and available to hosts for custom surfaces.
 - Renders the root block, which recursively renders children through `BlockFrame` + `ContainerSlot`.
 - Click on empty canvas area → deselect. `Escape` → select parent, then deselect at root.
 - **Canvas is `editRender` only** (D2). A separate **preview mode** (Toolbar toggle) swaps the artboard for the real output — for email, an `<iframe srcDoc>` of the rendered HTML (see 06). Preview is read-only; no DnD or selection.
