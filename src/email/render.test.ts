@@ -124,6 +124,14 @@ describe("renderEmail", () => {
         expect(html).toMatch(/<li[^>]*>[\s\S]*D/);
     });
 
+    it("renders markdown paragraphs with an explicit inline margin", async () => {
+        const { html } = await renderEmail(buildDemoEmail());
+        // p is unstyled by react-email's Markdown defaults: without an inline
+        // margin the canvas (preflight: 0) and the preview iframe (browser
+        // default) disagree
+        expect(html).toMatch(/<p[^>]*margin:0 0 12px/);
+    });
+
     it("renders nested sections and columns inside sections", async () => {
         let document = buildDemoEmail();
         const outerSection = document.blocks[document.rootId].children.main[0];
