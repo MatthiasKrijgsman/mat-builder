@@ -73,6 +73,20 @@ export interface InspectorProps<P = Record<string, unknown>> {
     update: (patch: Partial<P>) => void;
 }
 
+/** Declarative spec for a block to create — used by `onCreate` to self-populate children. */
+export interface NewBlockSpec {
+    type: string;
+    props?: Record<string, unknown>;
+    /** Container name → child specs */
+    children?: Record<string, NewBlockSpec[]>;
+}
+
+export interface OnCreateCtx {
+    document: BuilderDocument;
+    /** Where the block is being inserted; null when created as the document root or inside an `onCreate` subtree */
+    location: BlockLocation | null;
+}
+
 export interface BlockDefinition<P = Record<string, unknown>> {
     /* identity & palette */
     type: string;
@@ -97,6 +111,49 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     canDelete?: boolean;
     /** @default true (root blocks: set false) */
     canDrag?: boolean;
+    /**
+     * Runs when a block of this type is created (insert / createDocument).
+     * Patch the default props from drop context and/or self-populate children,
+     * e.g. a "columns" block that starts with two empty column children.
+     */
+    onCreate?: (ctx: OnCreateCtx) => { props?: Partial<P>; children?: Record<string, NewBlockSpec[]> } | void;
     /** Nicer layers-panel labels, e.g. first words of a text block */
     getDisplayName?: (props: P) => string | undefined;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Validation & history — see docs/03-architecture.md §1 and §3
+ * ───────────────────────────────────────────────────────────── */
+
+export type ValidationIssueCode =
+    | "missing-root"
+    | "root-is-child"
+    | "dangling-child-id"
+    | "orphan-block"
+    | "multiple-parents"
+    | "id-mismatch"
+    | "unknown-type"
+    | "unknown-container"
+    | "accepts-violation"
+    | "max-children-exceeded";
+
+export interface ValidationIssue {
+    code: ValidationIssueCode;
+    /** "error" = integrity broken; "warning" = tolerated (e.g. unknown block type) */
+    severity: "error" | "warning";
+    blockId?: BlockId;
+    message: string;
+}
+
+export interface HistoryEntry {
+    document: BuilderDocument;
+    /** Restored on undo, so you get back what you were looking at */
+    selectedId: BlockId | null;
+}
+
+export interface HistoryState {
+    past: HistoryEntry[];
+    future: HistoryEntry[];
+    /** Coalescing bookkeeping for `recordHistory` — see docs/03-architecture.md §3 */
+    lastRecord?: { coalesceKey: string; at: number };
 }

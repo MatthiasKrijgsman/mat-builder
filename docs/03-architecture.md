@@ -83,7 +83,7 @@ export const columnsBlock = defineBlock<ColumnsProps>({
   category: "Layout",
   keywords: ["grid", "split"],             // palette search
   defaultProps: { gap: 16, ratio: "50/50" },
-  schema: columnsPropsSchema,              // optional zod schema — validates on load/paste
+  schema: columnsPropsSchema,              // optional zod schema — validates on load/paste (not yet implemented; lands with the email preset so zod isn't a dependency until it pays for itself)
 
   // Named containers = the block's internal drop regions
   containers: [
@@ -187,11 +187,13 @@ All mutations go through a small command layer — the only code allowed to touc
 | Command | Notes |
 |---|---|
 | `insertBlock(type, at: Location)` | creates node from `defaultProps` (+ `onCreate`), inserts id at location |
-| `moveBlock(id, to: Location)` | validates `accepts` + no-descendant-cycle, then two array edits |
+| `moveBlock(id, to: Location)` | validates `accepts` + no-descendant-cycle, then two array edits; `to.index` uses pre-move coordinates (what hitboxes compute while the block is still in place) |
 | `updateProps(id, patch)` | shallow-merge; **history-coalesced** (below) |
 | `removeBlock(id)` | removes subtree; selection falls back to parent |
 | `duplicateBlock(id)` | deep-clone subtree with fresh ids, insert after source |
 | `setDocument(doc)` | load/replace (runs `migrate` + validation) |
+
+Implementation notes (src/core/commands.ts): commands that need definitions take the registry as a final argument; `insertBlock` and `duplicateBlock` return `{ document, blockId }` — callers (store, DnD) need the new id to select it. The shared drop-validity predicate `canDropAt(doc, registry, childType, at, movingId?)` (accepts + maxChildren + container-exists + root/canDrag/cycle rules) is what the DnD layer uses to gate drop targets before a command ever runs.
 
 ### Undo/redo
 
@@ -219,9 +221,11 @@ Snapshot history — immer's structural sharing makes snapshots cheap (unchanged
 
 ```ts
 // core (server-safe)
-export { defineBlock, createDocument, validateDocument, migrateDocument,
-         walkDocument, findAncestors, isDescendant } from "./core";
-export type { BuilderDocument, BlockNode, BlockDefinition, Location } from "./core";
+export { defineBlock, createRegistry, createDocument, validateDocument, migrateDocument,
+         walkDocument, findLocation, findAncestors, isDescendant, canDropAt } from "./core";
+export type { BuilderDocument, BlockNode, BlockDefinition, BlockRegistry, Location } from "./core";
+// createRegistry/BlockRegistry are public because createDocument & validateDocument take a
+// registry; the command & history functions stay internal — the provider's store drives them.
 
 // react
 export { BuilderProvider } from "./react/provider";
