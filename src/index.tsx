@@ -31,7 +31,17 @@ export type {
     ValidationIssueCode,
     HistoryEntry,
 } from "./core/types.ts";
-// Commands and history stay internal — the phase-2 store drives them (docs/03 §3).
+// Commands and history stay internal — the store drives them (docs/03 §3).
 
-// TODO(phase 2): BuilderProvider, hooks, Canvas, Inspector, field helpers
-// TODO(phase 3): drag and drop (docs/05-drag-and-drop.md), Palette, LayersPanel
+// React — provider & hooks
+export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
+export { useEditor, useSelectedBlock, useBlockNode, useBuilderState } from "./react/hooks.ts";
+export type { UseEditorResult, SelectedBlock } from "./react/hooks.ts";
+export type { EditorState, EditorActions } from "./react/store.ts";
+
+// UI components (each independent & restylable — docs/04)
+export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
+export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
+export * as Fields from "./components/fields/index.ts";
+
+// TODO(phase 3): drag and drop (docs/05-drag-and-drop.md), Palette, LayersPanel, Toolbar

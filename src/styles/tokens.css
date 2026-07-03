@@ -22,4 +22,19 @@
     /* Canvas */
     --mat-builder-color-canvas-bg: #f4f4f5;
     --mat-builder-color-artboard-bg: #ffffff;
+
+    /* Block chrome (name tag) */
+    --mat-builder-color-chrome-tag-fg: #ffffff;
+
+    /* Empty-container placeholders */
+    --mat-builder-color-placeholder-border: #d4d4d8;
+    --mat-builder-color-placeholder-fg: #a1a1aa;
+
+    /* Missing-block fallback (unknown types in old documents) */
+    --mat-builder-color-missing-border: #fca5a5;
+    --mat-builder-color-missing-bg: #fef2f2;
+    --mat-builder-color-missing-fg: #b91c1c;
+
+    /* Panels (inspector & friends) */
+    --mat-builder-color-panel-muted-fg: #71717a;
 }

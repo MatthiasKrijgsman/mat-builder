@@ -22,6 +22,7 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 ├── Canvas                         scroll container + root block render
 │   └── BlockFrame (internal)      per-block wrapper: selection/hover chrome, drag source,
 │       │                          drop target, toolbar affordances
+│       │                          (code: BlockView + BlockChrome in components/canvas/)
 │       ├── <block.editRender>     the application's component
 │       └── ContainerSlot (internal) per-container drop region, layout, empty placeholder,
 │                                    drop indicators
@@ -96,7 +97,9 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
 - `Escape` walks up: child → parent → … → root → none. Breadcrumb in the inspector covers the same need with the mouse.
 - Selection survives prop edits and is restored by undo (history entries store `selectedId`).
 
-### Keyboard (provider-level, active when focus is inside the builder)
+### Keyboard (active when focus is inside the builder)
+
+Implemented as a shared `onKeyDown` handler (`useBuilderKeyboard`, internal) that focusable builder surfaces attach — the Canvas today, the LayersPanel when it lands. The Canvas is `tabIndex={-1}` so clicking it (or any block) focuses it natively. Editable targets (inspector inputs) are skipped entirely: `Cmd/Ctrl+Z` inside a field stays the field's own text undo.
 
 | Key | Action |
 |---|---|
