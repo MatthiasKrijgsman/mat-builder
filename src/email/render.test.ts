@@ -57,6 +57,57 @@ describe("renderEmail", () => {
         expect(text).not.toContain("<html");
     });
 
+    it("renders columns, heading, image, divider and spacer", async () => {
+        let document = buildDemoEmail();
+        const root = document.rootId;
+
+        const cols = insertBlock(document, { type: "columns", at: { parentId: root, container: "main", index: 1 } }, registry);
+        document = cols.document;
+        const heading = insertBlock(
+            document,
+            { type: "heading", at: { parentId: cols.blockId, container: "col-1", index: 0 } },
+            registry,
+        );
+        document = updateProps(heading.document, { id: heading.blockId, patch: { text: "Column heading" } });
+        const image = insertBlock(
+            document,
+            { type: "image", at: { parentId: cols.blockId, container: "col-2", index: 0 } },
+            registry,
+        );
+        document = updateProps(image.document, {
+            id: image.blockId,
+            patch: { src: "https://example.com/pic.png", alt: "A picture", href: "https://example.com/target" },
+        });
+        const sectionId = document.blocks[root].children.main[0];
+        document = insertBlock(document, { type: "divider", at: { parentId: sectionId, container: "content", index: 0 } }, registry).document;
+        document = insertBlock(document, { type: "spacer", at: { parentId: sectionId, container: "content", index: 0 } }, registry).document;
+
+        expect(validateDocument(document, registry)).toEqual([]);
+        const { html } = await renderEmail(document);
+
+        expect(html).toContain("Column heading");
+        expect(html).toMatch(/<h2[^>]*>[\s\S]*Column heading/);
+        expect(html).toContain("width:50%"); // two active columns from the 50/50 preset
+        expect(html).toContain('src="https://example.com/pic.png"');
+        expect(html).toContain('href="https://example.com/target"');
+        expect(html).toContain("border-top:1px solid #e4e4e7"); // divider
+        expect(html).toContain("height:24px"); // spacer
+    });
+
+    it("images without a src render nothing", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        document = insertBlock(
+            document,
+            { type: "image", at: { parentId: sectionId, container: "content", index: 0 } },
+            registry,
+        ).document;
+
+        const { html } = await renderEmail(document);
+        expect(html).toContain("Hello from mat-builder");
+        expect(html).not.toContain("<img");
+    });
+
     it("skips unknown block types instead of crashing", async () => {
         const document = structuredClone(buildDemoEmail()); // commands freeze their output
 

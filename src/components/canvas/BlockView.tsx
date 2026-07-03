@@ -5,6 +5,7 @@ import {
     extractClosestEdge,
     type Edge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { IconCopy, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { canDropAt } from "../../core/commands.ts";
 import type { BlockId, BlockLocation, ContainerDef } from "../../core/types.ts";
@@ -139,14 +140,31 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 <MissingBlock type={node.type} />
             )}
             {(isSelected || (isHovered && !isRoot)) && !isDragSource && (
-                <BlockChrome label={label} selected={isSelected} />
+                <BlockChrome
+                    label={label}
+                    selected={isSelected}
+                    onDuplicate={location ? () => actions.duplicateBlock(id) : undefined}
+                    onDelete={!isRoot && definition?.canDelete !== false ? () => actions.removeBlock(id) : undefined}
+                />
             )}
             {closestEdge && <EdgeIndicator edge={closestEdge} />}
         </div>
     );
 }
 
-function BlockChrome({ label, selected }: { label: string; selected: boolean }) {
+interface BlockChromeProps {
+    label: string;
+    selected: boolean;
+    onDuplicate?: () => void;
+    onDelete?: () => void;
+}
+
+/**
+ * Selection/hover overlay. When selected, the name tag grows into a small
+ * action bar (docs/04 §BlockFrame): label + duplicate + delete. The overlay
+ * itself is pointer-transparent; only the bar accepts clicks.
+ */
+function BlockChrome({ label, selected, onDuplicate, onDelete }: BlockChromeProps) {
     const color = selected ? "var(--mat-builder-color-selection)" : "var(--mat-builder-color-hover)";
     return (
         <div
@@ -155,15 +173,43 @@ function BlockChrome({ label, selected }: { label: string; selected: boolean }) 
         >
             {selected && (
                 <span
-                    className="absolute left-0 top-0 -translate-y-full rounded-t px-1.5 py-0.5 text-[10px] font-medium leading-none"
+                    className="pointer-events-auto absolute left-0 top-0 flex -translate-y-full items-stretch rounded-t text-[10px] font-medium leading-none"
                     style={{ backgroundColor: color, color: "var(--mat-builder-color-chrome-tag-fg)" }}
                 >
-                    {label}
+                    <span className="px-1.5 py-0.5">{label}</span>
+                    {onDuplicate && (
+                        <ChromeButton label="Duplicate block" onClick={onDuplicate}>
+                            <IconCopy className="size-3" />
+                        </ChromeButton>
+                    )}
+                    {onDelete && (
+                        <ChromeButton label="Delete block" onClick={onDelete}>
+                            <IconTrash className="size-3" />
+                        </ChromeButton>
+                    )}
                 </span>
             )}
         </div>
     );
 }
+
+function ChromeButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            title={label}
+            className="flex cursor-pointer items-center px-1 hover:bg-white/20"
+            onClick={(event) => {
+                event.stopPropagation();
+                onClick();
+            }}
+        >
+            {children}
+        </button>
+    );
+}
+
 
 /** 2px accent line on the extracted edge — mounted only while an edge is present. */
 function EdgeIndicator({ edge }: { edge: Edge }) {

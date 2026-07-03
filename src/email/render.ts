@@ -3,8 +3,13 @@ import { createElement, Fragment, type ReactElement } from "react";
 import type { BlockId, BuilderDocument } from "../core/types.ts";
 import { emailRootEmail } from "./blocks/email-root/email.tsx";
 import { sectionEmail } from "./blocks/section/email.tsx";
+import { columnsEmail } from "./blocks/columns/email.tsx";
+import { headingEmail } from "./blocks/heading/email.tsx";
 import { textEmail } from "./blocks/text/email.tsx";
 import { buttonEmail } from "./blocks/button/email.tsx";
+import { imageEmail } from "./blocks/image/email.tsx";
+import { dividerEmail } from "./blocks/divider/email.tsx";
+import { spacerEmail } from "./blocks/spacer/email.tsx";
 import type { AnyEmailRenderer } from "./types.ts";
 
 /*
@@ -23,8 +28,13 @@ export type { EmailRenderer, AnyEmailRenderer } from "./types.ts";
 export const emailRenderers: Record<string, AnyEmailRenderer> = {
     "email-root": emailRootEmail,
     section: sectionEmail,
+    columns: columnsEmail,
+    heading: headingEmail,
     text: textEmail,
     button: buttonEmail,
+    image: imageEmail,
+    divider: dividerEmail,
+    spacer: spacerEmail,
 };
 
 /**

@@ -6,12 +6,11 @@ import {
     Inspector,
     LayersPanel,
     Palette,
-    useEditor,
+    UndoRedoButtons,
     type BuilderDocument,
 } from "@matthiaskrijgsman/mat-builder";
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
-import { ButtonIconSquare, TabButtons } from "@matthiaskrijgsman/mat-ui";
-import { IconArrowBackUp, IconArrowForwardUp } from "@tabler/icons-react";
+import { TabButtons } from "@matthiaskrijgsman/mat-ui";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -96,30 +95,14 @@ export default function EmailBuilderPage() {
 }
 
 function Topbar() {
-    const { undo, redo, canUndo, canRedo } = useEditor();
     return (
         <header className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-2">
             <h1 className="text-sm font-semibold">Email builder</h1>
             <Link href="/" className="text-xs text-gray-400 hover:underline">
                 ← kitchen sink
             </Link>
-            <div className="ml-auto flex items-center gap-1">
-                <ButtonIconSquare
-                    Icon={IconArrowBackUp}
-                    variant="tertiary"
-                    size="sm"
-                    aria-label="Undo"
-                    disabled={!canUndo}
-                    onClick={undo}
-                />
-                <ButtonIconSquare
-                    Icon={IconArrowForwardUp}
-                    variant="tertiary"
-                    size="sm"
-                    aria-label="Redo"
-                    disabled={!canRedo}
-                    onClick={redo}
-                />
+            <div className="ml-auto">
+                <UndoRedoButtons />
             </div>
         </header>
     );

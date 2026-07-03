@@ -21,7 +21,7 @@ export function LayersPanel({ className }: LayersPanelProps) {
     const { store, instanceId } = useBuilderContext();
     const rootId = useBuilderState((s) => s.document.rootId);
     const selectedId = useBuilderState((s) => s.selectedId);
-    const onKeyDown = useBuilderKeyboard();
+    const onKeyDown = useBuilderKeyboard({ surface: "layers" });
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {

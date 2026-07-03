@@ -49,7 +49,7 @@ Internal wrapper the package controls fully — this is where "we control how th
 
 - **Idle**: nothing rendered around the block.
 - **Hovered**: light outline + name tag (`ring-1` style overlay, absolutely positioned so it never affects layout — the chrome must not change the block's box or the edit render drifts from reality).
-- **Selected**: strong outline + floating action bar (drag handle, name, duplicate, delete). The drag handle is the `dragHandle` element for Pragmatic DnD, so text inside blocks stays selectable/editable.
+- **Selected**: strong outline + floating action bar (name, duplicate, delete — implemented; the whole frame is the drag surface until inline text editing needs a dedicated handle, see 05 §1).
 - **Dragging**: source block dims (`opacity-40`); custom drag preview shows icon + label chip rather than a screenshot of the block (cheap, and consistent between palette and canvas drags).
 - Chrome is layered via an absolutely-positioned overlay sibling of `editRender`, not by wrapping styles onto the block's own element.
 - All chrome pieces are themable: a `components`/`classNames` prop on the provider (shadcn-style slot overrides) lets the host replace the name tag, action bar, outline styles, and indicators without forking.
@@ -107,7 +107,10 @@ Implemented as a shared `onKeyDown` handler (`useBuilderKeyboard`, internal) tha
 | `Delete` / `Backspace` | remove selected block (respects `canDelete`) |
 | `Cmd/Ctrl+D` | duplicate selected |
 | `Escape` | select parent / clear selection |
-| `↑` / `↓` | previous / next sibling; `←`/`→` collapse/expand in layers panel |
+| `↑` / `↓` | previous / next sibling (no selection: selects the root) |
+| `←` / `→` | collapse / expand the selected block (layers panel surface only) |
+
+All of the above are implemented in `useBuilderKeyboard` (internal).
 
 (A full keyboard-only *move* mode — Atlassian recommends menu-based alternatives to DnD for accessibility — is a v2 item; the primitives (`moveBlock`) already exist, so it's UI work only.)
 

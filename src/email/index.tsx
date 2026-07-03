@@ -10,17 +10,47 @@
 
 import { emailRootBlock } from "./blocks/email-root/index.tsx";
 import { sectionBlock } from "./blocks/section/index.tsx";
+import { columnsBlock } from "./blocks/columns/index.tsx";
+import { headingBlock } from "./blocks/heading/index.tsx";
 import { textBlock } from "./blocks/text/index.tsx";
 import { buttonBlock } from "./blocks/button/index.tsx";
+import { imageBlock } from "./blocks/image/index.tsx";
+import { dividerBlock } from "./blocks/divider/index.tsx";
+import { spacerBlock } from "./blocks/spacer/index.tsx";
 
-export { emailRootBlock, sectionBlock, textBlock, buttonBlock };
+export {
+    emailRootBlock,
+    sectionBlock,
+    columnsBlock,
+    headingBlock,
+    textBlock,
+    buttonBlock,
+    imageBlock,
+    dividerBlock,
+    spacerBlock,
+};
 export { EMAIL_LEAF_TYPES } from "./blocks/section/index.tsx";
 export type { EmailRootProps } from "./blocks/email-root/styles.ts";
 export type { EmailSectionProps } from "./blocks/section/styles.ts";
+export type { EmailColumnsProps, EmailColumnsRatio } from "./blocks/columns/styles.ts";
+export type { EmailHeadingProps } from "./blocks/heading/styles.ts";
 export type { EmailTextProps } from "./blocks/text/styles.ts";
 export type { EmailButtonProps } from "./blocks/button/styles.ts";
+export type { EmailImageProps } from "./blocks/image/styles.ts";
+export type { EmailDividerProps } from "./blocks/divider/styles.ts";
+export type { EmailSpacerProps } from "./blocks/spacer/styles.ts";
 
 /** The preset handed to <BuilderProvider blocks={emailBlocks}> */
-export const emailBlocks = [emailRootBlock, sectionBlock, textBlock, buttonBlock];
+export const emailBlocks = [
+    emailRootBlock,
+    sectionBlock,
+    columnsBlock,
+    headingBlock,
+    textBlock,
+    buttonBlock,
+    imageBlock,
+    dividerBlock,
+    spacerBlock,
+];
 
 export { EmailPreview, type EmailPreviewProps } from "./preview.tsx";

@@ -16,7 +16,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 |---|---|---|---|
 | `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, fontFamily, previewText |
 | `section` | `content` (vertical) | `Section` | padding, background, borderRadius |
-| `columns` | `col-1…col-n` (each vertical) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
+| `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
 | `heading` | — | `Heading` | text, level, align, color |
 | `text` | — | `Text` | rich-ish text (bold/italic/link), align, size, color |
 | `button` | — | `Button` (padded `<a>`) | label, href, colors, radius, align, fullWidth |

@@ -44,6 +44,7 @@ export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
 export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
 export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";
+export { Toolbar, UndoRedoButtons, type ToolbarProps } from "./components/toolbar/Toolbar.tsx";
 export * as Fields from "./components/fields/index.ts";
 export type { DragState } from "./react/store.ts";
 
