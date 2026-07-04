@@ -3,7 +3,7 @@
  * style-props value. See types.ts for the shared contract.
  */
 
-export { BackgroundGroup } from "./BackgroundGroup.tsx";
+export { BackgroundGroup, type BackgroundGroupProps } from "./BackgroundGroup.tsx";
 export { BorderGroup } from "./BorderGroup.tsx";
 export { EffectsGroup } from "./EffectsGroup.tsx";
 export { LayoutGroup, type LayoutGroupProps } from "./LayoutGroup.tsx";

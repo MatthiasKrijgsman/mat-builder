@@ -36,7 +36,11 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
             />
-            <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <BackgroundGroup
+                modes={["none", "solid", "gradient"]}
+                value={props.background}
+                onChange={(background) => update({ background })}
+            />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
             <TypographyGroup value={props.typography} onChange={(typography) => update({ typography })} />
             <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />

@@ -156,6 +156,28 @@ describe("renderEmail", () => {
         expect(html).toMatch(/<li[^>]*>[\s\S]*D/);
     });
 
+    it("renders background images with sizing and a fallback color", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        document = updateProps(document, {
+            id: sectionId,
+            patch: {
+                background: {
+                    type: "image",
+                    color: "#fafafa",
+                    gradient: { from: "#ffffff", to: "#e4e4e7", angle: 180 },
+                    image: { url: "https://example.com/bg.png", size: "cover", position: "center", repeat: false },
+                },
+            },
+        });
+
+        const { html } = await renderEmail(document);
+        expect(html).toContain("url(https://example.com/bg.png)");
+        expect(html).toMatch(/background-color:\s*#fafafa/i);
+        expect(html).toContain("background-size:cover");
+        expect(html).toContain("background-repeat:no-repeat");
+    });
+
     it("renders encoded blank lines (&nbsp; paragraphs) as visible empty paragraphs", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];

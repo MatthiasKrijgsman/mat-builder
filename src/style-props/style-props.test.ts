@@ -42,6 +42,31 @@ describe("background", () => {
         expect(css.backgroundColor).toBe("#111111");
         expect(css.backgroundImage).toBe("linear-gradient(90deg, #111111, #222222)");
     });
+
+    it("image emits url background with sizing and a fallback color", () => {
+        const css = backgroundToCss({
+            ...defaultBackground,
+            type: "image",
+            color: "#fafafa",
+            image: { url: "https://example.com/bg.png", size: "cover", position: "center", repeat: false },
+        });
+        expect(css.backgroundImage).toBe("url(https://example.com/bg.png)");
+        expect(css.backgroundColor).toBe("#fafafa");
+        expect(css.backgroundSize).toBe("cover");
+        expect(css.backgroundPosition).toBe("center");
+        expect(css.backgroundRepeat).toBe("no-repeat");
+    });
+
+    it("image mode without a url (or without an image value at all) falls back to the color", () => {
+        expect(backgroundToCss({ ...defaultBackground, type: "image", color: "#fafafa" })).toEqual({
+            backgroundColor: "#fafafa",
+        });
+        // Pre-image documents have no `image` key on stored background values
+        const { image: _image, ...legacy } = defaultBackground;
+        expect(backgroundToCss({ ...legacy, type: "image", color: "#fafafa" })).toEqual({
+            backgroundColor: "#fafafa",
+        });
+    });
 });
 
 describe("border", () => {
