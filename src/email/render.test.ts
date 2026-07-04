@@ -156,6 +156,19 @@ describe("renderEmail", () => {
         expect(html).toMatch(/<li[^>]*>[\s\S]*D/);
     });
 
+    it("renders encoded blank lines (&nbsp; paragraphs) as visible empty paragraphs", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        // The shape RichTextField stores when the user presses Enter twice
+        document = updateProps(document, { id: textId, patch: { text: "first\n\n&nbsp;\n\nsecond" } });
+
+        const { html } = await renderEmail(document);
+        expect(html).toMatch(/<p[^>]*>\s*&nbsp;\s*<\/p>/);
+        expect(html).toContain("first");
+        expect(html).toContain("second");
+    });
+
     it("renders markdown paragraphs with an explicit inline margin", async () => {
         const { html } = await renderEmail(buildDemoEmail());
         // p is unstyled by react-email's Markdown defaults: without an inline

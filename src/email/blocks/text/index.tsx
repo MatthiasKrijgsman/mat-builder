@@ -12,7 +12,8 @@ export const textBlock = defineBlock<EmailTextProps>({
     category: "Content",
     keywords: ["paragraph", "copy", "body", "markdown"],
     defaultProps: emailTextDefaults,
-    getDisplayName: (props) => props.text.replace(/[#*_[\]()`>]/g, "").trim().slice(0, 24) || undefined,
+    getDisplayName: (props) =>
+        props.text.replace(/&nbsp;/g, " ").replace(/[#*_[\]()`>]/g, "").trim().slice(0, 24) || undefined,
     // Same <Markdown> as the output render — markdown parity for free
     editRender: ({ props }) => (
         <Markdown markdownContainerStyles={emailTextStyles(props)} markdownCustomStyles={emailTextMarkdownStyles}>

@@ -2,6 +2,7 @@ import { $convertFromMarkdownString, $convertToMarkdownString, TRANSFORMERS } fr
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
 import { InputLexical } from "@matthiaskrijgsman/mat-ui";
+import { $getRoot, $isParagraphNode } from "lexical";
 import { useEffect, useMemo, useRef } from "react";
 
 /*
@@ -14,6 +15,35 @@ import { useEffect, useMemo, useRef } from "react";
  * store markdown in their props and render it (e.g. via react-email's
  * <Markdown>) — see docs/06.
  */
+
+/*
+ * Blank paragraphs (the user pressing Enter twice) are not representable in
+ * standard markdown — Lexical serializes them as bare extra newlines, which
+ * every markdown renderer (and Lexical's own re-import) collapses. So the
+ * stored markdown encodes each blank paragraph as an `&nbsp;` paragraph
+ * (renders as a visible empty line) and the editor decodes those back to
+ * real blank paragraphs on load.
+ *
+ * Lexical's newline-delimited export shape: k blank paragraphs BETWEEN two
+ * text blocks serialize as (2+k) consecutive newlines; k blanks at the start
+ * or end serialize as k boundary newlines.
+ */
+const BLANK_PARAGRAPH = "&nbsp;";
+
+function encodeBlankParagraphs(markdown: string): string {
+    return markdown
+        .replace(/\n{3,}(?=[^\n])/g, (run) => "\n\n" + `${BLANK_PARAGRAPH}\n\n`.repeat(run.length - 2))
+        .replace(/^\n+/, (run) => `${BLANK_PARAGRAPH}\n\n`.repeat(run.length))
+        .replace(/\n+$/, (run) => `\n\n${BLANK_PARAGRAPH}`.repeat(run.length));
+}
+
+/** Markdown → editor state, restoring encoded blank paragraphs. Call inside editor.update(). */
+function $importMarkdown(markdown: string, transformers: typeof TRANSFORMERS): void {
+    $convertFromMarkdownString(markdown, transformers);
+    for (const node of $getRoot().getChildren()) {
+        if ($isParagraphNode(node) && node.getTextContent() === BLANK_PARAGRAPH) node.clear();
+    }
+}
 
 export interface RichTextFieldProps {
     label?: string;
@@ -57,9 +87,11 @@ function MarkdownPlugins({ value, onChange }: { value: string | undefined; onCha
         if (value === undefined) return;
         const root = editor.getRootElement();
         if (root && root.contains(root.ownerDocument.activeElement)) return;
-        const current = editor.getEditorState().read(() => $convertToMarkdownString(transformers));
+        const current = editor
+            .getEditorState()
+            .read(() => encodeBlankParagraphs($convertToMarkdownString(transformers)));
         if (current === value) return;
-        editor.update(() => $convertFromMarkdownString(value, transformers));
+        editor.update(() => $importMarkdown(value, transformers));
     }, [editor, value, transformers]);
 
     // Editor edits → markdown out (the store coalesces history, so typing stays one undo step)
@@ -68,7 +100,7 @@ function MarkdownPlugins({ value, onChange }: { value: string | undefined; onCha
             editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
                 if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return;
                 editorState.read(() => {
-                    const markdown = $convertToMarkdownString(transformers);
+                    const markdown = encodeBlankParagraphs($convertToMarkdownString(transformers));
                     if (markdown === lastEmitted.current) return;
                     lastEmitted.current = markdown;
                     onChangeRef.current(markdown);
