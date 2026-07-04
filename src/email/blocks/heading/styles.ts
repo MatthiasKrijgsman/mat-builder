@@ -1,29 +1,36 @@
 import type { CSSProperties } from "react";
+import {
+    defaultEffects,
+    defaultTypography,
+    effectsToCss,
+    spacingToCss,
+    typographyToCss,
+    uniformSides,
+    type EffectsValue,
+    type SpacingValue,
+    type TypographyValue,
+} from "../../../style-props/index.ts";
 
 export interface EmailHeadingProps {
     text: string;
+    /** Semantic tag only (h1–h3) — the size comes from typography */
     level: "1" | "2" | "3";
-    align: "left" | "center" | "right";
-    color: string;
+    typography: TypographyValue;
+    spacing: SpacingValue;
+    effects: EffectsValue;
 }
 
 export const emailHeadingDefaults: EmailHeadingProps = {
     text: "Heading",
     level: "2",
-    align: "left",
-    color: "#18181b",
+    typography: { ...defaultTypography, fontSize: 24, lineHeight: 1.25, color: "#18181b" },
+    spacing: { padding: uniformSides(0), margin: { top: 0, right: 0, bottom: 16, left: 0 } },
+    effects: defaultEffects,
 };
 
-const LEVEL_SIZES: Record<EmailHeadingProps["level"], number> = { "1": 32, "2": 24, "3": 18 };
-
-export const emailHeadingStyles = (props: EmailHeadingProps): CSSProperties => {
-    const fontSize = LEVEL_SIZES[props.level];
-    return {
-        textAlign: props.align,
-        color: props.color,
-        fontSize,
-        lineHeight: `${Math.round(fontSize * 1.25)}px`,
-        fontWeight: 700,
-        margin: "0 0 16px",
-    };
-};
+export const emailHeadingStyles = (props: EmailHeadingProps): CSSProperties => ({
+    ...typographyToCss(props.typography),
+    fontWeight: 700,
+    ...spacingToCss(props.spacing),
+    ...effectsToCss(props.effects),
+});

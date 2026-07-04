@@ -1,6 +1,13 @@
 import { IconLayoutRows } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
-import * as Fields from "../../../components/fields/index.ts";
+import {
+    BackgroundGroup,
+    BorderGroup,
+    EffectsGroup,
+    LayoutGroup,
+    SizeGroup,
+    SpacingGroup,
+} from "../../../components/style-groups/index.ts";
 import { emailSectionDefaults, emailSectionStyles, type EmailSectionProps } from "./styles.ts";
 
 /** Leaf types (no containers of their own) — what column cells accept. */
@@ -21,6 +28,7 @@ export const sectionBlock = defineBlock<EmailSectionProps>({
             // only column CELLS are restricted to leaves — see columns/index.tsx.
             accepts: [...EMAIL_LEAF_TYPES, "section", "columns"],
             placeholder: "Drop content here",
+            getGap: (props) => (props as unknown as EmailSectionProps).layout?.gap,
         },
     ],
     editRender: ({ props, containers }) => (
@@ -28,25 +36,16 @@ export const sectionBlock = defineBlock<EmailSectionProps>({
     ),
     inspector: ({ props, update }) => (
         <>
-            <Fields.ColorField
-                label="Background"
-                value={props.backgroundColor}
-                onChange={(backgroundColor) => update({ backgroundColor })}
+            <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
+            <LayoutGroup
+                fields={["horizontal", "gap"]}
+                value={props.layout}
+                onChange={(layout) => update({ layout })}
             />
-            <Fields.NumberField
-                label="Padding"
-                value={props.padding}
-                min={0}
-                max={80}
-                onChange={(padding) => update({ padding })}
-            />
-            <Fields.NumberField
-                label="Corner radius"
-                value={props.borderRadius}
-                min={0}
-                max={32}
-                onChange={(borderRadius) => update({ borderRadius })}
-            />
+            <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),
 });

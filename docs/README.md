@@ -18,6 +18,7 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 | Decision | Choice |
 |---|---|
 | Inspector config forms | Custom React component per block + shared field-helper components (wrapping mat-ui inputs) |
+| Shared style groups | Reusable collapsible property sets (Size/Background/Border/Spacing/Effects/Layout/Typography): nested per-group props (`props.border = {…}`) + pure `toCss` converters in `src/style-props/` consumed by both renders (03 §Style props, 06) |
 | Canvas rendering | Separate **editor render** (divs/Tailwind) and **output render** (react-email) per block |
 | Packaging | **Standalone repo, published npm package** — same model as mat-ui; the in-repo `site/` playground is the primary dev surface. (Supersedes the earlier internal-workspace-package choice — multiple companies' projects will consume the builder.) |
 | Package shape | Single package with subpath exports: `.` (editor), `./email` (block preset), `./email/render` (server-safe renderer), `./style` |

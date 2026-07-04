@@ -1,6 +1,7 @@
 import { IconHeading } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { EffectsGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
 import { emailHeadingDefaults, emailHeadingStyles, type EmailHeadingProps } from "./styles.ts";
 
 export const headingBlock = defineBlock<EmailHeadingProps>({
@@ -20,6 +21,7 @@ export const headingBlock = defineBlock<EmailHeadingProps>({
             <Fields.TextField label="Text" value={props.text} onChange={(text) => update({ text })} />
             <Fields.SelectField
                 label="Level"
+                description="Semantic tag only — the size is set under Typography"
                 value={props.level}
                 options={[
                     { label: "H1", value: "1" },
@@ -28,13 +30,9 @@ export const headingBlock = defineBlock<EmailHeadingProps>({
                 ]}
                 onChange={(level) => update({ level: level as EmailHeadingProps["level"] })}
             />
-            <Fields.SelectField
-                label="Align"
-                value={props.align}
-                options={["left", "center", "right"]}
-                onChange={(align) => update({ align: align as EmailHeadingProps["align"] })}
-            />
-            <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
+            <TypographyGroup defaultOpen value={props.typography} onChange={(typography) => update({ typography })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),
 });

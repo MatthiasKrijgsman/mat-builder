@@ -76,7 +76,9 @@ Renders one named container of a block:
 - Subscribes to `selectedId`. Empty state when nothing is selected (or shows the root/document settings — root is a block, so this is free).
 - Header: block icon, label, breadcrumb of ancestors (each clickable → reselect), delete button.
 - Body: mounts the definition's `inspector` component with `{ id, props, update }`. `update` shallow-merges and coalesces history (03 §3).
-- **Field helpers** are thin wrappers around mat-ui inputs (label + control, builder-flavored layout) so application inspectors are mostly declarative one-liners; anything bespoke is just JSX composed from mat-ui directly.
+- **Field helpers** are thin wrappers around mat-ui inputs (label + control, builder-flavored layout) so application inspectors are mostly declarative one-liners; anything bespoke is just JSX composed from mat-ui directly. Shipped: `TextField`, `TextAreaField`, `RichTextField`, `NumberField`, `SelectField`, `SegmentedField` (mat-ui `TabButtons` as a segmented control), `ColorField`, `ToggleField`.
+- **`InspectorGroup`** — a named, collapsible section (hand-rolled header + chevron; mat-ui has no accordion). Collapse state is local, so it resets when the selection changes — accepted for now.
+- **Style groups** (`StyleGroups.*`) — reusable property sets built on `InspectorGroup`: `SizeGroup`, `BackgroundGroup`, `BorderGroup`, `SpacingGroup`, `EffectsGroup`, `LayoutGroup`, `TypographyGroup`. Each edits one object-valued prop and always emits the complete next object (see 03 §Style props). Groups with natural subsets take a `fields` filter (e.g. `<SpacingGroup fields={["margin"]} />`).
 - Keyed by `selectedId` so switching blocks remounts the form (no stale local state).
 
 ### LayersPanel

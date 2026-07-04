@@ -123,8 +123,11 @@ interface ContainerDef {
   accepts?: string[] | ((childType: string, ctx: AcceptCtx) => boolean); // omit = accept all
   maxChildren?: number;
   placeholder?: string;                    // empty-container hint text
+  getGap?: (props) => number | undefined;  // canvas gap between children, derived from the block's props
 }
 ```
+
+`getGap` lets a container's child spacing follow a block prop (the email preset wires it to `props.layout.gap`). The canvas applies it as flex-column gap **only when > 0** (so the default block flow and its margin collapsing survive); the output render is responsible for the same gap in its own idiom (email: table-safe `withVerticalGap` wrappers).
 
 `layout` matters to the *editor*, not just styling: it decides whether DnD uses top/bottom edges (vertical), left/right edges (horizontal), or 2D closest-edge (grid) for drop position detection — see [05-drag-and-drop.md](05-drag-and-drop.md).
 
@@ -161,6 +164,15 @@ interface InspectorProps<P> {
   update: (patch: Partial<P>) => void;     // merges + records history (coalesced)
 }
 ```
+
+`update` merges **shallowly** (top-level keys replace). Object-valued props — the style-group values below — must therefore always be patched with the *complete* next object, never a nested partial; the shipped style-group components guarantee this.
+
+### Style props & style groups
+
+Reusable, named property sets that blocks opt into instead of re-inventing ad-hoc style props:
+
+- **`src/style-props/`** — the pure, server-safe vocabulary: one value type + defaults + `toCss(value?): CSSProperties` converter per set (`SizeValue`, `BackgroundValue`, `BorderValue`, `SpacingValue`, `EffectsValue`, `LayoutValue`, `TypographyValue`). Every converter maps `undefined → {}` so documents predating a group degrade softly. Importable from both the root entry and `./email/render`.
+- **`src/components/style-groups/`** — one collapsible inspector component per set (`<BorderGroup value={props.border} onChange={(border) => update({ border })} />`), built on `InspectorGroup` and the field helpers. Blocks store each group's value under a single props key (`props.border`, `props.background`, …).
 
 The **registry** is just the array of definitions handed to the provider; core wraps it in a `Map` and exposes `getDefinition(type)`. Unknown types found in a loaded document render a built-in "missing block" placeholder rather than crashing (protects against removed block types in old documents).
 

@@ -1,5 +1,6 @@
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { BackgroundGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
 import { emailRootBodyStyles, emailRootContainerStyles, emailRootDefaults, type EmailRootProps } from "./styles.ts";
 
 export const emailRootBlock = defineBlock<EmailRootProps>({
@@ -26,11 +27,6 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
                 value={props.backgroundColor}
                 onChange={(backgroundColor) => update({ backgroundColor })}
             />
-            <Fields.ColorField
-                label="Content background"
-                value={props.contentBackground}
-                onChange={(contentBackground) => update({ contentBackground })}
-            />
             <Fields.NumberField
                 label="Content width"
                 value={props.contentWidth}
@@ -38,32 +34,28 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
                 max={800}
                 onChange={(contentWidth) => update({ contentWidth })}
             />
-            <Fields.NumberField
-                label="Vertical padding"
-                description="Space above/below the content"
-                value={props.paddingY}
-                min={0}
-                max={96}
-                onChange={(paddingY) => update({ paddingY })}
-            />
-            <Fields.NumberField
-                label="Horizontal padding"
-                description="Keeps page background visible on narrow screens"
-                value={props.paddingX}
-                min={0}
-                max={96}
-                onChange={(paddingX) => update({ paddingX })}
-            />
-            <Fields.TextField
-                label="Font family"
-                value={props.fontFamily}
-                onChange={(fontFamily) => update({ fontFamily })}
-            />
             <Fields.TextField
                 label="Preview text"
                 value={props.previewText}
                 description="Inbox snippet shown next to the subject"
                 onChange={(previewText) => update({ previewText })}
+            />
+            <BackgroundGroup
+                label="Content background"
+                value={props.background}
+                onChange={(background) => update({ background })}
+            />
+            <SpacingGroup
+                label="Page padding"
+                fields={["padding"]}
+                value={props.spacing}
+                onChange={(spacing) => update({ spacing })}
+            />
+            <TypographyGroup
+                label="Base typography"
+                fields={["fontFamily", "fontSize", "lineHeight", "letterSpacing", "color"]}
+                value={props.typography}
+                onChange={(typography) => update({ typography })}
             />
         </>
     ),

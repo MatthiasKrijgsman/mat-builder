@@ -56,6 +56,12 @@ export interface ContainerDef {
     maxChildren?: number;
     /** Empty-container hint text */
     placeholder?: string;
+    /**
+     * Vertical gap (px) between this container's children on the canvas,
+     * derived from the parent block's props (email preset: props.layout.gap).
+     * The output render applies the same gap itself (e.g. src/email/gap.ts).
+     */
+    getGap?: (props: Record<string, unknown>) => number | undefined;
 }
 
 export interface EditRenderProps<P = Record<string, unknown>> {

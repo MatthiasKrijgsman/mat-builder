@@ -23,6 +23,10 @@ import type { AnyEmailRenderer } from "./types.ts";
  */
 
 export type { EmailRenderer, AnyEmailRenderer } from "./types.ts";
+// Style-props vocabulary (value types + pure toCss converters) — server-safe,
+// re-exported so backend/custom-renderer code never touches the client entry.
+export * from "../style-props/index.ts";
+export { withVerticalGap } from "./gap.ts";
 
 /** Output renderer per block type — the server-side counterpart of the editor preset. */
 export const emailRenderers: Record<string, AnyEmailRenderer> = {

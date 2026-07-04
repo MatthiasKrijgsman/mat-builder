@@ -43,10 +43,16 @@ export type { EditorState, EditorActions } from "./react/store.ts";
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
 export { Artboard, type ArtboardProps } from "./components/canvas/Artboard.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
+export { InspectorGroup, type InspectorGroupProps } from "./components/inspector/InspectorGroup.tsx";
 export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
 export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";
 export { Toolbar, UndoRedoButtons, type ToolbarProps } from "./components/toolbar/Toolbar.tsx";
 export * as Fields from "./components/fields/index.ts";
 export type { DragState } from "./react/store.ts";
+
+// Style groups — reusable collapsible property sets (docs/04) …
+export * as StyleGroups from "./components/style-groups/index.ts";
+// … and their value types, defaults, and pure toCss converters (server-safe)
+export * from "./style-props/index.ts";
 
 // TODO(phase 4): email preset (docs/06-email-builder.md), Toolbar

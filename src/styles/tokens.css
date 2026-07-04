@@ -39,4 +39,5 @@
 
     /* Panels (inspector & friends) */
     --mat-builder-color-panel-muted-fg: #71717a;
+    --mat-builder-color-panel-border: #e4e4e7;
 }

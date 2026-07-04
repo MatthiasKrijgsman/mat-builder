@@ -15,8 +15,8 @@ import { BlockView } from "./BlockView.tsx";
  * ring highlight shows only while this slot is the innermost target.
  */
 
-export function ContainerSlot(props: { parentId: BlockId; container: ContainerDef; childIds: BlockId[] }) {
-    const { parentId, container, childIds } = props;
+export function ContainerSlot(props: { parentId: BlockId; container: ContainerDef; childIds: BlockId[]; gap?: number }) {
+    const { parentId, container, childIds, gap = 0 } = props;
     const { store, registry, instanceId } = useBuilderContext();
     const ref = useRef<HTMLDivElement>(null);
     const [isOver, setIsOver] = useState(false);
@@ -78,7 +78,12 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
             display: "grid",
             gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))`,
         };
+    } else if (gap > 0) {
+        // Only when a gap is set — at 0 the default block flow (and its margin
+        // collapsing) is preserved, keeping canvas/email parity.
+        className = "flex flex-col";
     }
+    if (gap > 0) layoutStyle = { ...layoutStyle, gap };
 
     return (
         <div

@@ -2,6 +2,7 @@ import { IconTypography } from "@tabler/icons-react";
 import { Markdown } from "react-email";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { EffectsGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
 import { emailTextDefaults, emailTextMarkdownStyles, emailTextStyles, type EmailTextProps } from "./styles.ts";
 
 export const textBlock = defineBlock<EmailTextProps>({
@@ -21,20 +22,9 @@ export const textBlock = defineBlock<EmailTextProps>({
     inspector: ({ props, update }) => (
         <>
             <Fields.RichTextField label="Text" value={props.text} onChange={(text) => update({ text })} />
-            <Fields.SelectField
-                label="Align"
-                value={props.align}
-                options={["left", "center", "right"]}
-                onChange={(align) => update({ align: align as EmailTextProps["align"] })}
-            />
-            <Fields.NumberField
-                label="Size"
-                value={props.fontSize}
-                min={10}
-                max={40}
-                onChange={(fontSize) => update({ fontSize })}
-            />
-            <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
+            <TypographyGroup defaultOpen value={props.typography} onChange={(typography) => update({ typography })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),
 });

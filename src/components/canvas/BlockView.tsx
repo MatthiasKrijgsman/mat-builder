@@ -111,6 +111,7 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 parentId={id}
                 container={container}
                 childIds={node.children[container.name] ?? []}
+                gap={container.getGap?.(node.props) ?? 0}
             />
         );
     }

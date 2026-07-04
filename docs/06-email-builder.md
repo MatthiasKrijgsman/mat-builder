@@ -12,17 +12,21 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 
 ## Block set (v1)
 
-| Block | Containers | Output mapping (react-email) | Key props |
-|---|---|---|---|
-| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | backgroundColor, contentWidth, paddingY, paddingX (keeps page bg visible on narrow screens), fontFamily, previewText |
-| `section` | `content` (vertical) | `Section` | padding, background, borderRadius |
-| `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | ratio preset, gap, verticalAlign |
-| `heading` | — | `Heading` | text, level, align, color |
-| `text` | — | `Markdown` (both renders — parity for free) | text as **markdown** (bold/italic/links/lists via the inspector's Lexical editor), align, size, color |
-| `button` | — | `Button` (padded `<a>`) | label, href, colors, radius, align, fullWidth |
-| `image` | — | `Img` (+ optional `Link` wrapper) | src, alt, width, align, href |
-| `divider` | — | `Hr` | color, thickness, spacing |
-| `spacer` | — | fixed-height `Section` | height |
+Style props are the shared **style groups** (03 §Style props): `size`, `background`, `border`, `spacing`, `effects`, `layout`, `typography` — one object-valued prop each, listed by key below. Bespoke props stay per block.
+
+| Block | Containers | Output mapping (react-email) | Style groups | Bespoke props |
+|---|---|---|---|---|
+| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | background (content container), spacing (padding → Body; keeps page bg visible on narrow screens), typography (base, no align) | backgroundColor (page), contentWidth, previewText |
+| `section` | `content` (vertical) | `Section` | size (width), background, border, spacing, effects, layout (horizontal + gap) | — |
+| `columns` | `col-1…col-3` (static; the ratio preset decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | background, border, spacing, effects, layout (vertical + gap between columns) | ratio preset |
+| `heading` | — | `Heading` | typography, spacing, effects | text, level (**semantic tag only** — size comes from typography) |
+| `text` | — | `Markdown` (both renders — parity for free) | typography, spacing, effects | text as **markdown** (bold/italic/links/lists via the inspector's Lexical editor) |
+| `button` | — | `Button` (padded `<a>`) | size (width), background, border, typography, spacing (padding = inner, margin = outer), layout (horizontal self-align), effects | label, href |
+| `image` | — | `Img` (+ optional `Link` wrapper) | size (width), border, spacing (padding only), effects, layout (horizontal self-align via auto margins) | src, alt, href |
+| `divider` | — | `Hr` | spacing (margin only) | color, thickness |
+| `spacer` | — | fixed-height `Section` | — | height |
+
+**Email caveats (best-effort by design):** gradients emit `background-image` plus a solid `background-color` fallback (Outlook ignores the image); `box-shadow` and `opacity` are ignored by Outlook; margins on tables are unreliable — the button emits its outer margin as wrapper-`Section` padding instead; fixed-width sections stay left-aligned (cross-client centering of fixed tables is out of scope); `layout.gap` renders as table-safe `paddingBottom` wrapper divs (`withVerticalGap` in `src/email/gap.ts`), matching the canvas's flex-gap; "full" height and "stretch" alignment have no email equivalent and degrade to auto/left.
 
 The hierarchy is expressed entirely through container `accepts` rules — the generic builder enforces it; no email-specific code in the core. `email-root.main` accepts `["section", "columns"]`; `section.content` accepts the leaves **plus `section` and `columns`** (sections nest as padded/background groupings and can wrap a column layout — a UX-feedback revision of the originally rigid root → section/columns → leaves plan); `columns.col-*` accepts leaf types only, so column layouts never nest.
 

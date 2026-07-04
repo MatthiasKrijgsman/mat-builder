@@ -1,6 +1,15 @@
 import { IconClick } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import {
+    BackgroundGroup,
+    BorderGroup,
+    EffectsGroup,
+    LayoutGroup,
+    SizeGroup,
+    SpacingGroup,
+    TypographyGroup,
+} from "../../../components/style-groups/index.ts";
 import { emailButtonDefaults, emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } from "./styles.ts";
 
 export const buttonBlock = defineBlock<EmailButtonProps>({
@@ -20,30 +29,18 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
         <>
             <Fields.TextField label="Label" value={props.label} onChange={(label) => update({ label })} />
             <Fields.TextField label="Link" value={props.href} onChange={(href) => update({ href })} />
-            <Fields.ColorField
-                label="Background"
-                value={props.backgroundColor}
-                onChange={(backgroundColor) => update({ backgroundColor })}
+            <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
+            <LayoutGroup
+                label="Alignment"
+                fields={["horizontal"]}
+                value={props.layout}
+                onChange={(layout) => update({ layout })}
             />
-            <Fields.ColorField label="Text color" value={props.color} onChange={(color) => update({ color })} />
-            <Fields.NumberField
-                label="Corner radius"
-                value={props.borderRadius}
-                min={0}
-                max={32}
-                onChange={(borderRadius) => update({ borderRadius })}
-            />
-            <Fields.SelectField
-                label="Align"
-                value={props.align}
-                options={["left", "center", "right"]}
-                onChange={(align) => update({ align: align as EmailButtonProps["align"] })}
-            />
-            <Fields.ToggleField
-                label="Full width"
-                value={props.fullWidth}
-                onChange={(fullWidth) => update({ fullWidth })}
-            />
+            <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <TypographyGroup value={props.typography} onChange={(typography) => update({ typography })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),
 });

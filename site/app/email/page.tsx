@@ -3,10 +3,19 @@
 import {
     BuilderProvider,
     Canvas,
+    defaultBackground,
+    defaultBorder,
+    defaultEffects,
+    defaultLayout,
+    defaultSize,
+    defaultSpacing,
+    defaultTypography,
     Inspector,
     LayersPanel,
     Palette,
+    symmetricSides,
     UndoRedoButtons,
+    uniformSides,
     type BuilderDocument,
 } from "@matthiaskrijgsman/mat-builder";
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
@@ -20,6 +29,16 @@ import { useState } from "react";
  * output in an iframe at desktop/mobile widths.
  */
 
+/** Neutral section style-group values — spread and override per section. */
+const sectionBase = {
+    size: { ...defaultSize, width: "full" as const },
+    background: defaultBackground,
+    border: defaultBorder,
+    spacing: { padding: uniformSides(24), margin: uniformSides(0) },
+    effects: defaultEffects,
+    layout: defaultLayout,
+};
+
 const initialDocument: BuilderDocument = {
     version: 1,
     rootId: "root",
@@ -29,12 +48,14 @@ const initialDocument: BuilderDocument = {
             type: "email-root",
             props: {
                 backgroundColor: "#f4f4f5",
-                contentBackground: "#ffffff",
+                background: { ...defaultBackground, type: "solid", color: "#ffffff" },
                 contentWidth: 600,
-                paddingY: 24,
-                paddingX: 12,
-                fontFamily:
-                    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
+                typography: {
+                    ...defaultTypography,
+                    fontFamily:
+                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                },
                 previewText: "Your July invoice is ready",
             },
             children: { main: ["intro", "cta"] },
@@ -42,13 +63,18 @@ const initialDocument: BuilderDocument = {
         intro: {
             id: "intro",
             type: "section",
-            props: { backgroundColor: "transparent", padding: 24, borderRadius: 0 },
+            props: { ...sectionBase },
             children: { content: ["intro-title", "intro-copy"] },
         },
         "intro-title": {
             id: "intro-title",
             type: "text",
-            props: { text: "Your invoice is ready", align: "left", fontSize: 20, color: "#18181b" },
+            props: {
+                text: "Your invoice is ready",
+                typography: { ...defaultTypography, fontSize: 20, color: "#18181b" },
+                spacing: defaultSpacing,
+                effects: defaultEffects,
+            },
             children: {},
         },
         "intro-copy": {
@@ -56,16 +82,20 @@ const initialDocument: BuilderDocument = {
             type: "text",
             props: {
                 text: "Hi there — your invoice for July is attached. You can view and download it any time from your dashboard.",
-                align: "left",
-                fontSize: 14,
-                color: "#3f3f46",
+                typography: defaultTypography,
+                spacing: defaultSpacing,
+                effects: defaultEffects,
             },
             children: {},
         },
         cta: {
             id: "cta",
             type: "section",
-            props: { backgroundColor: "#fafafa", padding: 24, borderRadius: 8 },
+            props: {
+                ...sectionBase,
+                background: { ...defaultBackground, type: "solid", color: "#fafafa" },
+                border: { ...defaultBorder, radius: 8 },
+            },
             children: { content: ["cta-button"] },
         },
         "cta-button": {
@@ -74,11 +104,13 @@ const initialDocument: BuilderDocument = {
             props: {
                 label: "View invoice",
                 href: "https://example.com/invoice",
-                backgroundColor: "#18181b",
-                color: "#ffffff",
-                borderRadius: 6,
-                align: "center",
-                fullWidth: false,
+                size: defaultSize,
+                background: { ...defaultBackground, type: "solid", color: "#18181b" },
+                border: { ...defaultBorder, radius: 6 },
+                typography: { ...defaultTypography, color: "#ffffff", align: "center" },
+                spacing: { padding: symmetricSides(12, 20), margin: uniformSides(0) },
+                layout: { ...defaultLayout, horizontal: "center" },
+                effects: defaultEffects,
             },
             children: {},
         },

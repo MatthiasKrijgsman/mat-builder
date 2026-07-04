@@ -1,12 +1,20 @@
 import { IconLayoutColumns } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import {
+    BackgroundGroup,
+    BorderGroup,
+    EffectsGroup,
+    LayoutGroup,
+    SpacingGroup,
+} from "../../../components/style-groups/index.ts";
 import type { ContainerDef } from "../../../core/types.ts";
 import {
     columnWidths,
     COLUMNS_RATIOS,
     emailColumnsDefaults,
     emailColumnStyles,
+    emailColumnsWrapperStyles,
     MAX_COLUMNS,
     type EmailColumnsProps,
     type EmailColumnsRatio,
@@ -35,7 +43,7 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
         const count = columnWidths(props.ratio).length;
         return (
             // flex is editor-only; the shared emailColumnStyles stay table-safe
-            <div style={{ display: "flex" }}>
+            <div style={{ ...emailColumnsWrapperStyles(props), display: "flex" }}>
                 {Array.from({ length: count }, (_, index) => (
                     <div key={index} style={emailColumnStyles(props, index, count)}>
                         {slots[`col-${index + 1}`]}
@@ -52,21 +60,15 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
                 options={COLUMNS_RATIOS}
                 onChange={(ratio) => update({ ratio: ratio as EmailColumnsRatio })}
             />
-            <Fields.NumberField
-                label="Gap"
-                value={props.gap}
-                min={0}
-                max={48}
-                onChange={(gap) => update({ gap })}
+            <LayoutGroup
+                fields={["vertical", "gap"]}
+                value={props.layout}
+                onChange={(layout) => update({ layout })}
             />
-            <Fields.SelectField
-                label="Vertical align"
-                value={props.verticalAlign}
-                options={["top", "middle", "bottom"]}
-                onChange={(verticalAlign) =>
-                    update({ verticalAlign: verticalAlign as EmailColumnsProps["verticalAlign"] })
-                }
-            />
+            <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),
 });

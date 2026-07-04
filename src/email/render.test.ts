@@ -95,6 +95,38 @@ describe("renderEmail", () => {
         expect(html).toContain("height:24px"); // spacer
     });
 
+    it("renders style groups (gradient, border, shadow, gap) into email-safe CSS", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        document = updateProps(document, {
+            id: sectionId,
+            patch: {
+                background: {
+                    type: "gradient",
+                    color: "#ffffff",
+                    gradient: { from: "#111111", to: "#222222", angle: 90 },
+                },
+                border: { width: 2, style: "solid", color: "#ff0000", radius: 8 },
+                effects: {
+                    opacity: 100,
+                    shadow: { type: "drop", x: 0, y: 2, blur: 8, spread: 0, color: "#000000", opacity: 15 },
+                },
+                layout: { horizontal: "start", vertical: "start", gap: 12 },
+            },
+        });
+
+        const { html } = await renderEmail(document);
+        // Gradient plus its solid fallback for clients that ignore background-image
+        expect(html).toContain("linear-gradient(90deg");
+        expect(html).toMatch(/background-color:\s*#111111/i);
+        expect(html).toContain("border:2px solid #ff0000");
+        expect(html).toContain("border-radius:8px");
+        expect(html).toMatch(/box-shadow:0px 2px 8px 0px rgba\(0,\s*0,\s*0,\s*0?\.15\)/);
+        // Children gap = table-safe wrapper divs, never flex
+        expect(html).toContain("padding-bottom:12px");
+        expect(html).not.toContain("display:flex");
+    });
+
     it("renders text-block markdown (bold, links) into the output", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];
