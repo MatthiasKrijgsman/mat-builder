@@ -14,6 +14,7 @@ import {
     LayersPanel,
     Palette,
     symmetricSides,
+    SYSTEM_FONT_STACK,
     UndoRedoButtons,
     uniformSides,
     type BuilderDocument,
@@ -51,11 +52,7 @@ const initialDocument: BuilderDocument = {
                 background: { ...defaultBackground, type: "solid", color: "#ffffff" },
                 contentWidth: 600,
                 spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
-                typography: {
-                    ...defaultTypography,
-                    fontFamily:
-                        "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-                },
+                typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
                 previewText: "Your July invoice is ready",
             },
             children: { main: ["intro", "cta"] },

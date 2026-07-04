@@ -11,4 +11,5 @@ export { NumberField, type NumberFieldProps } from "./NumberField.tsx";
 export { SegmentedField, type SegmentedFieldProps, type SegmentedFieldOption } from "./SegmentedField.tsx";
 export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./SelectField.tsx";
 export { ColorField, type ColorFieldProps } from "./ColorField.tsx";
+export { FontFamilyField, type FontFamilyFieldProps } from "./FontFamilyField.tsx";
 export { ToggleField, type ToggleFieldProps } from "./ToggleField.tsx";

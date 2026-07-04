@@ -23,10 +23,9 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
             {show("fontFamily") && (
-                <Fields.TextField
+                <Fields.FontFamilyField
                     label="Font family"
                     value={v.fontFamily}
-                    placeholder="Inherit"
                     onChange={(fontFamily) => set({ fontFamily })}
                 />
             )}

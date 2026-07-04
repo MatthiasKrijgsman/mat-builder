@@ -5,6 +5,7 @@ import {
     defaultTypography,
     paddingToCss,
     symmetricSides,
+    SYSTEM_FONT_STACK,
     typographyToCss,
     uniformSides,
     type BackgroundValue,
@@ -39,10 +40,7 @@ export const emailRootDefaults: EmailRootProps = {
     background: { ...defaultBackground, type: "solid", color: "#ffffff" },
     contentWidth: 600,
     spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
-    typography: {
-        ...defaultTypography,
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    },
+    typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
     previewText: "",
 };
 
