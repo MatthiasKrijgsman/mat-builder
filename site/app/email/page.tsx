@@ -114,57 +114,55 @@ const initialDocument: BuilderDocument = {
     },
 };
 
+type Mode = "edit" | "preview";
+
 export default function EmailBuilderPage() {
+    const [mode, setMode] = useState<Mode>("edit");
+
     return (
         <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument}>
             <div className="flex h-screen flex-col">
-                <Topbar />
-                <MainArea />
+                <Topbar mode={mode} onModeChange={setMode} />
+                <MainArea mode={mode} />
             </div>
         </BuilderProvider>
     );
 }
 
-function Topbar() {
+function Topbar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
         <header className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-2">
             <h1 className="text-sm font-semibold">Email builder</h1>
             <Link href="/" className="text-xs text-gray-400 hover:underline">
                 ← kitchen sink
             </Link>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-3">
+                <TabButtons
+                    size="sm"
+                    tabs={(["edit", "preview"] as const).map((value) => ({
+                        label: value === "edit" ? "Edit" : "Preview",
+                        active: mode === value,
+                        onClick: () => onModeChange(value),
+                    }))}
+                />
                 <UndoRedoButtons />
             </div>
         </header>
     );
 }
 
-function MainArea() {
-    const [mode, setMode] = useState<"edit" | "preview">("edit");
-
+function MainArea({ mode }: { mode: Mode }) {
     return (
         <div className="flex min-h-0 flex-1">
             <aside className="flex w-[400px] shrink-0 flex-col divide-y divide-gray-200 border-r border-gray-200 bg-white">
                 <Palette className="min-h-0 flex-1 overflow-y-auto" />
                 <LayersPanel className="h-2/5 shrink-0" />
             </aside>
-            <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex justify-center border-b border-gray-200 bg-white px-4 py-1.5">
-                    <TabButtons
-                        size="sm"
-                        tabs={(["edit", "preview"] as const).map((value) => ({
-                            label: value === "edit" ? "Edit" : "Preview",
-                            active: mode === value,
-                            onClick: () => setMode(value),
-                        }))}
-                    />
-                </div>
-                {mode === "edit" ? (
-                    <Canvas className="min-h-0 flex-1" artboardWidth={640} />
-                ) : (
-                    <EmailPreview className="min-h-0 flex-1" initialWidth={640} />
-                )}
-            </div>
+            {mode === "edit" ? (
+                <Canvas className="min-h-0 min-w-0 flex-1" artboardWidth={640} />
+            ) : (
+                <EmailPreview className="min-h-0 min-w-0 flex-1" initialWidth={640} />
+            )}
             <Inspector className="w-[400px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />
         </div>
     );
