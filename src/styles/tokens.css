@@ -16,6 +16,9 @@
 
     /* Drag and drop indicators */
     --mat-builder-color-drop-indicator: var(--mat-builder-color-selection);
+    /* Softer ring on the container that will receive the drop while a child
+       sibling edge line is the precise target */
+    --mat-builder-color-drop-parent: color-mix(in srgb, var(--mat-builder-color-drop-indicator) 40%, transparent);
     --mat-builder-color-drop-blocked: #f59e0b;
     --mat-builder-drop-indicator-thickness: 2px;
 

@@ -112,7 +112,7 @@ monitorForElements({
 ## 5. Indicators & previews
 
 - **Between siblings**: 2 px accent line on the extracted edge, offset by half the container gap (`box` indicator's `gap` prop does exactly this). Orientation follows the container axis.
-- **Into container**: ring/tint highlight of the slot (like the `group` indicator).
+- **Into container**: ring/tint highlight of the slot (like the `group` indicator). The ring shows whenever the slot is the innermost *container* target: full-strength when the slot itself is the drop ("into me"), softer (`--mat-builder-color-drop-parent`) while a child sibling edge line is the precise target — so the drop's parent container is always visible during a drag.
 - **Layers rows**: line before/after with indent, ring for `combine`.
 - Indicators mount only while an edge/instruction is present (library performance guidance).
 - **Drag preview**: `setCustomNativeDragPreview` rendering a small chip (block icon + label) via `createPortal`, `pointerOutsideOfPreview` offset. Same preview for palette and canvas drags → consistent feel, and avoids photographing large blocks. Known platform limits: previews are centered under the pointer on iOS/Android; avoid CSS `transform` on previews/draggables (WebKit bugs).

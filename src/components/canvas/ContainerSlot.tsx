@@ -12,14 +12,17 @@ import { BlockView } from "./BlockView.tsx";
  * the "into me" drop target (docs/05 §2b): appends at the end, makes empty
  * containers droppable, and gives forgiving drop-in-the-padding behavior.
  * Not sticky (per Atlassian's tree example — avoids stale highlights); the
- * ring highlight shows only while this slot is the innermost target.
+ * ring highlight shows while this slot is the innermost CONTAINER target:
+ * full-strength when the slot itself is the drop ("into me"), softer when a
+ * child block's edge line is the precise target — so the drop's parent
+ * container is always visible during a drag without shouting over the line.
  */
 
 export function ContainerSlot(props: { parentId: BlockId; container: ContainerDef; childIds: BlockId[]; gap?: number }) {
     const { parentId, container, childIds, gap = 0 } = props;
     const { store, registry, instanceId } = useBuilderContext();
     const ref = useRef<HTMLDivElement>(null);
-    const [isOver, setIsOver] = useState(false);
+    const [over, setOver] = useState<"none" | "parent" | "direct">("none");
 
     useEffect(() => {
         const element = ref.current;
@@ -38,17 +41,29 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
             getIsSticky: () => false,
             getData: () => ({ targetKind: "container", parentId, container: container.name }),
             onDrag: ({ location }) => {
-                const innermost = location.current.dropTargets[0]?.element === element;
-                setIsOver((current) => (current === innermost ? current : innermost));
+                // "direct" = this slot is the innermost target ("drop into me").
+                // "parent" = a child block's edge line is the precise target and this
+                // slot is the next container up — the drop's parent, kept visible.
+                const targets = location.current.dropTargets;
+                const next =
+                    targets[0]?.element === element ? "direct"
+                    : targets.find((target) => target.data.targetKind === "container")?.element === element ? "parent"
+                    : "none";
+                setOver((current) => (current === next ? current : next));
             },
-            onDragLeave: () => setIsOver(false),
-            onDrop: () => setIsOver(false),
+            onDragLeave: () => setOver("none"),
+            onDrop: () => setOver("none"),
         });
     }, [store, registry, instanceId, parentId, container.name]);
 
-    const highlight: CSSProperties | undefined = isOver
-        ? { boxShadow: `inset 0 0 0 var(--mat-builder-drop-indicator-thickness) var(--mat-builder-color-drop-indicator)` }
-        : undefined;
+    const highlight: CSSProperties | undefined =
+        over === "none" ? undefined : (
+            {
+                boxShadow: `inset 0 0 0 var(--mat-builder-drop-indicator-thickness) ${
+                    over === "direct" ? "var(--mat-builder-color-drop-indicator)" : "var(--mat-builder-color-drop-parent)"
+                }`,
+            }
+        );
 
     if (childIds.length === 0) {
         return (
@@ -58,9 +73,11 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
                 data-parent-id={parentId}
                 className="flex min-h-12 items-center justify-center rounded border border-dashed p-2 text-xs"
                 style={{
-                    borderColor: isOver
-                        ? "var(--mat-builder-color-drop-indicator)"
-                        : "var(--mat-builder-color-placeholder-border)",
+                    // An empty slot has no child sibling targets, so it's only ever "direct"
+                    borderColor:
+                        over === "direct"
+                            ? "var(--mat-builder-color-drop-indicator)"
+                            : "var(--mat-builder-color-placeholder-border)",
                     color: "var(--mat-builder-color-placeholder-fg)",
                     ...highlight,
                 }}
