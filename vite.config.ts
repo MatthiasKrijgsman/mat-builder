@@ -18,8 +18,22 @@ const externalDeps = [
   ...Object.keys(pkg.dependencies ?? {}),
   ...Object.keys(pkg.peerDependencies ?? {}),
 ];
-const isExternal = (id: string) =>
-  externalDeps.some((dep) => id === dep || id.startsWith(`${ dep }/`));
+const isExternal = (id: string) => {
+  if (externalDeps.some((dep) => id === dep || id.startsWith(`${ dep }/`))) return true;
+  // Any other bare specifier is a package we'd silently BUNDLE — the exact
+  // duplicate-instance failure described above (it shipped a private copy of
+  // Lexical once: peer deps added while dev:watch was running with this list
+  // already cached). Fail the build instead; also means dev:watch must be
+  // restarted after editing dependencies.
+  const isBare = !id.startsWith('.') && !id.startsWith('\0') && !id.startsWith('@/') && !path.isAbsolute(id);
+  if (isBare) {
+    throw new Error(
+      `"${ id }" is imported but not declared in dependencies/peerDependencies — ` +
+      'bundling it would create a duplicate module instance. Declare it (and restart dev:watch).',
+    );
+  }
+  return false;
+};
 
 export default defineConfig({
   plugins: [react(), tailwind()],
