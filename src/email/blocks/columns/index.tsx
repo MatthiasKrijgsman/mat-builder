@@ -9,6 +9,7 @@ import {
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
 import type { ContainerDef } from "../../../core/types.ts";
+import { EMAIL_LEAF_TYPES } from "../section/index.tsx";
 import {
     columnWidths,
     COLUMNS_RATIOS,
@@ -20,8 +21,8 @@ import {
     type EmailColumnsRatio,
 } from "./styles.ts";
 
-/** Column containers accept leaves but never columns — no nesting (docs/06). */
-const COLUMN_ACCEPTS = ["heading", "text", "button", "image", "divider", "spacer"];
+/** Column cells accept everything sections do — leaves, nested sections, nested columns (docs/06). */
+const COLUMN_ACCEPTS = [...EMAIL_LEAF_TYPES, "section", "columns"];
 
 const containers: ContainerDef[] = Array.from({ length: MAX_COLUMNS }, (_, index) => ({
     name: `col-${index + 1}`,
