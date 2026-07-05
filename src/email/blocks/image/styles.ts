@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import {
     borderToCss,
+    DEFAULT_WIDTH_PCT,
     defaultBorder,
     defaultEffects,
     defaultLayout,
@@ -19,7 +20,7 @@ export interface EmailImageProps {
     alt: string;
     /** Optional link target — wraps the image in an anchor */
     href: string;
-    /** width: fixed px (capped at 100%), full, or hug (intrinsic) */
+    /** width: fixed px (capped at 100%), full, % of available width, or hug (intrinsic) */
     size: SizeValue;
     /** horizontal = self-alignment within the parent (margin-auto technique) */
     layout: LayoutValue;
@@ -43,7 +44,11 @@ export const emailImageDefaults: EmailImageProps = {
 export const emailImageStyles = (props: EmailImageProps): CSSProperties => {
     const horizontal = props.layout?.horizontal ?? "center";
     return {
-        width: props.size?.width === "fixed" ? props.size.widthPx : props.size?.width === "full" ? "100%" : "auto",
+        width:
+            props.size?.width === "fixed" ? props.size.widthPx
+            : props.size?.width === "full" ? "100%"
+            : props.size?.width === "percent" ? `${props.size.widthPct ?? DEFAULT_WIDTH_PCT}%`
+            : "auto",
         maxWidth: "100%",
         height: props.size?.height === "fixed" ? props.size.heightPx : "auto",
         display: "block",

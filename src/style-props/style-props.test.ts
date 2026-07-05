@@ -149,10 +149,15 @@ describe("layout", () => {
 });
 
 describe("size", () => {
-    it("maps full/fixed/hug widths", () => {
+    it("maps full/fixed/percent/hug widths", () => {
         expect(sizeToCss({ width: "full", widthPx: 300, height: "hug", heightPx: 100 }).width).toBe("100%");
         expect(sizeToCss({ width: "fixed", widthPx: 300, height: "hug", heightPx: 100 }).width).toBe(300);
+        expect(sizeToCss({ width: "percent", widthPx: 300, widthPct: 50, height: "hug", heightPx: 100 }).width).toBe("50%");
         expect(sizeToCss({ width: "hug", widthPx: 300, height: "hug", heightPx: 100 }).width).toBe("auto");
+    });
+
+    it("percent width without widthPct (pre-percent document) falls back to the default", () => {
+        expect(sizeToCss({ width: "percent", widthPx: 300, height: "hug", heightPx: 100 }).width).toBe("50%");
     });
 
     it("only fixed height emits a px height; full height is auto in email flow", () => {

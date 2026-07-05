@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import {
     backgroundToCss,
     borderToCss,
+    DEFAULT_WIDTH_PCT,
     defaultBackground,
     defaultBorder,
     defaultEffects,
@@ -56,9 +57,12 @@ export const emailButtonStyles = (props: EmailButtonProps): CSSProperties => ({
     ...paddingToCss(props.spacing),
     fontWeight: 600,
     textDecoration: "none",
-    // "full" stretches the anchor itself; anything else hugs the label
+    // "full" stretches the anchor itself; fixed/percent size the inline-block; hug fits the label
     display: props.size?.width === "full" ? "block" : "inline-block",
-    width: props.size?.width === "fixed" ? props.size.widthPx : undefined,
+    width:
+        props.size?.width === "fixed" ? props.size.widthPx
+        : props.size?.width === "percent" ? `${props.size.widthPct ?? DEFAULT_WIDTH_PCT}%`
+        : undefined,
     boxSizing: "border-box",
     ...effectsToCss(props.effects),
 });
