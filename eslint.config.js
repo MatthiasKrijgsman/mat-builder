@@ -19,6 +19,15 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Allow the omit-via-destructuring idiom: `const { textAlign: _textAlign, ...rest } = …`
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+    },
   },
   {
     // Library entry barrels mix component and function exports by design;
