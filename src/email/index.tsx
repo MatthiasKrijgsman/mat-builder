@@ -11,7 +11,6 @@
 import { emailRootBlock } from "./blocks/email-root/index.tsx";
 import { sectionBlock } from "./blocks/section/index.tsx";
 import { columnsBlock } from "./blocks/columns/index.tsx";
-import { headingBlock } from "./blocks/heading/index.tsx";
 import { textBlock } from "./blocks/text/index.tsx";
 import { buttonBlock } from "./blocks/button/index.tsx";
 import { imageBlock } from "./blocks/image/index.tsx";
@@ -22,7 +21,6 @@ export {
     emailRootBlock,
     sectionBlock,
     columnsBlock,
-    headingBlock,
     textBlock,
     buttonBlock,
     imageBlock,
@@ -33,7 +31,6 @@ export { EMAIL_LEAF_TYPES } from "./blocks/section/index.tsx";
 export type { EmailRootProps } from "./blocks/email-root/styles.ts";
 export type { EmailSectionProps } from "./blocks/section/styles.ts";
 export type { EmailColumnsProps, EmailColumnsRatio } from "./blocks/columns/styles.ts";
-export type { EmailHeadingProps } from "./blocks/heading/styles.ts";
 export type { EmailTextProps } from "./blocks/text/styles.ts";
 export type { EmailButtonProps } from "./blocks/button/styles.ts";
 export type { EmailImageProps } from "./blocks/image/styles.ts";
@@ -45,7 +42,6 @@ export const emailBlocks = [
     emailRootBlock,
     sectionBlock,
     columnsBlock,
-    headingBlock,
     textBlock,
     buttonBlock,
     imageBlock,

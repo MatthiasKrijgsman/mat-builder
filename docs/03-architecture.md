@@ -43,7 +43,7 @@ interface BuilderDocument {
 }
 ```
 
-Example (email): a two-column section holding a heading and a button —
+Example (email): a two-column section holding a text block and a button —
 
 ```jsonc
 {
@@ -53,8 +53,8 @@ Example (email): a two-column section holding a heading and a button —
     "root":  { "id": "root", "type": "email-root", "props": { "backgroundColor": "#f4f4f5" },
                "children": { "main": ["sec1"] } },
     "sec1":  { "id": "sec1", "type": "columns", "props": { "gap": 16, "ratio": "50/50" },
-               "children": { "left": ["h1"], "right": ["btn1"] } },
-    "h1":    { "id": "h1", "type": "heading", "props": { "text": "Hello", "level": 2 }, "children": {} },
+               "children": { "left": ["txt1"], "right": ["btn1"] } },
+    "txt1":  { "id": "txt1", "type": "text", "props": { "text": "## Hello" }, "children": {} },
     "btn1":  { "id": "btn1", "type": "button", "props": { "label": "Buy", "href": "…" }, "children": {} }
   }
 }

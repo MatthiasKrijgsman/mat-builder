@@ -58,18 +58,18 @@ describe("renderEmail", () => {
         expect(text).not.toContain("<html");
     });
 
-    it("renders columns, heading, image, divider and spacer", async () => {
+    it("renders columns, image, divider and spacer", async () => {
         let document = buildDemoEmail();
         const root = document.rootId;
 
         const cols = insertBlock(document, { type: "columns", at: { parentId: root, container: "main", index: 1 } }, registry);
         document = cols.document;
-        const heading = insertBlock(
+        const headingText = insertBlock(
             document,
-            { type: "heading", at: { parentId: cols.blockId, container: "col-1", index: 0 } },
+            { type: "text", at: { parentId: cols.blockId, container: "col-1", index: 0 } },
             registry,
         );
-        document = updateProps(heading.document, { id: heading.blockId, patch: { text: "Column heading" } });
+        document = updateProps(headingText.document, { id: headingText.blockId, patch: { text: "## Column heading" } });
         const image = insertBlock(
             document,
             { type: "image", at: { parentId: cols.blockId, container: "col-2", index: 0 } },
