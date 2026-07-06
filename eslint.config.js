@@ -31,8 +31,15 @@ export default tseslint.config([
   },
   {
     // Library entry barrels mix component and function exports by design;
-    // fast refresh does not apply to package entry points.
-    files: ['src/index.tsx', 'src/email/index.tsx'],
+    // fast refresh does not apply to package entry points. Same for the
+    // inline-toolbar item factories (fragments of building blocks + helpers)
+    // and the rich-text module (renderer component + pure projections).
+    files: [
+      'src/index.tsx',
+      'src/email/index.tsx',
+      'src/components/inline/**',
+      'src/email/rich-text/**',
+    ],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

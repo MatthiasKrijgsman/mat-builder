@@ -4,3 +4,67 @@
 
 /* Tokens CSS Variables */
 @import "./styles/tokens.css";
+
+/*
+ * Inline rich text editing surface (InlineRichText's Lexical theme classes).
+ *
+ * KEEP IN SYNC with src/email/rich-text/styles.ts — the idle canvas view and
+ * the email output inline these exact values, and entering/leaving edit mode
+ * must never shift layout. Heading line-heights are round(fontSize * 1.2).
+ * User line-height overrides arrive as inline styles (LineHeightPlugin) and
+ * win over these classes.
+ */
+.mat-builder-rt-p {
+    margin: 0 0 12px;
+}
+.mat-builder-rt-h1 { font-size: 40px; line-height: 48px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-h2 { font-size: 32px; line-height: 38px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-h3 { font-size: 28px; line-height: 34px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-h4 { font-size: 24px; line-height: 29px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-h5 { font-size: 20px; line-height: 24px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-h6 { font-size: 16px; line-height: 19px; font-weight: 500; margin: 0 0 12px; }
+.mat-builder-rt-ul {
+    list-style-type: disc;
+    padding-left: 24px;
+    margin: 0 0 12px;
+}
+.mat-builder-rt-ol {
+    list-style-type: decimal;
+    padding-left: 24px;
+    margin: 0 0 12px;
+}
+.mat-builder-rt-li {
+    margin: 4px 0;
+}
+.mat-builder-rt-li-nested {
+    list-style-type: none;
+}
+.mat-builder-rt-quote {
+    margin: 0 0 12px;
+    padding-left: 16px;
+    border-left: 4px solid #e4e4e7;
+    font-style: italic;
+}
+.mat-builder-rt-link {
+    color: #067df7;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.mat-builder-rt-bold {
+    font-weight: 700;
+}
+.mat-builder-rt-italic {
+    font-style: italic;
+}
+.mat-builder-rt-underline {
+    text-decoration: underline;
+}
+.mat-builder-rt-strike {
+    text-decoration: line-through;
+}
+.mat-builder-rt-underline-strike {
+    text-decoration: underline line-through;
+}
+.mat-builder-rt-code {
+    font-family: 'Courier New', Courier, monospace;
+}

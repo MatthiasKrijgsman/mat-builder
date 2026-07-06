@@ -13,6 +13,7 @@ import {
     Inspector,
     LayersPanel,
     Palette,
+    richTextParagraph,
     symmetricSides,
     SYSTEM_FONT_STACK,
     UndoRedoButtons,
@@ -67,8 +68,8 @@ const initialDocument: BuilderDocument = {
             id: "intro-title",
             type: "text",
             props: {
-                text: "Your invoice is ready",
-                typography: { ...defaultTypography, fontSize: 20, color: "#18181b" },
+                // Per-range typography lives inside the content (docs/06)
+                content: richTextParagraph("Your invoice is ready", "font-size: 20px;color: #18181b"),
                 spacing: defaultSpacing,
                 effects: defaultEffects,
             },
@@ -78,8 +79,9 @@ const initialDocument: BuilderDocument = {
             id: "intro-copy",
             type: "text",
             props: {
-                text: "Hi there — your invoice for July is attached. You can view and download it any time from your dashboard.",
-                typography: defaultTypography,
+                content: richTextParagraph(
+                    "Hi there — your invoice for July is attached. You can view and download it any time from your dashboard.",
+                ),
                 spacing: defaultSpacing,
                 effects: defaultEffects,
             },

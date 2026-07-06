@@ -70,6 +70,11 @@ export interface EditRenderProps<P = Record<string, unknown>> {
     /** One pre-rendered element per ContainerDef — place them in your layout */
     containers: Record<string, ReactNode>;
     isSelected: boolean;
+    /** True while one of this block's fields is inline-edited on the canvas */
+    isEditing: boolean;
+    /** Shallow-merges a patch and records (coalesced) history — same contract
+     * as the inspector's update; lets edit renders host inline editors */
+    update: (patch: Partial<P>) => void;
 }
 
 export interface InspectorProps<P = Record<string, unknown>> {

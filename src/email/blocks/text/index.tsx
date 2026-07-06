@@ -1,30 +1,32 @@
 import { IconTypography } from "@tabler/icons-react";
-import { Markdown } from "react-email";
 import { defineBlock } from "../../../core/define-block.ts";
-import * as Fields from "../../../components/fields/index.ts";
-import { EffectsGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
-import { emailTextDefaults, emailTextMarkdownStyles, emailTextStyles, type EmailTextProps } from "./styles.ts";
+import { InlineRichText } from "../../../components/inline/index.ts";
+import { EffectsGroup, SpacingGroup } from "../../../components/style-groups/index.ts";
+import { richTextToPlain } from "../../rich-text/index.ts";
+import { emailTextDefaults, emailTextStyles, type EmailTextProps } from "./styles.ts";
 
 export const textBlock = defineBlock<EmailTextProps>({
     type: "text",
     label: "Text",
     icon: IconTypography,
     category: "Content",
-    keywords: ["paragraph", "copy", "body", "markdown"],
+    keywords: ["paragraph", "copy", "body", "rich text"],
     defaultProps: emailTextDefaults,
-    getDisplayName: (props) =>
-        props.text.replace(/&nbsp;/g, " ").replace(/[#*_[\]()`>]/g, "").trim().slice(0, 24) || undefined,
-    // Same <Markdown> as the output render — markdown parity for free
-    editRender: ({ props }) => (
-        <Markdown markdownContainerStyles={emailTextStyles(props)} markdownCustomStyles={emailTextMarkdownStyles}>
-            {props.text}
-        </Markdown>
+    getDisplayName: (props) => richTextToPlain(props.content).slice(0, 24) || undefined,
+    // Double-click to edit in place; the idle view renders through the same
+    // serializer as the email output. Typography lives in the inline toolbar.
+    editRender: ({ id, props, update }) => (
+        <InlineRichText
+            id={id}
+            field="content"
+            value={props.content}
+            onChange={(content) => update({ content })}
+            style={emailTextStyles(props)}
+        />
     ),
     inspector: ({ props, update }) => (
         <>
-            <Fields.RichTextField label="Text" value={props.text} onChange={(text) => update({ text })} />
-            <TypographyGroup defaultOpen value={props.typography} onChange={(typography) => update({ typography })} />
-            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <SpacingGroup defaultOpen value={props.spacing} onChange={(spacing) => update({ spacing })} />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),

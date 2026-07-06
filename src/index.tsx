@@ -37,7 +37,7 @@ export type {
 export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
 export { useEditor, useSelectedBlock, useBlockNode, useBuilderState } from "./react/hooks.ts";
 export type { UseEditorResult, SelectedBlock } from "./react/hooks.ts";
-export type { EditorState, EditorActions } from "./react/store.ts";
+export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts";
 
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
@@ -49,6 +49,19 @@ export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPa
 export { Toolbar, UndoRedoButtons, type ToolbarProps } from "./components/toolbar/Toolbar.tsx";
 export * as Fields from "./components/fields/index.ts";
 export type { DragState } from "./react/store.ts";
+
+// Inline on-canvas text editing (docs/04, docs/06) — drop into editRender
+export {
+    InlineRichText,
+    InlineText,
+    selectionTypographyItems,
+    blockTypographyItems,
+    type InlineRichTextProps,
+    type InlineTextProps,
+    type BlockTypographyItemsProps,
+} from "./components/inline/index.ts";
+// The stored rich-text vocabulary (pure/server-safe; also under ./email/render)
+export * from "./email/rich-text/index.ts";
 
 // Style groups — reusable collapsible property sets (docs/04) …
 export * as StyleGroups from "./components/style-groups/index.ts";

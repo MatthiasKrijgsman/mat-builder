@@ -25,6 +25,9 @@ export type { EmailRenderer, AnyEmailRenderer } from "./types.ts";
 // Style-props vocabulary (value types + pure toCss converters) — server-safe,
 // re-exported so backend/custom-renderer code never touches the client entry.
 export * from "../style-props/index.ts";
+// Stored rich text: the pure serializer + content builders (server-safe —
+// walks plain JSON, no lexical import; docs/06).
+export * from "./rich-text/index.ts";
 export { withVerticalGap } from "./gap.ts";
 
 /** Output renderer per block type — the server-side counterpart of the editor preset. */

@@ -1,6 +1,6 @@
 {
   "name": "@matthiaskrijgsman/mat-builder",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -61,9 +61,10 @@
     "zustand": "^5.0.5"
   },
   "peerDependencies": {
-    "@lexical/markdown": "^0.45.0",
     "@lexical/react": "^0.45.0",
-    "@matthiaskrijgsman/mat-ui": "^0.0.55",
+    "@lexical/rich-text": "^0.45.0",
+    "@lexical/utils": "^0.45.0",
+    "@matthiaskrijgsman/mat-ui": "^0.0.58",
     "@react-email/render": "^2.0.10",
     "@tabler/icons-react": "^3.34.1",
     "lexical": "^0.45.0",
@@ -82,11 +83,12 @@
   "devDependencies": {
     "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.0.0",
     "@eslint/js": "^9.33.0",
-    "@lexical/markdown": "0.45.0",
     "@lexical/react": "0.45.0",
+    "@lexical/rich-text": "0.45.0",
+    "@lexical/utils": "0.45.0",
     "@react-email/render": "^2.0.10",
     "lexical": "0.45.0",
-    "@matthiaskrijgsman/mat-ui": "^0.0.55",
+    "@matthiaskrijgsman/mat-ui": "^0.0.58",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.12",
     "@types/node": "^24.3.0",

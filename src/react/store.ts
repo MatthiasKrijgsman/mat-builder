@@ -38,9 +38,19 @@ export type DragState =
     | { kind: "new-block"; blockType: string }
     | { kind: "move-block"; blockId: BlockId };
 
+/** An inline text editing session: one editable field of one block. */
+export interface EditingTarget {
+    blockId: BlockId;
+    /** The prop being edited — distinguishes multiple text areas in one block. */
+    field: string;
+}
+
 export interface EditorActions {
     select(id: BlockId | null): void;
     hover(id: BlockId | null): void;
+    /** Enters inline editing for a block field (also selects the block) */
+    startEditing(id: BlockId, field: string): void;
+    stopEditing(): void;
     /** Drag lifecycle — set by the provider's DnD monitor */
     setDrag(drag: DragState | null): void;
     /** Layers tree expand state */
@@ -67,6 +77,10 @@ export interface EditorState {
     document: BuilderDocument;
     selectedId: BlockId | null;
     hoveredId: BlockId | null;
+    /** Active inline editing session, or null. A mounted inline editor must
+     * never go stale against the document, so anything that changes the
+     * document out from under it (drag, undo/redo, load) clears this. */
+    editing: EditingTarget | null;
     /** Layers tree expand state */
     expanded: Set<BlockId>;
     drag: DragState | null;
@@ -98,6 +112,10 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
         };
 
         const select = (id: BlockId | null) => {
+            // Selecting anything else ends an inline editing session — this is
+            // the "click outside" exit (portal popovers never reach canvas
+            // click handlers, so they don't end the session).
+            if (get().editing && get().editing!.blockId !== id) set({ editing: null });
             if (get().selectedId === id) return;
             set({ selectedId: id });
             callbacks.onSelectionChange?.(id);
@@ -107,7 +125,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
         const restore = (result: { history: HistoryState; entry: { document: BuilderDocument; selectedId: BlockId | null } } | null) => {
             if (!result) return;
             const previousSelection = get().selectedId;
-            set({ document: result.entry.document, selectedId: result.entry.selectedId, history: result.history });
+            set({ document: result.entry.document, selectedId: result.entry.selectedId, history: result.history, editing: null });
             callbacks.onChange?.(result.entry.document);
             if (previousSelection !== result.entry.selectedId) {
                 callbacks.onSelectionChange?.(result.entry.selectedId);
@@ -118,6 +136,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             document: options.document,
             selectedId: null,
             hoveredId: null,
+            editing: null,
             // Everything starts expanded; newly created parents auto-expand (docs/04 §LayersPanel)
             expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
             drag: null,
@@ -128,9 +147,19 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                 hover: (id) => {
                     if (get().hoveredId !== id) set({ hoveredId: id });
                 },
+                startEditing: (id, field) => {
+                    if (!get().document.blocks[id]) return;
+                    select(id);
+                    const editing = get().editing;
+                    if (editing?.blockId === id && editing.field === field) return;
+                    set({ editing: { blockId: id, field } });
+                },
+                stopEditing: () => {
+                    if (get().editing) set({ editing: null });
+                },
                 setDrag: (drag) => {
                     // A drag also clears hover — the hover chrome must not fight drop indicators
-                    set(drag ? { drag, hoveredId: null } : { drag });
+                    set(drag ? { drag, hoveredId: null, editing: null } : { drag });
                 },
                 setExpanded: (id, expanded) => {
                     const current = get().expanded;
@@ -221,7 +250,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                     const document = setDocument(next, registry);
                     const history = recordHistory(get().history, snapshot(), { timestamp: now() });
                     commitDocument(document, history);
-                    set({ expanded: new Set(Object.keys(document.blocks)) });
+                    set({ expanded: new Set(Object.keys(document.blocks)), editing: null });
                     if (get().selectedId && !document.blocks[get().selectedId as BlockId]) select(null);
                 },
 
@@ -248,6 +277,7 @@ export function syncExternalDocument(store: EditorStore, next: BuilderDocument, 
         history: createHistory(),
         selectedId: selectedId && document.blocks[selectedId] ? selectedId : null,
         hoveredId: null,
+        editing: null,
         expanded: new Set(Object.keys(document.blocks)),
     });
 }

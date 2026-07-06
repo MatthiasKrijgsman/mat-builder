@@ -6,7 +6,7 @@ import {
     type Edge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { IconCopy, IconTrash } from "@tabler/icons-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { canDropAt } from "../../core/commands.ts";
 import type { BlockId, BlockLocation, ContainerDef } from "../../core/types.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
@@ -45,6 +45,9 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
     const isHovered = useBuilderState((s) => s.hoveredId === id);
     const isRoot = useBuilderState((s) => s.document.rootId === id);
     const isDragSource = useBuilderState((s) => s.drag?.kind === "move-block" && s.drag.blockId === id);
+    const isEditing = useBuilderState((s) => s.editing?.blockId === id);
+
+    const update = useCallback((patch: Record<string, unknown>) => actions.updateProps(id, patch), [actions, id]);
 
     const ref = useRef<HTMLDivElement>(null);
     const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
@@ -62,6 +65,9 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
             cleanups.push(
                 draggable({
                     element,
+                    // Inline editing owns the pointer (text selection) — checked
+                    // live at drag start so no effect re-run is needed
+                    canDrag: () => store.getState().editing?.blockId !== id,
                     getInitialData: () => makeMoveBlockDrag(instanceId, id),
                     onGenerateDragPreview: ({ nativeSetDragImage }) => setChipDragPreview(nativeSetDragImage, label),
                 }),
@@ -138,7 +144,14 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
             }}
         >
             {definition ? (
-                <definition.editRender id={id} props={node.props} containers={containers} isSelected={isSelected} />
+                <definition.editRender
+                    id={id}
+                    props={node.props}
+                    containers={containers}
+                    isSelected={isSelected}
+                    isEditing={isEditing}
+                    update={update}
+                />
             ) : (
                 <MissingBlock type={node.type} />
             )}
@@ -148,6 +161,9 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 <BlockChrome
                     label={label}
                     selected={isSelected}
+                    // The name-tag action bar yields to the pinned floating toolbar
+                    // while inline-editing (both sit at the block's top edge)
+                    hideBar={isEditing}
                     onDuplicate={location ? () => actions.duplicateBlock(id) : undefined}
                     onDelete={definition?.canDelete !== false ? () => actions.removeBlock(id) : undefined}
                 />
@@ -160,6 +176,8 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
 interface BlockChromeProps {
     label: string;
     selected: boolean;
+    /** Keep the ring but drop the tag/action bar (inline editing) */
+    hideBar?: boolean;
     onDuplicate?: () => void;
     onDelete?: () => void;
 }
@@ -177,7 +195,7 @@ const TAG_CLEARANCE = 20;
  * fact — scrolled-away tags just scroll like content), so we measure once per
  * chrome render and flip the tag inside the block's corner when needed.
  */
-function BlockChrome({ label, selected, onDuplicate, onDelete }: BlockChromeProps) {
+function BlockChrome({ label, selected, hideBar = false, onDuplicate, onDelete }: BlockChromeProps) {
     const ref = useRef<HTMLDivElement>(null);
     const [tagInside, setTagInside] = useState(false);
 
@@ -200,7 +218,7 @@ function BlockChrome({ label, selected, onDuplicate, onDelete }: BlockChromeProp
             className="pointer-events-none absolute inset-0 z-10"
             style={{ boxShadow: `inset 0 0 0 ${selected ? 2 : 1}px ${color}` }}
         >
-            {selected && (
+            {selected && !hideBar && (
                 <span
                     className={`pointer-events-auto absolute left-0 top-0 flex items-stretch text-[10px] font-medium leading-none ${
                         tagInside ? "rounded-br" : "-translate-y-full rounded-t"

@@ -28,7 +28,7 @@ type DragPayload =
 
 - The move payload carries only the `blockId` — the source location is recomputed at drop time (`findLocation`), so mid-drag document changes can't corrupt a drop.
 - Palette items: `draggable({ getInitialData: () => ({ instanceId, kind: "new-block", blockType }) })`. The palette item itself never moves — a new node is created on drop.
-- Canvas blocks: the whole `BlockFrame` element is the `draggable` for now — inline text editing is deferred (see 06), so there's no text selection to protect yet; the floating drag handle arrives with the selected-block action bar. `canDrag` honors the definition's `canDrag` and always blocks the root.
+- Canvas blocks: the whole `BlockFrame` element is the `draggable`. Inline text editing (see 06) is protected by a live `canDrag` check — while a block is the active editing target (`store.editing`), its draggable refuses to start, so dragging across text selects text instead of moving the block; it is draggable again the moment the session ends. `canDrag` also honors the definition's `canDrag` and always blocks the root.
 - Layer rows: a second `draggable` for the same block id — identical payload, so drops resolve uniformly.
 
 Type-guard helpers (`isBuilderDrag(data, instanceId)`) gate every `canDrop`/`canMonitor`.

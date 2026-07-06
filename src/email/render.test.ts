@@ -5,6 +5,7 @@ import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
 import { emailBlocks } from "./index.tsx";
 import { buildEmailTree, renderEmail } from "./render.ts";
+import { richTextHeading, richTextParagraph } from "./rich-text/index.ts";
 
 const registry = createRegistry(emailBlocks);
 
@@ -20,7 +21,7 @@ function buildDemoEmail(): BuilderDocument {
         { type: "text", at: { parentId: section.blockId, container: "content", index: 0 } },
         registry,
     );
-    document = updateProps(text.document, { id: text.blockId, patch: { text: "Hello from mat-builder" } });
+    document = updateProps(text.document, { id: text.blockId, patch: { content: richTextParagraph("Hello from mat-builder") } });
     const button = insertBlock(
         document,
         { type: "button", at: { parentId: section.blockId, container: "content", index: 1 } },
@@ -69,7 +70,10 @@ describe("renderEmail", () => {
             { type: "text", at: { parentId: cols.blockId, container: "col-1", index: 0 } },
             registry,
         );
-        document = updateProps(headingText.document, { id: headingText.blockId, patch: { text: "## Column heading" } });
+        document = updateProps(headingText.document, {
+            id: headingText.blockId,
+            patch: { content: richTextHeading("Column heading", "h2") },
+        });
         const image = insertBlock(
             document,
             { type: "image", at: { parentId: cols.blockId, container: "col-2", index: 0 } },
@@ -127,27 +131,90 @@ describe("renderEmail", () => {
         expect(html).not.toContain("display:flex");
     });
 
-    it("renders text-block markdown (bold, links) into the output", async () => {
+    it("renders rich text formatting (bold, links) into the output", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];
         const textId = document.blocks[sectionId].children.content[0];
-        document = updateProps(document, {
-            id: textId,
-            patch: { text: "Plain, **bold** and a [link](https://example.com/md)." },
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    {
+                        type: "paragraph",
+                        children: [
+                            { type: "text", text: "Plain, ", format: 0 },
+                            { type: "text", text: "bold", format: 1 },
+                            { type: "text", text: " and a ", format: 0 },
+                            {
+                                type: "link",
+                                url: "https://example.com/rt",
+                                children: [{ type: "text", text: "link", format: 0 }],
+                            },
+                            { type: "text", text: ".", format: 0 },
+                        ],
+                    },
+                ],
+            },
         });
+        document = updateProps(document, { id: textId, patch: { content } });
 
         const { html, text } = await renderEmail(document);
-        expect(html).toMatch(/<strong[^>]*>bold<\/strong>/);
-        expect(html).toContain('href="https://example.com/md"');
+        expect(html).toMatch(/<span[^>]*font-weight:700[^>]*>bold<\/span>/);
+        expect(html).toContain('href="https://example.com/rt"');
         expect(text).toContain("bold");
-        expect(text).not.toContain("**"); // markdown is rendered, not passed through
     });
 
-    it("renders markdown lists with explicit inline list styles", async () => {
+    it("renders per-selection typography (color, size, font) from text-node styles", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];
         const textId = document.blocks[sectionId].children.content[0];
-        document = updateProps(document, { id: textId, patch: { text: "- D\n- E\n- F" } });
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    {
+                        type: "paragraph",
+                        $: { lineHeight: 1.8 },
+                        format: "center",
+                        children: [
+                            { type: "text", text: "normal ", format: 0 },
+                            {
+                                type: "text",
+                                text: "loud",
+                                format: 0,
+                                style: "color: rgba(255, 0, 0, 0.5);font-size: 24px;font-family: Georgia, 'Times New Roman', serif",
+                            },
+                        ],
+                    },
+                ],
+            },
+        });
+        document = updateProps(document, { id: textId, patch: { content } });
+
+        const { html } = await renderEmail(document);
+        // (pretty-printed output wraps attributes, so match substrings)
+        expect(html).toContain("color:rgba(255, 0, 0, 0.5)");
+        expect(html).toContain("font-size:24px");
+        expect(html).toContain("font-family:Georgia");
+        expect(html).toMatch(/>loud<\/span/);
+        expect(html).toContain("margin:0 0 12px;text-align:center;line-height:180%");
+    });
+
+    it("renders rich text lists with explicit inline list styles", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        const item = (text: string) => ({
+            type: "listitem",
+            children: [{ type: "text", text, format: 0 }],
+        });
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [{ type: "list", listType: "bullet", tag: "ul", children: [item("D"), item("E"), item("F")] }],
+            },
+        });
+        document = updateProps(document, { id: textId, patch: { content } });
 
         const { html } = await renderEmail(document);
         // Inline styles so bullets survive the canvas preflight and email-client resets alike
@@ -178,24 +245,33 @@ describe("renderEmail", () => {
         expect(html).toContain("background-repeat:no-repeat");
     });
 
-    it("renders encoded blank lines (&nbsp; paragraphs) as visible empty paragraphs", async () => {
+    it("renders empty paragraphs as visible blank lines (&nbsp;)", async () => {
         let document = buildDemoEmail();
         const sectionId = document.blocks[document.rootId].children.main[0];
         const textId = document.blocks[sectionId].children.content[0];
-        // The shape RichTextField stores when the user presses Enter twice
-        document = updateProps(document, { id: textId, patch: { text: "first\n\n&nbsp;\n\nsecond" } });
+        // The shape Lexical stores when the user presses Enter twice
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    { type: "paragraph", children: [{ type: "text", text: "first", format: 0 }] },
+                    { type: "paragraph", children: [] },
+                    { type: "paragraph", children: [{ type: "text", text: "second", format: 0 }] },
+                ],
+            },
+        });
+        document = updateProps(document, { id: textId, patch: { content } });
 
         const { html } = await renderEmail(document);
-        expect(html).toMatch(/<p[^>]*>\s*&nbsp;\s*<\/p>/);
+        expect(html).toMatch(/<p[^>]*>\s*(&nbsp;|\u00A0)\s*<\/p>/);
         expect(html).toContain("first");
         expect(html).toContain("second");
     });
 
-    it("renders markdown paragraphs with an explicit inline margin", async () => {
+    it("renders paragraphs with an explicit inline margin", async () => {
         const { html } = await renderEmail(buildDemoEmail());
-        // p is unstyled by react-email's Markdown defaults: without an inline
-        // margin the canvas (preflight: 0) and the preview iframe (browser
-        // default) disagree
+        // Without an inline margin the canvas (preflight: 0) and the preview
+        // iframe (browser default) disagree
         expect(html).toMatch(/<p[^>]*margin:0 0 12px/);
     });
 
@@ -214,7 +290,10 @@ describe("renderEmail", () => {
             { type: "text", at: { parentId: inner.blockId, container: "content", index: 0 } },
             registry,
         );
-        document = updateProps(innerText.document, { id: innerText.blockId, patch: { text: "Nested section copy" } });
+        document = updateProps(innerText.document, {
+            id: innerText.blockId,
+            patch: { content: richTextParagraph("Nested section copy") },
+        });
         document = insertBlock(
             document,
             { type: "columns", at: { parentId: outerSection, container: "content", index: 1 } },

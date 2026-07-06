@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { backgroundToCss, defaultBackground } from "./background.ts";
 import { borderToCss, defaultBorder } from "./border.ts";
-import { hexToRgba } from "./color.ts";
+import { hexToRgba, parseColorToHexOpacity } from "./color.ts";
 import { defaultEffects, effectsToCss } from "./effects.ts";
 import { horizontalToTextAlign, layoutToCss, verticalToVerticalAlign } from "./layout.ts";
 import { sizeToCss } from "./size.ts";
@@ -196,5 +196,28 @@ describe("hexToRgba", () => {
 
     it("leaves unparseable input untouched", () => {
         expect(hexToRgba("tomato", 50)).toBe("tomato");
+    });
+});
+
+describe("parseColorToHexOpacity", () => {
+    it("round-trips hexToRgba output", () => {
+        expect(parseColorToHexOpacity(hexToRgba("#3f3f46", 50))).toEqual({ hex: "#3f3f46", opacity: 50 });
+        expect(parseColorToHexOpacity(hexToRgba("#3f3f46", 100))).toEqual({ hex: "#3f3f46", opacity: 100 });
+    });
+
+    it("parses hex (incl. shorthand) as fully opaque", () => {
+        expect(parseColorToHexOpacity("#FF0000")).toEqual({ hex: "#ff0000", opacity: 100 });
+        expect(parseColorToHexOpacity("#abc")).toEqual({ hex: "#aabbcc", opacity: 100 });
+    });
+
+    it("parses rgb() and rgba()", () => {
+        expect(parseColorToHexOpacity("rgb(255, 0, 0)")).toEqual({ hex: "#ff0000", opacity: 100 });
+        expect(parseColorToHexOpacity("rgba(0, 0, 0, 0.15)")).toEqual({ hex: "#000000", opacity: 15 });
+    });
+
+    it("returns null for anything else", () => {
+        expect(parseColorToHexOpacity("")).toBeNull();
+        expect(parseColorToHexOpacity("red")).toBeNull();
+        expect(parseColorToHexOpacity("var(--x)")).toBeNull();
     });
 });

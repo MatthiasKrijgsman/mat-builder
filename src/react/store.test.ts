@@ -192,3 +192,92 @@ describe("loadDocument & external sync", () => {
         expect(onChange).not.toHaveBeenCalled();
     });
 });
+
+describe("inline editing", () => {
+    it("startEditing selects the block and records the target", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+
+        actions.startEditing("t1", "content");
+        expect(store.getState().editing).toEqual({ blockId: "t1", field: "content" });
+        expect(store.getState().selectedId).toBe("t1");
+    });
+
+    it("startEditing on a missing block is a no-op", () => {
+        const { store } = makeStore();
+        store.getState().actions.startEditing("ghost", "content");
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("selecting another block (or nothing) ends the session; same block keeps it", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.startEditing("t1", "content");
+
+        actions.select("t1");
+        expect(store.getState().editing).not.toBeNull();
+
+        actions.select("sec1");
+        expect(store.getState().editing).toBeNull();
+
+        actions.startEditing("t1", "content");
+        actions.select(null);
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("a drag start ends the session", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.startEditing("t1", "content");
+
+        actions.setDrag({ kind: "move-block", blockId: "sec1" });
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("removing the edited block ends the session", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.startEditing("t1", "content");
+
+        actions.removeBlock("t1");
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("undo and redo end the session (the mounted editor must never go stale)", () => {
+        const { store, tick } = makeStore();
+        const { actions } = store.getState();
+        actions.updateProps("t1", { text: "changed" });
+        tick(1000);
+
+        actions.startEditing("t1", "content");
+        actions.undo();
+        expect(store.getState().editing).toBeNull();
+
+        actions.startEditing("t1", "content");
+        actions.redo();
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("loadDocument and syncExternalDocument end the session", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+
+        actions.startEditing("t1", "content");
+        actions.loadDocument(exampleDoc());
+        expect(store.getState().editing).toBeNull();
+
+        actions.startEditing("t1", "content");
+        syncExternalDocument(store, exampleDoc(), testRegistry);
+        expect(store.getState().editing).toBeNull();
+    });
+
+    it("stopEditing ends the session and keeps the selection", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.startEditing("t1", "content");
+
+        actions.stopEditing();
+        expect(store.getState().editing).toBeNull();
+        expect(store.getState().selectedId).toBe("t1");
+    });
+});

@@ -1,6 +1,7 @@
 import { IconClick } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { blockTypographyItems, InlineText } from "../../../components/inline/index.ts";
 import {
     BackgroundGroup,
     BorderGroup,
@@ -8,7 +9,6 @@ import {
     LayoutGroup,
     SizeGroup,
     SpacingGroup,
-    TypographyGroup,
 } from "../../../components/style-groups/index.ts";
 import { emailButtonDefaults, emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } from "./styles.ts";
 
@@ -20,14 +20,25 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
     keywords: ["cta", "link", "action"],
     defaultProps: emailButtonDefaults,
     getDisplayName: (props) => props.label || undefined,
-    editRender: ({ props }) => (
+    // The label edits in place (double-click); a button is uniform, so its
+    // toolbar edits the block-level typography prop rather than the selection.
+    editRender: ({ id, props, update }) => (
         <div style={emailButtonWrapperStyles(props)}>
-            <span style={emailButtonStyles(props)}>{props.label}</span>
+            <InlineText
+                id={id}
+                field="label"
+                value={props.label}
+                onChange={(label) => update({ label })}
+                style={emailButtonStyles(props)}
+                toolbar={blockTypographyItems({
+                    value: props.typography,
+                    onChange: (typography) => update({ typography }),
+                })}
+            />
         </div>
     ),
     inspector: ({ props, update }) => (
         <>
-            <Fields.TextField label="Label" value={props.label} onChange={(label) => update({ label })} />
             <Fields.TextField label="Link" value={props.href} onChange={(href) => update({ href })} />
             <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
             <LayoutGroup
@@ -42,7 +53,6 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
                 onChange={(background) => update({ background })}
             />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
-            <TypographyGroup value={props.typography} onChange={(typography) => update({ typography })} />
             <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
