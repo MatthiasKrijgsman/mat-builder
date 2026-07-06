@@ -22,6 +22,35 @@ import { $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightP
 
 const FONT_OPTIONS = EMAIL_FONT_STACKS.map(({ name, stack }) => ({ value: stack, label: name }));
 
+/** Effective INHERITED text style, read from the editor root's computed
+ * style — when the selection carries no inline style the controls show the
+ * values the text actually renders with (the email-root base typography
+ * cascading in), not an empty field. */
+function useInheritedTextStyle() {
+    const [editor] = useLexicalComposerContext();
+    const root = editor.getRootElement();
+    if (!root) {
+        return {
+            fontSize: defaultTypography.fontSize,
+            lineHeight: defaultTypography.lineHeight,
+            letterSpacing: defaultTypography.letterSpacing,
+            color: { hex: defaultTypography.color, opacity: defaultTypography.opacity },
+        };
+    }
+    const computed = window.getComputedStyle(root);
+    const fontSize = Number.parseFloat(computed.fontSize) || defaultTypography.fontSize;
+    const lineHeightPx = Number.parseFloat(computed.lineHeight); // NaN for "normal"
+    const letterSpacing = Number.parseFloat(computed.letterSpacing) || 0; // "normal" → 0
+    return {
+        fontSize,
+        lineHeight: Number.isNaN(lineHeightPx)
+            ? defaultTypography.lineHeight
+            : Math.round((lineHeightPx / fontSize) * 10) / 10,
+        letterSpacing,
+        color: parseColorToHexOpacity(computed.color) ?? { hex: defaultTypography.color, opacity: 100 },
+    };
+}
+
 function FontFamilyItem() {
     const { values, patch } = useLexicalSelectionStyle(["font-family"]);
     return (
@@ -39,12 +68,13 @@ function FontFamilyItem() {
 
 function FontSizeItem() {
     const { values, patch } = useLexicalSelectionStyle(["font-size"]);
+    const inherited = useInheritedTextStyle();
     const parsed = Number.parseFloat(values["font-size"]);
     return (
         <LexicalToolbarNumber
             title="Font size (px)"
             prefix="Aa"
-            value={Number.isNaN(parsed) ? null : parsed}
+            value={Number.isNaN(parsed) ? inherited.fontSize : parsed}
             onChange={(size) => patch({ "font-size": `${size}px` })}
             min={8}
             max={96}
@@ -54,12 +84,13 @@ function FontSizeItem() {
 
 function LineHeightItem() {
     const [editor] = useLexicalComposerContext();
+    const inherited = useInheritedTextStyle();
     const value = useSelectionLineHeight(editor);
     return (
         <LexicalToolbarNumber
             title="Line height (multiplier)"
             prefix="Lh"
-            value={value}
+            value={value ?? inherited.lineHeight}
             onChange={(multiplier) => editor.update(() => $setLineHeightOnSelection(multiplier))}
             min={0.5}
             max={3}
@@ -70,12 +101,13 @@ function LineHeightItem() {
 
 function LetterSpacingItem() {
     const { values, patch } = useLexicalSelectionStyle(["letter-spacing"]);
+    const inherited = useInheritedTextStyle();
     const parsed = Number.parseFloat(values["letter-spacing"]);
     return (
         <LexicalToolbarNumber
             title="Letter spacing (px)"
             prefix="Ls"
-            value={Number.isNaN(parsed) ? null : parsed}
+            value={Number.isNaN(parsed) ? inherited.letterSpacing : parsed}
             onChange={(spacing) => patch({ "letter-spacing": spacing === 0 ? null : `${spacing}px` })}
             min={-2}
             max={10}
@@ -88,7 +120,8 @@ function LetterSpacingItem() {
  * (a separate opacity property would also fade backgrounds; docs/06). */
 function TextColorItem() {
     const { values, patch } = useLexicalSelectionStyle(["color"]);
-    const current = parseColorToHexOpacity(values["color"]) ?? { hex: defaultTypography.color, opacity: 100 };
+    const inherited = useInheritedTextStyle();
+    const current = parseColorToHexOpacity(values["color"]) ?? inherited.color;
     return (
         <>
             <LexicalToolbarColor
@@ -99,7 +132,7 @@ function TextColorItem() {
             <LexicalToolbarNumber
                 title="Text opacity (%)"
                 prefix="%"
-                value={values["color"] ? current.opacity : null}
+                value={current.opacity}
                 onChange={(opacity) => patch({ color: hexToRgba(current.hex, opacity) })}
                 min={0}
                 max={100}
@@ -109,10 +142,9 @@ function TextColorItem() {
     );
 }
 
-/** Flat fragment of toolbar building blocks — append to the default items. */
+/** Flat fragment of toolbar building blocks — the floating toolbar's second row. */
 export const selectionTypographyItems = () => (
     <>
-        <LexicalToolbarDivider />
         <FontFamilyItem />
         <FontSizeItem />
         <LineHeightItem />

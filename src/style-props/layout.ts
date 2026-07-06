@@ -32,3 +32,11 @@ export const verticalToVerticalAlign = (v: VerticalAlign): "top" | "middle" | "b
 
 export const layoutToCss = (v?: LayoutValue): CSSProperties =>
     v ? { textAlign: horizontalToTextAlign(v.horizontal) } : {};
+
+/** Best-effort per-block vertical alignment — takes effect where the block
+ * participates in a table-cell/inline formatting context (e.g. inside a
+ * column); block-level flow ignores it (see docs/06 email caveats). */
+export const verticalAlignToCss = (v?: LayoutValue): CSSProperties =>
+    v && v.vertical !== "start" && v.vertical !== "stretch"
+        ? { verticalAlign: verticalToVerticalAlign(v.vertical) }
+        : {};

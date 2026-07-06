@@ -27,6 +27,7 @@ export function FontFamilyField({ value, onChange, ...rest }: FontFamilyFieldPro
     return (
         <InputSelectSearchable<string>
             size="sm"
+            variant="flat"
             placeholder="Inherit"
             clearable
             {...rest}

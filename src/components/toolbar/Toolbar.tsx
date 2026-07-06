@@ -31,7 +31,7 @@ export function UndoRedoButtons() {
         <div className="flex items-center gap-1">
             <ButtonIconSquare
                 Icon={IconArrowBackUp}
-                variant="tertiary"
+                variant={canUndo ? 'primary' : 'transparent'}
                 size="sm"
                 aria-label="Undo"
                 disabled={!canUndo}
@@ -39,7 +39,7 @@ export function UndoRedoButtons() {
             />
             <ButtonIconSquare
                 Icon={IconArrowForwardUp}
-                variant="tertiary"
+                variant={canRedo ? 'primary' : 'transparent'}
                 size="sm"
                 aria-label="Redo"
                 disabled={!canRedo}

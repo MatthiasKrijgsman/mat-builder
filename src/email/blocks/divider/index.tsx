@@ -1,4 +1,5 @@
 import { IconSeparator } from "@tabler/icons-react";
+import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { SpacingGroup } from "../../../components/style-groups/index.ts";
@@ -14,14 +15,17 @@ export const dividerBlock = defineBlock<EmailDividerProps>({
     editRender: ({ props }) => <hr style={emailDividerStyles(props)} />,
     inspector: ({ props, update }) => (
         <>
-            <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
-            <Fields.NumberField
-                label="Thickness"
-                value={props.thickness}
-                min={1}
-                max={8}
-                onChange={(thickness) => update({ thickness })}
-            />
+            <div className="flex flex-col gap-4 px-3 pb-4">
+                <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
+                <Fields.NumberField
+                    label="Thickness"
+                    value={props.thickness}
+                    min={1}
+                    max={8}
+                    onChange={(thickness) => update({ thickness })}
+                />
+            </div>
+            <Divider />
             <SpacingGroup fields={["margin"]} value={props.spacing} onChange={(spacing) => update({ spacing })} />
         </>
     ),

@@ -1,4 +1,5 @@
 import { IconLayoutRows } from "@tabler/icons-react";
+import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import {
     BackgroundGroup,
@@ -37,14 +38,19 @@ export const sectionBlock = defineBlock<EmailSectionProps>({
     inspector: ({ props, update }) => (
         <>
             <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
+            <Divider />
             <LayoutGroup
                 fields={["horizontal", "gap"]}
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
             />
+            <Divider />
             <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <Divider />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <Divider />
             <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),

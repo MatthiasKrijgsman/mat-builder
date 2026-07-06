@@ -29,11 +29,14 @@ export interface InlineTextProps {
     /** Toolbar items pinned above the text while editing (flat fragment of
      * mat-ui toolbar building blocks, e.g. blockTypographyItems(...)). */
     toolbar?: ReactNode;
+    /** Extra building blocks on a second toolbar row — e.g. block-level
+     * controls like vertical align. */
+    toolbarSecondRow?: ReactNode;
 }
 
 const singleLine = (text: string): string => text.replace(/\s*[\r\n]+\s*/g, " ");
 
-export function InlineText({ id, field = "text", value, onChange, style, className, toolbar }: InlineTextProps) {
+export function InlineText({ id, field = "text", value, onChange, style, className, toolbar, toolbarSecondRow }: InlineTextProps) {
     const actions = useBuilderState((s) => s.actions);
     const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
     const ref = useRef<HTMLSpanElement>(null);
@@ -108,8 +111,11 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
                 }}
                 onClick={(event) => event.stopPropagation()}
             />
-            {toolbar && (
-                <FloatingToolbarShell anchor={anchor} open matchAnchorWidth={false}>
+            {toolbar && anchor && (
+                // Content-sized (a label is far narrower than its toolbar);
+                // needs mat-ui >= 0.0.60, where overflow-collapse measures
+                // content-sized bars correctly.
+                <FloatingToolbarShell anchor={anchor} open matchAnchorWidth={false} secondRow={toolbarSecondRow}>
                     {toolbar}
                 </FloatingToolbarShell>
             )}

@@ -1,7 +1,9 @@
 import { IconTypography } from "@tabler/icons-react";
+import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
-import { InlineRichText } from "../../../components/inline/index.ts";
+import { InlineRichText, verticalAlignItems } from "../../../components/inline/index.ts";
 import { EffectsGroup, SpacingGroup } from "../../../components/style-groups/index.ts";
+import { defaultLayout } from "../../../style-props/index.ts";
 import { richTextToPlain } from "../../rich-text/index.ts";
 import { emailTextDefaults, emailTextStyles, type EmailTextProps } from "./styles.ts";
 
@@ -22,11 +24,16 @@ export const textBlock = defineBlock<EmailTextProps>({
             value={props.content}
             onChange={(content) => update({ content })}
             style={emailTextStyles(props)}
+            toolbarExtra={verticalAlignItems({
+                value: props.layout?.vertical,
+                onChange: (vertical) => update({ layout: { ...(props.layout ?? defaultLayout), vertical } }),
+            })}
         />
     ),
     inspector: ({ props, update }) => (
         <>
             <SpacingGroup defaultOpen value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),

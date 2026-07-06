@@ -11,6 +11,6 @@ export interface TextAreaFieldProps {
 
 export function TextAreaField({ value, onChange, rows = 4, ...rest }: TextAreaFieldProps) {
     return (
-        <InputTextArea {...rest} rows={rows} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+        <InputTextArea variant="flat" {...rest} rows={rows} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
     );
 }

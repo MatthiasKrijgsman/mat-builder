@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { backgroundToCss, defaultBackground } from "./background.ts";
-import { borderToCss, defaultBorder } from "./border.ts";
+import { borderToCss, defaultBorder, type BorderValue } from "./border.ts";
 import { hexToRgba, parseColorToHexOpacity } from "./color.ts";
 import { defaultEffects, effectsToCss } from "./effects.ts";
 import { horizontalToTextAlign, layoutToCss, verticalToVerticalAlign } from "./layout.ts";
@@ -71,12 +71,29 @@ describe("background", () => {
 
 describe("border", () => {
     it("width 0 emits no border but radius still applies", () => {
-        expect(borderToCss({ ...defaultBorder, width: 0, radius: 8 })).toEqual({ borderRadius: 8 });
+        expect(borderToCss({ ...defaultBorder, radius: 8 })).toEqual({ borderRadius: 8 });
     });
 
-    it("stroke emits the border shorthand", () => {
-        expect(borderToCss({ width: 2, style: "dashed", color: "#000000", radius: 0 })).toEqual({
+    it("uniform stroke emits the border shorthand", () => {
+        expect(borderToCss({ width: uniformSides(2), style: "dashed", color: "#000000", radius: 0 })).toEqual({
             border: "2px dashed #000000",
+        });
+    });
+
+    it("per-side widths emit only the sides that are set", () => {
+        expect(
+            borderToCss({ width: { top: 1, right: 0, bottom: 3, left: 0 }, style: "solid", color: "#111111", radius: 0 }),
+        ).toEqual({
+            borderTop: "1px solid #111111",
+            borderBottom: "3px solid #111111",
+        });
+    });
+
+    it("legacy single-number widths still apply to all sides", () => {
+        expect(
+            borderToCss({ width: 2 as unknown as BorderValue["width"], style: "solid", color: "#000000", radius: 0 }),
+        ).toEqual({
+            border: "2px solid #000000",
         });
     });
 });

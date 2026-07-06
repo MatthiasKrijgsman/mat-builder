@@ -16,6 +16,7 @@ import {
     symmetricSides,
     typographyToCss,
     uniformSides,
+    verticalAlignToCss,
     type BackgroundValue,
     type BorderValue,
     type EffectsValue,
@@ -71,5 +72,6 @@ export const emailButtonStyles = (props: EmailButtonProps): CSSProperties => ({
  *  padding because Outlook ignores margins on tables. */
 export const emailButtonWrapperStyles = (props: EmailButtonProps): CSSProperties => ({
     textAlign: horizontalToTextAlign(props.layout?.horizontal ?? "start"),
+    ...verticalAlignToCss(props.layout),
     padding: props.spacing ? sideShorthand(props.spacing.margin) : undefined,
 });

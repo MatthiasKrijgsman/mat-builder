@@ -9,5 +9,5 @@ export interface TextFieldProps {
 }
 
 export function TextField({ value, onChange, ...rest }: TextFieldProps) {
-    return <Input size="sm" {...rest} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />;
+    return <Input size="sm" variant="flat" {...rest} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />;
 }

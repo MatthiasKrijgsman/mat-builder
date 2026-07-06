@@ -1,5 +1,5 @@
-import { IconChevronRight } from "@tabler/icons-react";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { PanelLink } from "@matthiaskrijgsman/mat-ui";
 
 /*
  * InspectorGroup — a named, collapsible set of inspector fields (docs/04).
@@ -11,28 +11,20 @@ import { useState, type ReactNode } from "react";
  */
 
 export interface InspectorGroupProps {
-    label: string;
-    defaultOpen?: boolean;
-    children: ReactNode;
+  label: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
 }
 
 export function InspectorGroup({ label, defaultOpen = false, children }: InspectorGroupProps) {
-    const [open, setOpen] = useState(defaultOpen);
-    return (
-        <section
-            className="flex flex-col rounded border"
-            style={{ borderColor: "var(--mat-builder-color-panel-border)" }}
-        >
-            <button
-                type="button"
-                aria-expanded={open}
-                onClick={() => setOpen((current) => !current)}
-                className="flex cursor-pointer items-center gap-1.5 px-2 py-1.5 text-xs font-medium"
-            >
-                <IconChevronRight className={`size-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
-                {label}
-            </button>
-            {open && <div className="flex flex-col gap-3 p-2 pt-1">{children}</div>}
-        </section>
-    );
+  const [ open, setOpen ] = useState(defaultOpen);
+  return (
+    <section className={ 'flex flex-col' }>
+      <PanelLink
+        aria-expanded={ open }
+        onClick={ () => setOpen((current) => !current) }
+      >{ label }</PanelLink>
+      { open && <div className="flex flex-col gap-2 p-3">{ children }</div> }
+    </section>
+  );
 }

@@ -8,6 +8,7 @@ import {
     defaultSpacing,
     effectsToCss,
     paddingToCss,
+    verticalAlignToCss,
     type BorderValue,
     type EffectsValue,
     type LayoutValue,
@@ -57,5 +58,6 @@ export const emailImageStyles = (props: EmailImageProps): CSSProperties => {
         ...borderToCss(props.border),
         ...paddingToCss(props.spacing),
         ...effectsToCss(props.effects),
+        ...verticalAlignToCss(props.layout),
     };
 };

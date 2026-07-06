@@ -75,10 +75,10 @@ Renders one named container of a block:
 ### Inspector
 
 - Subscribes to `selectedId`. Empty state when nothing is selected (or shows the root/document settings — root is a block, so this is free).
-- Header: block icon, label, breadcrumb of ancestors (each clickable → reselect), delete button.
+- Header: block icon, label, delete button, closed off by a `Divider`. (An earlier ancestor breadcrumb was dropped — the layers panel and `Escape`-to-parent cover upward navigation.)
 - Body: mounts the definition's `inspector` component with `{ id, props, update }`. `update` shallow-merges and coalesces history (03 §3).
 - **Field helpers** are thin wrappers around mat-ui inputs (label + control, builder-flavored layout) so application inspectors are mostly declarative one-liners; anything bespoke is just JSX composed from mat-ui directly. Shipped: `TextField`, `TextAreaField`, `RichTextField`, `NumberField`, `SelectField`, `SegmentedField` (mat-ui `TabButtons` as a segmented control), `ColorField`, `ToggleField`, `FontFamilyField` (searchable select over the email-safe stacks in `style-props/typography.ts`; clear = inherit).
-- **`InspectorGroup`** — a named, collapsible section (hand-rolled header + chevron; mat-ui has no accordion). Collapse state is local, so it resets when the selection changes — accepted for now.
+- **`InspectorGroup`** — a named, collapsible section (mat-ui `PanelLink` header). Collapse state is local, so it resets when the selection changes — accepted for now. Inspectors separate groups with mat-ui `Divider`s; loose (ungrouped) fields sit in a padded `flex flex-col gap-4 px-3 pb-4` wrapper above the first divider.
 - **Style groups** (`StyleGroups.*`) — reusable property sets built on `InspectorGroup`: `SizeGroup`, `BackgroundGroup`, `BorderGroup`, `SpacingGroup`, `EffectsGroup`, `LayoutGroup`, `TypographyGroup`. Each edits one object-valued prop and always emits the complete next object (see 03 §Style props). Groups with natural subsets take a `fields` filter (e.g. `<SpacingGroup fields={["margin"]} />`).
 - Keyed by `selectedId` so switching blocks remounts the form (no stale local state).
 
@@ -99,7 +99,7 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
 ### Selection
 
 - Click a block on canvas → select (innermost block under the pointer; clicks don't bubble-select parents).
-- `Escape` walks up: child → parent → … → root → none. Breadcrumb in the inspector covers the same need with the mouse.
+- `Escape` walks up: child → parent → … → root → none. The layers panel covers the same need with the mouse.
 - Selection survives prop edits and is restored by undo (history entries store `selectedId`).
 
 ### Keyboard (active when focus is inside the builder)
@@ -124,7 +124,7 @@ All of the above are implemented in `useBuilderKeyboard` (internal).
 1. **Add a block**: drag from palette → indicators show valid insert positions → drop → block created with `defaultProps`, selected, inspector opens → post-drop flash on the new block.
 2. **Configure**: select block → inspector shows its form → edits apply live to the canvas (single undo step per burst).
 3. **Restructure**: drag a block by its handle (canvas) or its row (layers panel) → move/reparent → flash at destination.
-4. **Navigate deep trees**: layers panel + breadcrumb + `Escape`-to-parent cover the "select the section, not the text inside it" problem.
+4. **Navigate deep trees**: layers panel + `Escape`-to-parent cover the "select the section, not the text inside it" problem.
 5. **Preview & export**: toolbar toggle → real rendered output; export handled by the application layer (06).
 
 ### Feedback details worth specifying up front

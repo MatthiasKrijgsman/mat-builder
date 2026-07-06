@@ -22,12 +22,14 @@ export const spacerBlock = defineBlock<EmailSpacerProps>({
         />
     ),
     inspector: ({ props, update }) => (
-        <Fields.NumberField
-            label="Height"
-            value={props.height}
-            min={4}
-            max={160}
-            onChange={(height) => update({ height })}
-        />
+        <div className="flex flex-col gap-4 px-3 pb-4">
+            <Fields.NumberField
+                label="Height"
+                value={props.height}
+                min={4}
+                max={160}
+                onChange={(height) => update({ height })}
+            />
+        </div>
     ),
 });

@@ -14,6 +14,7 @@ export function SelectField({ value, onChange, options, ...rest }: SelectFieldPr
     return (
         <InputSelectNative
             size="sm"
+            variant="flat"
             {...rest}
             value={value ?? ""}
             options={options.map((option) =>

@@ -1,4 +1,5 @@
 import { IconPhoto } from "@tabler/icons-react";
+import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import {
@@ -34,18 +35,25 @@ export const imageBlock = defineBlock<EmailImageProps>({
         ),
     inspector: ({ props, update }) => (
         <>
-            <Fields.TextField label="Image URL" value={props.src} onChange={(src) => update({ src })} />
-            <Fields.TextField label="Alt text" value={props.alt} onChange={(alt) => update({ alt })} />
-            <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />
+            <div className="flex flex-col gap-4 px-3 pb-4">
+                <Fields.TextField label="Image URL" value={props.src} onChange={(src) => update({ src })} />
+                <Fields.TextField label="Alt text" value={props.alt} onChange={(alt) => update({ alt })} />
+                <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />
+            </div>
+            <Divider />
             <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
+            <Divider />
             <LayoutGroup
                 label="Alignment"
-                fields={["horizontal"]}
+                fields={["horizontal", "vertical"]}
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
             />
+            <Divider />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <Divider />
             <SpacingGroup fields={["padding"]} value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),

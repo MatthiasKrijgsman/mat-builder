@@ -1,4 +1,5 @@
 import { IconLayoutColumns } from "@tabler/icons-react";
+import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import {
@@ -55,20 +56,27 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
     },
     inspector: ({ props, update }) => (
         <>
-            <Fields.SelectField
-                label="Ratio"
-                value={props.ratio}
-                options={COLUMNS_RATIOS}
-                onChange={(ratio) => update({ ratio: ratio as EmailColumnsRatio })}
-            />
+            <div className="flex flex-col gap-4 px-3 pb-4">
+                <Fields.SelectField
+                    label="Ratio"
+                    value={props.ratio}
+                    options={COLUMNS_RATIOS}
+                    onChange={(ratio) => update({ ratio: ratio as EmailColumnsRatio })}
+                />
+            </div>
+            <Divider />
             <LayoutGroup
                 fields={["vertical", "gap"]}
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
             />
+            <Divider />
             <BackgroundGroup value={props.background} onChange={(background) => update({ background })} />
+            <Divider />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
+            <Divider />
             <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
     ),

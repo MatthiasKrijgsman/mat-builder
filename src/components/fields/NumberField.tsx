@@ -14,6 +14,7 @@ export function NumberField({ value, onChange, ...rest }: NumberFieldProps) {
     return (
         <Input
             size="sm"
+            variant="flat"
             type="number"
             {...rest}
             value={value ?? ""}

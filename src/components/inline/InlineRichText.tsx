@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { COMMAND_PRIORITY_HIGH, KEY_ESCAPE_COMMAND } from "lexical";
 import {
     lexicalDefaultToolbarItems,
     LexicalFloatingToolbar,
     LexicalInline,
+    LexicalToolbarDivider,
 } from "@matthiaskrijgsman/mat-ui";
 import type { BlockId } from "../../core/types.ts";
 import { useBuilderState } from "../../react/hooks.ts";
@@ -40,6 +41,9 @@ export interface InlineRichTextProps {
     style?: CSSProperties;
     className?: string;
     placeholder?: string;
+    /** Extra toolbar building blocks appended (after a divider) to the
+     * toolbar's second row — e.g. block-level controls like vertical align. */
+    toolbarExtra?: ReactNode;
 }
 
 /** Theme class map for the editing surface. The classes live in src/style.css
@@ -91,14 +95,9 @@ function ExitOnEscapePlugin({ onExit }: { onExit: () => void }) {
     return null;
 }
 
-const renderToolbar = () => (
-    <>
-        {lexicalDefaultToolbarItems()}
-        {selectionTypographyItems()}
-    </>
-);
+const renderToolbar = () => lexicalDefaultToolbarItems();
 
-export function InlineRichText({ id, field = "content", value, onChange, style, className, placeholder }: InlineRichTextProps) {
+export function InlineRichText({ id, field = "content", value, onChange, style, className, placeholder, toolbarExtra }: InlineRichTextProps) {
     const actions = useBuilderState((s) => s.actions);
     const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -107,6 +106,23 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
         actions.stopEditing();
         focusCanvas(containerRef.current);
     }, [actions]);
+
+    // Second row: the typography controls (font/size/color/…) plus any
+    // block-level extras — kept out of row one so nothing collapses into "⋮".
+    const renderSecondRow = useCallback(
+        () => (
+            <>
+                {selectionTypographyItems()}
+                {toolbarExtra && (
+                    <>
+                        <LexicalToolbarDivider />
+                        {toolbarExtra}
+                    </>
+                )}
+            </>
+        ),
+        [toolbarExtra],
+    );
 
     if (!isEditing) {
         return (
@@ -137,7 +153,7 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
             >
                 <LineHeightPlugin />
                 <ExitOnEscapePlugin onExit={exit} />
-                <LexicalFloatingToolbar open render={renderToolbar} />
+                <LexicalFloatingToolbar open render={renderToolbar} renderSecondRow={renderSecondRow} />
             </LexicalInline>
         </div>
     );

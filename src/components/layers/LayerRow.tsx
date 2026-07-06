@@ -136,7 +136,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
             <div
                 ref={ref}
                 data-layer-id={id}
-                className="relative flex cursor-pointer items-center gap-1 rounded py-1 pr-1.5 text-xs select-none"
+                className="relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pr-3 font-medium select-none"
                 style={{ paddingLeft: ROW_BASE_PADDING + depth * INDENT_PX, ...rowBackground }}
                 onClick={(event) => {
                     event.stopPropagation();
@@ -162,13 +162,13 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
                         }}
                     >
                         <IconChevronRight
-                            className={`size-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                            className={`size-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
                         />
                     </button>
                 ) : (
                     <span className="size-4 shrink-0" />
                 )}
-                {Icon && <Icon className="size-3.5 shrink-0" />}
+                {Icon && <Icon className="size-4 text-stone-400 shrink-0" />}
                 <span className="truncate">{label}</span>
                 {instruction && <InstructionIndicator instruction={instruction} depth={depth} />}
             </div>
