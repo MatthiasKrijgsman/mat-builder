@@ -67,7 +67,7 @@ Renders one named container of a block:
 
 ### Palette
 
-- Grouped by `category`, fuzzy search over `label` + `keywords`, icon + label per item.
+- Grouped by `category`, fuzzy search over `label` + `keywords`. Items render as square tinted tiles (icon in a colored rounded square, label below); each category gets a tint cycled from the `--mat-builder-palette-tint-*` token sets in registry order, so colors are consumer-rethemable and stable while searching.
 - Each `PaletteItem` is a Pragmatic `draggable` carrying `{ kind: "new-block", blockType }`.
 - **Click-to-add** as a complement to drag: clicking inserts into the current selection's nearest accepting container (or root) — good for accessibility and speed.
 - Items whose type is accepted nowhere in the current document state could be dimmed (v2 polish).

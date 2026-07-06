@@ -43,4 +43,35 @@
     /* Panels (inspector & friends) */
     --mat-builder-color-panel-muted-fg: #71717a;
     --mat-builder-color-panel-border: #e4e4e7;
+
+    /* Palette category tints — assigned to categories in registry order,
+       cycling. Each set is tile background / tile border / icon color.
+       The set count must match PALETTE_TINT_COUNT in Palette.tsx. */
+    --mat-builder-palette-tint-1-bg: #f5f3ff;
+    --mat-builder-palette-tint-1-border: #ddd6fe;
+    --mat-builder-palette-tint-1-fg: #7c3aed;
+
+    --mat-builder-palette-tint-2-bg: #eff6ff;
+    --mat-builder-palette-tint-2-border: #bfdbfe;
+    --mat-builder-palette-tint-2-fg: #2563eb;
+
+    --mat-builder-palette-tint-3-bg: #f0f9ff;
+    --mat-builder-palette-tint-3-border: #bae6fd;
+    --mat-builder-palette-tint-3-fg: #0284c7;
+
+    --mat-builder-palette-tint-4-bg: #ecfdf5;
+    --mat-builder-palette-tint-4-border: #a7f3d0;
+    --mat-builder-palette-tint-4-fg: #059669;
+
+    --mat-builder-palette-tint-5-bg: #fffbeb;
+    --mat-builder-palette-tint-5-border: #fde68a;
+    --mat-builder-palette-tint-5-fg: #d97706;
+
+    --mat-builder-palette-tint-6-bg: #eef2ff;
+    --mat-builder-palette-tint-6-border: #c7d2fe;
+    --mat-builder-palette-tint-6-fg: #4f46e5;
+
+    --mat-builder-palette-tint-7-bg: #fff1f2;
+    --mat-builder-palette-tint-7-border: #fecdd3;
+    --mat-builder-palette-tint-7-fg: #e11d48;
 }

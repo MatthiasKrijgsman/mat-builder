@@ -36,8 +36,8 @@ export interface EmailRootProps {
 }
 
 export const emailRootDefaults: EmailRootProps = {
-    backgroundColor: "#f4f4f5",
-    background: { ...defaultBackground, type: "solid", color: "#ffffff" },
+    backgroundColor: "#FFFFFF",
+    background: { ...defaultBackground, type: "solid", color: "#FFFFFF" },
     contentWidth: 600,
     spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
     typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },

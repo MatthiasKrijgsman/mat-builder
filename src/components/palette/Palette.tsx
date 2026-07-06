@@ -19,9 +19,24 @@ export interface PaletteProps {
   className?: string;
 }
 
+/** Number of --mat-builder-palette-tint-* sets defined in styles/tokens.css. */
+const PALETTE_TINT_COUNT = 7;
+
 export function Palette({ className }: PaletteProps) {
   const { registry } = useBuilderContext();
   const [ query, setQuery ] = useState("");
+
+  // Category → tint index, assigned in registry order over the *unfiltered*
+  // definitions so colors stay stable while searching.
+  const tintByCategory = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const definition of registry.definitions) {
+      if (definition.hidden) continue;
+      const category = definition.category ?? "Blocks";
+      if (!map.has(category)) map.set(category, (map.size % PALETTE_TINT_COUNT) + 1);
+    }
+    return map;
+  }, [ registry ]);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -46,6 +61,7 @@ export function Palette({ className }: PaletteProps) {
     <div className={ `mat-builder-palette flex flex-col gap-3 p-3 ${ className ?? "" }` }>
       <Input
         size="sm"
+        variant={'flat'}
         Icon={IconSearch}
         type="search"
         placeholder="Search blocks…"
@@ -61,9 +77,13 @@ export function Palette({ className }: PaletteProps) {
           >
             { category }
           </p>
-          <div className={'grid grid-cols-4 gap-2'}>
+          <div className={'grid grid-cols-5 gap-x-2 gap-y-2.5'}>
           { definitions.map((definition) => (
-            <PaletteItem key={ definition.type } definition={ definition }/>
+            <PaletteItem
+              key={ definition.type }
+              definition={ definition }
+              tint={ tintByCategory.get(category) ?? 1 }
+            />
           )) }
           </div>
         </div>
@@ -77,7 +97,7 @@ export function Palette({ className }: PaletteProps) {
   );
 }
 
-function PaletteItem({ definition }: { definition: AnyBlockDefinition }) {
+function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tint: number }) {
   const { store, registry, instanceId } = useBuilderContext();
   const ref = useRef<HTMLButtonElement>(null);
   const Icon = definition.icon;
@@ -105,12 +125,20 @@ function PaletteItem({ definition }: { definition: AnyBlockDefinition }) {
       ref={ ref }
       type="button"
       onClick={ onClick }
-      className="flex flex-col items-center justify-center gap-2 cursor-grab rounded-lg border border-stone-200 px-2.5 py-2 text-left text-sm hover:shadow-sm aspect-square"
+      className="group flex min-w-0 flex-col items-center gap-1.5 cursor-grab"
     >
-      { Icon && <div className={'grid place-items-center h-8 w-8 rounded-lg bg-gray-100'}>
-          <Icon className="size-4 shrink-0 stroke-2 text-gray-800"/>
-      </div> }
-      <span className="truncate">{ definition.label }</span>
+      <div
+        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs transition-shadow group-hover:shadow-sm"
+        style={ {
+          backgroundColor: `var(--mat-builder-palette-tint-${ tint }-bg)`,
+          borderColor: `var(--mat-builder-palette-tint-${ tint }-border)`,
+          // icons draw with currentColor, so the tile sets the icon color
+          color: `var(--mat-builder-palette-tint-${ tint }-fg)`,
+        } }
+      >
+        { Icon && <Icon className="size-5 shrink-0 stroke-2"/> }
+      </div>
+      <span className="w-full truncate text-center text-xs font-medium">{ definition.label }</span>
     </button>
   );
 }

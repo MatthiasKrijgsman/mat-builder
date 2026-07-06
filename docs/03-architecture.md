@@ -50,7 +50,7 @@ Example (email): a two-column section holding a text block and a button —
   "version": 1,
   "rootId": "root",
   "blocks": {
-    "root":  { "id": "root", "type": "email-root", "props": { "backgroundColor": "#f4f4f5" },
+    "root":  { "id": "root", "type": "email-root", "props": { "backgroundColor": "#ffffff" },
                "children": { "main": ["sec1"] } },
     "sec1":  { "id": "sec1", "type": "columns", "props": { "gap": 16, "ratio": "50/50" },
                "children": { "left": ["txt1"], "right": ["btn1"] } },

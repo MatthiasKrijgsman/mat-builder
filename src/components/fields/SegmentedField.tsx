@@ -19,6 +19,7 @@ export function SegmentedField<T extends string>({ label, value, onChange, optio
             {label && <InputLabel>{label}</InputLabel>}
             <TabButtons
                 size="sm"
+                fullWidth={true}
                 tabs={options.map((option) => ({
                     label: option.label,
                     active: option.value === value,

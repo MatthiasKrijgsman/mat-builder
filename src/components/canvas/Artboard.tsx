@@ -126,7 +126,7 @@ export function Artboard(props: ArtboardProps) {
             <div className="grid min-h-full place-items-center p-6">
                 <div className="relative">
                     <div
-                        className="overflow-hidden rounded-lg shadow-sm"
+                        className="overflow-hidden rounded-lg shadow-lg shadow-gray-200/50 border border-stone-200"
                         style={{
                             width: size.width,
                             height: size.height,
