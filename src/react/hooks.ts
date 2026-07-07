@@ -2,6 +2,7 @@ import { useStore } from "zustand";
 import type { AnyBlockDefinition, BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockNode } from "../core/types.ts";
 import { useBuilderContext } from "./context.ts";
+import type { MergeTag } from "./merge-tags.ts";
 import type { EditorActions, EditorState } from "./store.ts";
 
 /*
@@ -35,6 +36,11 @@ export function useEditor(): UseEditorResult {
 /** Slice subscription to one block's node; undefined once the block is removed. */
 export function useBlockNode(id: BlockId): BlockNode | undefined {
     return useBuilderState((s) => s.document.blocks[id]);
+}
+
+/** The provider's merge tags (see merge-tags.ts); empty when none configured. */
+export function useMergeTags(): MergeTag[] {
+    return useBuilderState((s) => s.mergeTags);
 }
 
 export interface SelectedBlock {

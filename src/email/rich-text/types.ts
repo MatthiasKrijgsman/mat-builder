@@ -70,6 +70,14 @@ export interface RichLineBreakNode extends RichNodeBase {
     type: "linebreak";
 }
 
+/** Personalization token (docs/06 §merge tags). The output render emits
+ * `token` verbatim; `label` is a display-name snapshot for canvas chips. */
+export interface RichMergeTagNode extends RichNodeBase {
+    type: "merge-tag";
+    token: string;
+    label?: string;
+}
+
 export type RichNode =
     | RichTextNode
     | RichHeadingNode
@@ -77,6 +85,7 @@ export type RichNode =
     | RichListItemNode
     | RichLinkNode
     | RichLineBreakNode
+    | RichMergeTagNode
     | RichElementNode;
 
 export interface RichRootNode extends RichElementNode {

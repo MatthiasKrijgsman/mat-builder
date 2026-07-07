@@ -1,5 +1,5 @@
 export { RichText, richTextToPlain, type RichTextProps } from "./render.tsx";
-export { richTextParagraph, richTextParagraphs, richTextHeading, DEFAULT_TEXT_CONTENT } from "./defaults.ts";
+export { richTextParagraph, richTextParagraphs, richTextHeading, richTextMergeTagNode, DEFAULT_TEXT_CONTENT } from "./defaults.ts";
 export {
     TEXT_FORMAT,
     LINE_HEIGHT_STATE_KEY,
@@ -27,4 +27,5 @@ export type {
     RichListItemNode,
     RichLinkNode,
     RichLineBreakNode,
+    RichMergeTagNode,
 } from "./types.ts";

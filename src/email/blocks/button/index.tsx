@@ -46,7 +46,7 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
     inspector: ({ props, update }) => (
         <>
             <div className="flex flex-col gap-4 px-3 pb-4">
-                <Fields.TextField label="Link" value={props.href} onChange={(href) => update({ href })} />
+                <Fields.MergeTagTextField label="Link" value={props.href} onChange={(href) => update({ href })} />
             </div>
             <Divider />
             <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />

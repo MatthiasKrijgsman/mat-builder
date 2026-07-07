@@ -68,3 +68,16 @@
 .mat-builder-rt-code {
     font-family: 'Courier New', Courier, monospace;
 }
+/* Merge-tag chip (MergeTagNode + idle canvas render — editor-only; the email
+ * output emits the literal token instead, so no styles.ts counterpart). The
+ * one class serves both modes, keeping idle/editing pixel parity. */
+.mat-builder-rt-merge-tag {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--mat-builder-color-merge-tag-bg);
+    color: var(--mat-builder-color-merge-tag-fg);
+    font-size: 0.85em;
+    font-weight: 500;
+    white-space: nowrap;
+    user-select: none;
+}

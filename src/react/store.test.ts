@@ -281,3 +281,23 @@ describe("inline editing", () => {
         expect(store.getState().selectedId).toBe("t1");
     });
 });
+
+describe("merge tags", () => {
+    it("defaults to an empty list and accepts a configured one", () => {
+        const { store } = makeStore();
+        expect(store.getState().mergeTags).toEqual([]);
+
+        const tags = [{ token: "{{first_name}}", label: "First name" }];
+        const configured = createEditorStore({ registry: testRegistry, document: exampleDoc(), mergeTags: tags });
+        expect(configured.getState().mergeTags).toBe(tags);
+    });
+
+    it("survives undo — editor configuration, not document state", () => {
+        const tags = [{ token: "{{x}}", label: "X" }];
+        const store = createEditorStore({ registry: testRegistry, document: exampleDoc(), mergeTags: tags });
+        const { actions } = store.getState();
+        actions.updateProps("t1", { text: "changed" });
+        actions.undo();
+        expect(store.getState().mergeTags).toBe(tags);
+    });
+});

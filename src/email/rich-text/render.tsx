@@ -4,6 +4,7 @@ import type {
     RichHeadingNode,
     RichLinkNode,
     RichListNode,
+    RichMergeTagNode,
     RichNode,
     RichTextDocument,
     RichTextNode,
@@ -76,18 +77,33 @@ const renderText = (node: RichTextNode, key: number): ReactNode => {
     );
 };
 
-const renderChildren = (node: RichElementNode): ReactNode[] =>
-    (node.children ?? []).map((child, index) => renderNode(child, index));
+/** Non-structural render hooks threaded through the walk (editor-side
+ * customization; the output path passes none and gets literal text). */
+interface RenderOptions {
+    renderMergeTag?: (node: RichMergeTagNode) => ReactNode;
+}
 
-const renderNode = (node: RichNode, key: number): ReactNode => {
+const renderChildren = (node: RichElementNode, options: RenderOptions): ReactNode[] =>
+    (node.children ?? []).map((child, index) => renderNode(child, index, options));
+
+const renderNode = (node: RichNode, key: number, options: RenderOptions): ReactNode => {
     switch (node.type) {
         case "text":
             return renderText(node as RichTextNode, key);
         case "linebreak":
             return <br key={key} />;
+        case "merge-tag": {
+            const element = node as RichMergeTagNode;
+            if (options.renderMergeTag) {
+                return <span key={key}>{options.renderMergeTag(element)}</span>;
+            }
+            // Output path: the literal token as escaped text — substitution
+            // happens downstream (the ESP), never here.
+            return element.token;
+        }
         case "paragraph": {
             const element = node as RichElementNode;
-            const children = renderChildren(element);
+            const children = renderChildren(element, options);
             return (
                 <p key={key} style={{ ...PARAGRAPH_STYLES, ...blockOverrides(element) }}>
                     {/* An empty paragraph still takes a line (matches the editor). */}
@@ -100,14 +116,14 @@ const renderNode = (node: RichNode, key: number): ReactNode => {
             const Tag = HEADING_SIZES[element.tag] ? element.tag : "h2";
             return (
                 <Tag key={key} style={{ ...heading(HEADING_SIZES[Tag]), ...blockOverrides(element) }}>
-                    {renderChildren(element)}
+                    {renderChildren(element, options)}
                 </Tag>
             );
         }
         case "quote":
             return (
                 <blockquote key={key} style={{ ...BLOCKQUOTE_STYLES, ...blockOverrides(node as RichElementNode) }}>
-                    {renderChildren(node as RichElementNode)}
+                    {renderChildren(node as RichElementNode, options)}
                 </blockquote>
             );
         case "list": {
@@ -115,13 +131,13 @@ const renderNode = (node: RichNode, key: number): ReactNode => {
             if (element.listType === "number") {
                 return (
                     <ol key={key} start={element.start && element.start !== 1 ? element.start : undefined} style={OL_STYLES}>
-                        {renderChildren(element)}
+                        {renderChildren(element, options)}
                     </ol>
                 );
             }
             return (
                 <ul key={key} style={UL_STYLES}>
-                    {renderChildren(element)}
+                    {renderChildren(element, options)}
                 </ul>
             );
         }
@@ -133,7 +149,7 @@ const renderNode = (node: RichNode, key: number): ReactNode => {
                 element.children?.length === 1 && (element.children[0] as RichElementNode).type === "list";
             return (
                 <li key={key} style={onlyNestedList ? { ...LI_STYLES, listStyleType: "none" } : LI_STYLES}>
-                    {renderChildren(element)}
+                    {renderChildren(element, options)}
                 </li>
             );
         }
@@ -148,14 +164,14 @@ const renderNode = (node: RichNode, key: number): ReactNode => {
                     rel={element.rel ?? undefined}
                     style={LINK_STYLES}
                 >
-                    {renderChildren(element)}
+                    {renderChildren(element, options)}
                 </a>
             );
         }
         default:
             // Unknown node: render what we can of its children (tolerance —
             // a stored document must never become unrenderable).
-            return isElement(node) ? <span key={key}>{renderChildren(node)}</span> : null;
+            return isElement(node) ? <span key={key}>{renderChildren(node, options)}</span> : null;
     }
 };
 
@@ -179,17 +195,24 @@ const parseDocument = (content: string): RichTextDocument | null => {
 export interface RichTextProps {
     /** Serialized editor state JSON (see rich-text/types.ts). */
     content: string;
+    /** Editor-side hook: custom rendering for merge-tag nodes (canvas chips).
+     * Omitted — the server/output path — the literal token is emitted as text. */
+    renderMergeTag?: (node: RichMergeTagNode) => ReactNode;
 }
 
-export const RichText = ({ content }: RichTextProps) => {
+export const RichText = ({ content, renderMergeTag }: RichTextProps) => {
     const document = parseDocument(content);
     if (!document) return null;
-    return <>{renderChildren(document.root)}</>;
+    return <>{renderChildren(document.root, { renderMergeTag })}</>;
 };
 
 const collectPlain = (node: RichNode, out: string[]): void => {
     if (node.type === "text") {
         out.push((node as RichTextNode).text);
+        return;
+    }
+    if (node.type === "merge-tag") {
+        out.push((node as RichMergeTagNode).token);
         return;
     }
     if (isElement(node)) {

@@ -73,4 +73,13 @@ export const richTextHeading = (text: string, tag: "h1" | "h2" | "h3" | "h4" | "
         },
     });
 
+/** A merge-tag node (docs/06 §merge tags) for composing documents in samples
+ * and tests; matches MergeTagNode.exportJSON on the editor side. */
+export const richTextMergeTagNode = (token: string, label?: string) => ({
+    type: "merge-tag",
+    version: 1,
+    token,
+    ...(label !== undefined ? { label } : {}),
+});
+
 export const DEFAULT_TEXT_CONTENT = richTextParagraph("Lorem ipsum dolor sit amet");

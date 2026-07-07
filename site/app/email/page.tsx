@@ -13,12 +13,14 @@ import {
     Inspector,
     LayersPanel,
     Palette,
+    richTextMergeTagNode,
     richTextParagraph,
     symmetricSides,
     SYSTEM_FONT_STACK,
     UndoRedoButtons,
     uniformSides,
     type BuilderDocument,
+    type MergeTag,
 } from "@matthiaskrijgsman/mat-builder";
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
 import { TabButtons } from "@matthiaskrijgsman/mat-ui";
@@ -30,6 +32,44 @@ import { useState } from "react";
  * Edit shows the canvas (editRender); Preview shows the real react-email
  * output in an iframe at desktop/mobile widths.
  */
+
+/** Consumer-provided personalization tokens (docs/06 §merge tags) — the
+ * Mailchimp-style entry proves the library assumes no delimiter syntax. */
+const mergeTags: MergeTag[] = [
+    { token: "{{first_name}}", label: "First name" },
+    { token: "{{last_name}}", label: "Last name" },
+    { token: "{{invoice_url}}", label: "Invoice URL" },
+    { token: "*|COMPANY|*", label: "Company" },
+];
+
+const textNode = (text: string) => ({ type: "text", version: 1, detail: 0, format: 0, mode: "normal", style: "", text });
+
+/** Intro copy with merge-tag chips baked in, so the feature shows on load. */
+const introCopyContent = JSON.stringify({
+    root: {
+        type: "root",
+        version: 1,
+        direction: null,
+        format: "",
+        indent: 0,
+        children: [
+            {
+                type: "paragraph",
+                version: 1,
+                direction: null,
+                format: "",
+                indent: 0,
+                children: [
+                    textNode("Hi "),
+                    richTextMergeTagNode("{{first_name}}", "First name"),
+                    textNode(" — your "),
+                    richTextMergeTagNode("*|COMPANY|*", "Company"),
+                    textNode(" invoice for July is attached. You can view and download it any time from your dashboard."),
+                ],
+            },
+        ],
+    },
+});
 
 /** Neutral section style-group values — spread and override per section. */
 const sectionBase = {
@@ -79,9 +119,7 @@ const initialDocument: BuilderDocument = {
             id: "intro-copy",
             type: "text",
             props: {
-                content: richTextParagraph(
-                    "Hi there — your invoice for July is attached. You can view and download it any time from your dashboard.",
-                ),
+                content: introCopyContent,
                 spacing: defaultSpacing,
                 effects: defaultEffects,
             },
@@ -102,7 +140,7 @@ const initialDocument: BuilderDocument = {
             type: "button",
             props: {
                 label: "View invoice",
-                href: "https://example.com/invoice",
+                href: "{{invoice_url}}",
                 size: defaultSize,
                 background: { ...defaultBackground, type: "solid", color: "#18181b" },
                 border: { ...defaultBorder, radius: 6 },
@@ -122,7 +160,7 @@ export default function EmailBuilderPage() {
     const [mode, setMode] = useState<Mode>("edit");
 
     return (
-        <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument}>
+        <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
             <div className="flex h-screen flex-col">
                 <Topbar mode={mode} onModeChange={setMode} />
                 <MainArea mode={mode} />

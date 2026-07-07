@@ -5,7 +5,7 @@ import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
 import { emailBlocks } from "./index.tsx";
 import { buildEmailTree, renderEmail } from "./render.ts";
-import { richTextHeading, richTextParagraph } from "./rich-text/index.ts";
+import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
 const registry = createRegistry(emailBlocks);
 
@@ -343,5 +343,44 @@ describe("renderEmail", () => {
 
     it("buildEmailTree returns null for missing ids", () => {
         expect(buildEmailTree(buildDemoEmail(), "ghost")).toBeNull();
+    });
+
+    it("emits merge-tag tokens literally in text content, button href and both output variants", async () => {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        const buttonId = document.blocks[sectionId].children.content[1];
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    {
+                        type: "paragraph",
+                        children: [
+                            { type: "text", text: "Hi ", format: 0 },
+                            richTextMergeTagNode("{{first_name}}", "First name"),
+                            { type: "text", text: ", welcome to ", format: 0 },
+                            richTextMergeTagNode("*|COMPANY|*", "Company"),
+                        ],
+                    },
+                ],
+            },
+        });
+        document = updateProps(document, { id: textId, patch: { content } });
+        document = updateProps(document, {
+            id: buttonId,
+            patch: { label: "Open {{first_name}}'s invoice", href: "{{invoice_url}}" },
+        });
+
+        const { html, text } = await renderEmail(document);
+        // (React's streamed render separates adjacent text nodes with <!-- -->,
+        // so tokens are asserted individually rather than as one fused string)
+        expect(html).toContain("{{first_name}}");
+        expect(html).toContain("*|COMPANY|*");
+        expect(html).toContain('href="{{invoice_url}}"');
+        expect(html).toContain("Open {{first_name}}");
+        // display labels never reach the output
+        expect(html).not.toContain("First name");
+        expect(text).toContain("Hi {{first_name}}, welcome to *|COMPANY|*");
     });
 });

@@ -148,6 +148,33 @@ describe("RichText", () => {
         const html = render(doc([p([t("a"), { type: "linebreak" }, t("b")])]));
         expect(html).toContain("a<br/>b");
     });
+
+    it("emits merge-tag tokens as literal text, whatever the delimiter syntax", () => {
+        const html = render(
+            doc([
+                p([t("Hi "), { type: "merge-tag", token: "{{first_name}}", label: "First name" }, t("!")]),
+                p([{ type: "merge-tag", token: "*|COMPANY|*", label: "Company" }]),
+            ]),
+        );
+        expect(html).toContain("Hi {{first_name}}!");
+        expect(html).toContain("*|COMPANY|*");
+        // the display label never reaches the output
+        expect(html).not.toContain("First name");
+    });
+
+    it("renders merge-tag tokens without a label", () => {
+        const html = render(doc([p([{ type: "merge-tag", token: "%email%" }])]));
+        expect(html).toContain("%email%");
+    });
+
+    it("lets renderMergeTag override merge-tag rendering (canvas chips)", () => {
+        const content = doc([p([{ type: "merge-tag", token: "{{first_name}}", label: "First name" }])]);
+        const html = renderToStaticMarkup(
+            <RichText content={content} renderMergeTag={(node) => <em>{node.label ?? node.token}</em>} />,
+        );
+        expect(html).toContain("<em>First name</em>");
+        expect(html).not.toContain("{{first_name}}");
+    });
 });
 
 describe("richTextToPlain", () => {
@@ -162,5 +189,10 @@ describe("richTextToPlain", () => {
 
     it("returns empty for malformed content", () => {
         expect(richTextToPlain("nope")).toBe("");
+    });
+
+    it("includes merge-tag tokens", () => {
+        const content = doc([p([t("Hi "), { type: "merge-tag", token: "{{first_name}}", label: "First name" }])]);
+        expect(richTextToPlain(content)).toBe("Hi {{first_name}}");
     });
 });

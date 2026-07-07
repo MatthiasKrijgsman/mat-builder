@@ -16,6 +16,7 @@ import {
 } from "../core/index.ts";
 import type { BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockLocation, BuilderDocument, HistoryState } from "../core/types.ts";
+import type { MergeTag } from "./merge-tags.ts";
 
 /*
  * Per-instance editor store — see docs/03-architecture.md §3.
@@ -84,6 +85,10 @@ export interface EditorState {
     /** Layers tree expand state */
     expanded: Set<BlockId>;
     drag: DragState | null;
+    /** Consumer-provided personalization tokens (provider prop); empty hides
+     * all merge-tag UI. Editor configuration, not document state — never in
+     * history snapshots. */
+    mergeTags: MergeTag[];
     history: HistoryState;
     actions: EditorActions;
 }
@@ -93,6 +98,8 @@ export type EditorStore = StoreApi<EditorState>;
 export interface CreateEditorStoreOptions {
     registry: BlockRegistry;
     document: BuilderDocument;
+    /** Consumer-provided personalization tokens (see merge-tags.ts) */
+    mergeTags?: MergeTag[];
     /** Mutable — the provider reassigns its fields every render so callbacks never go stale */
     callbacks?: EditorCallbacks;
     /** Timestamp source for history coalescing; injectable for tests */
@@ -140,6 +147,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             // Everything starts expanded; newly created parents auto-expand (docs/04 §LayersPanel)
             expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
             drag: null,
+            mergeTags: options.mergeTags ?? [],
             history: createHistory(),
 
             actions: {

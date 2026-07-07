@@ -100,7 +100,19 @@ export async function renderEmail(doc: BuilderDocument) {
 }
 ```
 
-Used from a Next.js route handler / server action: load document JSON → `renderEmail` → hand to the ESP (Resend/SES/…). Merge variables (`{{firstName}}`) pass through as literal text in v1; personalization is the ESP's problem until we need conditional blocks.
+Used from a Next.js route handler / server action: load document JSON → `renderEmail` → hand to the ESP (Resend/SES/…). Merge tags (below) reach the output as literal token text; substitution is the ESP's problem until we need conditional blocks.
+
+## Merge tags
+
+Consumer-provided personalization tokens, insertable anywhere in rich text, in the Button label, and in the Button link. The tag list varies per host/ESP, so it enters through the provider — `<BuilderProvider mergeTags={[{ token: "{{first_name}}", label: "First name" }]}>` (`useMergeTags()` reads it back). Each tag carries its **literal token string**: the library assumes no delimiter syntax, so `{{x}}`, `*|FNAME|*` and `%x%` all work unmodified. With no `mergeTags` configured, every bit of merge-tag UI hides — but stored documents containing tags still load and export (node registration and walker support are unconditional).
+
+Three insertion surfaces, one dropdown menu (`MergeTagItems.tsx`):
+
+- **Rich text**: a menu in the floating toolbar's first row inserts a `MergeTagNode` (`src/components/inline/MergeTagNode.tsx`) — an inline Lexical `DecoratorNode` that renders the *label* as an atomic chip (`.mat-builder-rt-merge-tag`, deletes/selects as one unit) while `getTextContent()` projects the *token* (plain-text copy stays correct). The node snapshots token **and** label at insert time, so documents keep rendering chips when the host's tag list changes. Serialized shape: `{ type: "merge-tag", token, label }` — mirrored as `RichMergeTagNode` in `rich-text/types.ts`.
+- **Button label** (`InlineText`, a plain string prop): the same menu splices the raw token text at the caret — no chips in single-line labels.
+- **Button link**: the inspector uses `Fields.MergeTagTextField`, a TextField with the tag menu in its button tray, splicing at the caret. (The Image block's link/src could adopt it the same way when needed.)
+
+Output: the walker's `merge-tag` case emits the literal token as escaped text; `richTextToPlain` and the plain-text render include it too. **Deliberate canvas/preview deviation** — the canvas shows the chip ("First name", via `RichText`'s editor-only `renderMergeTag` hook, keeping idle/edit pixel parity), while Preview mode and the export show the truth (`{{first_name}}`). Two caveats: tokens containing `&`/`<` get HTML-entity-escaped inside `href` attributes, which ESPs handle inconsistently (avoid such delimiters); and consumers running an **older** `./email/render` will render merge-tag nodes as nothing — upgrade the render side before letting editors insert tags.
 
 ## Preview mode
 

@@ -11,8 +11,11 @@ import {
 import type { BlockId } from "../../core/types.ts";
 import { useBuilderState } from "../../react/hooks.ts";
 import { RichText } from "../../email/rich-text/index.ts";
+import type { RichMergeTagNode } from "../../email/rich-text/index.ts";
 import { selectionTypographyItems } from "./SelectionTypographyItems.tsx";
 import { LineHeightPlugin } from "./LineHeightPlugin.tsx";
+import { MergeTagChip, MergeTagNode } from "./MergeTagNode.tsx";
+import { mergeTagItems } from "./MergeTagItems.tsx";
 import { focusCanvas } from "./focus.ts";
 
 /*
@@ -95,7 +98,24 @@ function ExitOnEscapePlugin({ onExit }: { onExit: () => void }) {
     return null;
 }
 
-const renderToolbar = () => lexicalDefaultToolbarItems();
+// Row one: insertion actions live next to the link button; the merge-tag
+// menu hides itself (divider included) when the provider has no tags.
+const renderToolbar = () => (
+    <>
+        {lexicalDefaultToolbarItems()}
+        {mergeTagItems()}
+    </>
+);
+
+/** Chip render for the idle canvas — same class as the editing decorator, so
+ * entering/leaving edit mode never shifts layout (docs/06). The email output
+ * takes the default path and emits the literal token instead. */
+const renderMergeTag = (node: RichMergeTagNode) => <MergeTagChip label={node.label ?? node.token} />;
+
+/** Always registered — documents containing merge tags must keep loading
+ * even when the host no longer passes `mergeTags` (only the insert UI is
+ * conditional). */
+const EXTRA_NODES = [MergeTagNode];
 
 export function InlineRichText({ id, field = "content", value, onChange, style, className, placeholder, toolbarExtra }: InlineRichTextProps) {
     const actions = useBuilderState((s) => s.actions);
@@ -136,7 +156,7 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                     actions.startEditing(id, field);
                 }}
             >
-                <RichText content={value} />
+                <RichText content={value} renderMergeTag={renderMergeTag} />
             </div>
         );
     }
@@ -147,6 +167,7 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 value={value || undefined}
                 onChange={onChange}
                 namespace="mat-builder-inline"
+                nodes={EXTRA_NODES}
                 theme={richTextTheme}
                 placeholder={placeholder}
                 autoFocus

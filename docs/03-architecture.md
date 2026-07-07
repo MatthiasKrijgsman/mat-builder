@@ -224,6 +224,7 @@ Snapshot history — immer's structural sharing makes snapshots cheap (unchanged
   value={document}                 // controlled; or defaultValue for uncontrolled
   onChange={(doc) => save(doc)}    // called after every committed command (debounce upstream)
   onSelectionChange={...}
+  mergeTags={[{ token: "{{first_name}}", label: "First name" }]} // optional; see 06 §merge tags
 >
   {/* host app arranges the UI components freely — see 04 */}
 </BuilderProvider>
@@ -244,13 +245,15 @@ export { BuilderProvider } from "./react/provider";
 export { useEditor,        // actions + history: { undo, redo, canUndo, canRedo }
          useSelectedBlock, // { id, node, definition } | null
          useBlockNode,     // (id) => node slice subscription
-         useBuilderState   // selector escape hatch
+         useBuilderState,  // selector escape hatch
+         useMergeTags      // the provider's mergeTags (empty when unconfigured)
        } from "./react/hooks";
+export type { MergeTag } from "./react/merge-tags"; // { token, label } — literal token, no delimiter assumed
 
 // UI components (each independent & restylable — see 04)
 export { Canvas, Palette, Inspector, LayersPanel, Toolbar } from "./components";
-export * as Fields from "./components/fields"; // TextField, NumberField, SelectField,
-                                               // ColorField, ToggleField, SegmentedField, …
+export * as Fields from "./components/fields"; // TextField, MergeTagTextField, NumberField,
+                                               // SelectField, ColorField, ToggleField, …
 ```
 
 ## 5. Repository layout (standalone repo, mirrors mat-ui)

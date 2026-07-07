@@ -35,6 +35,10 @@
     --mat-builder-color-placeholder-border: #d4d4d8;
     --mat-builder-color-placeholder-fg: #a1a1aa;
 
+    /* Merge-tag chips (inline personalization tokens on the canvas) */
+    --mat-builder-color-merge-tag-bg: #ede9fe;
+    --mat-builder-color-merge-tag-fg: #6d28d9;
+
     /* Missing-block fallback (unknown types in old documents) */
     --mat-builder-color-missing-border: #fca5a5;
     --mat-builder-color-missing-bg: #fef2f2;

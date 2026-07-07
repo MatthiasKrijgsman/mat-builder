@@ -4,3 +4,11 @@ export { selectionTypographyItems } from "./SelectionTypographyItems.tsx";
 export { blockTypographyItems, type BlockTypographyItemsProps } from "./BlockTypographyItems.tsx";
 export { verticalAlignItems, type VerticalAlignItemsProps } from "./VerticalAlignItems.tsx";
 export { LineHeightPlugin, $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightPlugin.tsx";
+export {
+    MergeTagNode,
+    MergeTagChip,
+    $createMergeTagNode,
+    $isMergeTagNode,
+    type SerializedMergeTagNode,
+} from "./MergeTagNode.tsx";
+export { mergeTagItems, MergeTagPlainItem, type MergeTagPlainItemProps } from "./MergeTagItems.tsx";

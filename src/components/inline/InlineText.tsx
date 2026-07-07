@@ -1,8 +1,9 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { FloatingToolbarShell } from "@matthiaskrijgsman/mat-ui";
 import type { BlockId } from "../../core/types.ts";
-import { useBuilderState } from "../../react/hooks.ts";
+import { useBuilderState, useMergeTags } from "../../react/hooks.ts";
+import { MergeTagPlainItem } from "./MergeTagItems.tsx";
 import { focusCanvas } from "./focus.ts";
 
 /*
@@ -39,6 +40,7 @@ const singleLine = (text: string): string => text.replace(/\s*[\r\n]+\s*/g, " ")
 export function InlineText({ id, field = "text", value, onChange, style, className, toolbar, toolbarSecondRow }: InlineTextProps) {
     const actions = useBuilderState((s) => s.actions);
     const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
+    const hasMergeTags = useMergeTags().length > 0;
     const ref = useRef<HTMLSpanElement>(null);
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
@@ -46,6 +48,45 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
         actions.stopEditing();
         focusCanvas(ref.current);
     }, [actions]);
+
+    // Last caret/selection inside the editable — clicking the merge-tag menu
+    // (a portal) moves DOM focus away, so the insert restores this range.
+    const savedRange = useRef<Range | null>(null);
+    useEffect(() => {
+        if (!isEditing) {
+            savedRange.current = null;
+            return;
+        }
+        const save = () => {
+            const selection = window.getSelection();
+            const element = ref.current;
+            if (!selection || selection.rangeCount === 0 || !element) return;
+            const range = selection.getRangeAt(0);
+            if (element.contains(range.commonAncestorContainer)) {
+                savedRange.current = range.cloneRange();
+            }
+        };
+        document.addEventListener("selectionchange", save);
+        return () => document.removeEventListener("selectionchange", save);
+    }, [isEditing]);
+
+    const insertToken = useCallback((token: string) => {
+        const element = ref.current;
+        if (!element) return;
+        element.focus();
+        const selection = window.getSelection();
+        if (selection) {
+            const range = savedRange.current ?? document.createRange();
+            if (!savedRange.current) {
+                range.selectNodeContents(element);
+                range.collapse(false); // never focused → append at the end
+            }
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        // Same pattern as the paste handler: keeps native undo, fires onInput.
+        document.execCommand("insertText", false, token);
+    }, []);
 
     // Session start: seed the DOM text once, focus, select everything.
     useLayoutEffect(() => {
@@ -111,12 +152,13 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
                 }}
                 onClick={(event) => event.stopPropagation()}
             />
-            {toolbar && anchor && (
+            {(toolbar || hasMergeTags) && anchor && (
                 // Content-sized (a label is far narrower than its toolbar);
                 // needs mat-ui >= 0.0.60, where overflow-collapse measures
                 // content-sized bars correctly.
                 <FloatingToolbarShell anchor={anchor} open matchAnchorWidth={false} secondRow={toolbarSecondRow}>
                     {toolbar}
+                    <MergeTagPlainItem onInsert={insertToken} divider={Boolean(toolbar)} />
                 </FloatingToolbarShell>
             )}
         </>

@@ -35,7 +35,8 @@ export type {
 
 // React — provider & hooks
 export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
-export { useEditor, useSelectedBlock, useBlockNode, useBuilderState } from "./react/hooks.ts";
+export type { MergeTag } from "./react/merge-tags.ts";
+export { useEditor, useSelectedBlock, useBlockNode, useBuilderState, useMergeTags } from "./react/hooks.ts";
 export type { UseEditorResult, SelectedBlock } from "./react/hooks.ts";
 export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts";
 
@@ -56,9 +57,17 @@ export {
     InlineText,
     selectionTypographyItems,
     blockTypographyItems,
+    mergeTagItems,
+    MergeTagPlainItem,
+    MergeTagNode,
+    MergeTagChip,
+    $createMergeTagNode,
+    $isMergeTagNode,
     type InlineRichTextProps,
     type InlineTextProps,
     type BlockTypographyItemsProps,
+    type MergeTagPlainItemProps,
+    type SerializedMergeTagNode,
 } from "./components/inline/index.ts";
 // The stored rich-text vocabulary (pure/server-safe; also under ./email/render)
 export * from "./email/rich-text/index.ts";

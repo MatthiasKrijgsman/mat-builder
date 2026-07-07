@@ -3,6 +3,7 @@ import { createRegistry, setDocument, type AnyBlockDefinition } from "../core/in
 import type { BlockId, BuilderDocument } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
+import type { MergeTag } from "./merge-tags.ts";
 import { createEditorStore, syncExternalDocument, type EditorCallbacks } from "./store.ts";
 
 /*
@@ -21,11 +22,17 @@ export interface BuilderProviderProps {
     /** Called after every committed command (debounce upstream for saving) */
     onChange?: (document: BuilderDocument) => void;
     onSelectionChange?: (id: BlockId | null) => void;
+    /** Personalization tokens available in text surfaces (see merge-tags.ts);
+     * omit or pass empty to hide all merge-tag UI. Pass a stable array. */
+    mergeTags?: MergeTag[];
     children: ReactNode;
 }
 
+/** Stable empty list so an omitted `mergeTags` prop never churns the store. */
+const NO_MERGE_TAGS: MergeTag[] = [];
+
 export function BuilderProvider(props: BuilderProviderProps) {
-    const { blocks, value, defaultValue, onChange, onSelectionChange, children } = props;
+    const { blocks, value, defaultValue, onChange, onSelectionChange, mergeTags, children } = props;
 
     const [instance] = useState<BuilderContextValue & { callbacks: EditorCallbacks }>(() => {
         const registry = createRegistry(blocks);
@@ -34,7 +41,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
             throw new Error("BuilderProvider requires a `value` or `defaultValue` document");
         }
         const callbacks: EditorCallbacks = {};
-        const store = createEditorStore({ registry, document: setDocument(initial, registry), callbacks });
+        const store = createEditorStore({ registry, document: setDocument(initial, registry), mergeTags, callbacks });
         return { store, registry, callbacks, instanceId: Symbol("mat-builder-instance") };
     });
 
@@ -52,6 +59,14 @@ export function BuilderProvider(props: BuilderProviderProps) {
             syncExternalDocument(instance.store, value, instance.registry);
         }
     }, [value, instance]);
+
+    // Merge tags are plain editor configuration — keep the store's copy fresh
+    useEffect(() => {
+        const next = mergeTags ?? NO_MERGE_TAGS;
+        if (next !== instance.store.getState().mergeTags) {
+            instance.store.setState({ mergeTags: next });
+        }
+    }, [mergeTags, instance]);
 
     return <BuilderContext.Provider value={instance}>{children}</BuilderContext.Provider>;
 }
