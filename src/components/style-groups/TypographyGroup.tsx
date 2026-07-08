@@ -1,12 +1,14 @@
+import { IconAlignCenter, IconAlignLeft, IconAlignRight } from "@tabler/icons-react";
 import { defaultTypography, type TypographyValue } from "../../style-props/typography.ts";
 import * as Fields from "../fields/index.ts";
+import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
 import type { StyleGroupProps } from "./types.ts";
 
-const ALIGN_OPTIONS: { label: string; value: TypographyValue["align"] }[] = [
-    { label: "Left", value: "left" },
-    { label: "Center", value: "center" },
-    { label: "Right", value: "right" },
+const ALIGN_OPTIONS: SegmentedFieldOption<TypographyValue["align"]>[] = [
+    { label: "Left", value: "left", Icon: IconAlignLeft },
+    { label: "Center", value: "center", Icon: IconAlignCenter },
+    { label: "Right", value: "right", Icon: IconAlignRight },
 ];
 
 type TypographyField = "fontFamily" | "fontSize" | "lineHeight" | "letterSpacing" | "color" | "opacity" | "align";
@@ -60,11 +62,12 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
             )}
             {show("color") && <Fields.ColorField label="Color" value={v.color} onChange={(color) => set({ color })} />}
             {show("opacity") && (
-                <Fields.NumberField
-                    label="Text opacity (%)"
+                <Fields.SliderField
+                    label="Text opacity"
                     value={v.opacity}
                     min={0}
                     max={100}
+                    formatValue={(n) => `${n}%`}
                     onChange={(opacity) => set({ opacity })}
                 />
             )}

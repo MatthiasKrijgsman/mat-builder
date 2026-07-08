@@ -29,7 +29,14 @@ export function BorderGroup({ value, onChange, label = "Border", defaultOpen }: 
                 onChange={(style) => set({ style: style as BorderValue["style"] })}
             />
             <Fields.ColorField label="Color" value={v.color} onChange={(color) => set({ color })} />
-            <Fields.NumberField label="Radius" value={v.radius} min={0} max={48} onChange={(radius) => set({ radius })} />
+            <Fields.SliderField
+                label="Radius"
+                value={v.radius}
+                min={0}
+                max={48}
+                formatValue={(n) => `${n}px`}
+                onChange={(radius) => set({ radius })}
+            />
         </InspectorGroup>
     );
 }

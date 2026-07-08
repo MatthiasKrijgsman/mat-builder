@@ -1,12 +1,14 @@
+import { IconBoxModel, IconShadow, IconSquare } from "@tabler/icons-react";
 import { defaultEffects, type EffectsValue, type ShadowType } from "../../style-props/effects.ts";
 import * as Fields from "../fields/index.ts";
+import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
 import type { StyleGroupProps } from "./types.ts";
 
-const SHADOW_OPTIONS: { label: string; value: ShadowType }[] = [
-    { label: "None", value: "none" },
-    { label: "Drop", value: "drop" },
-    { label: "Inner", value: "inner" },
+const SHADOW_OPTIONS: SegmentedFieldOption<ShadowType>[] = [
+    { label: "None", value: "none", Icon: IconSquare },
+    { label: "Drop", value: "drop", Icon: IconShadow },
+    { label: "Inner", value: "inner", Icon: IconBoxModel },
 ];
 
 export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }: StyleGroupProps<EffectsValue>) {
@@ -15,11 +17,12 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
     const setShadow = (patch: Partial<EffectsValue["shadow"]>) => set({ shadow: { ...v.shadow, ...patch } });
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
-            <Fields.NumberField
-                label="Opacity (%)"
+            <Fields.SliderField
+                label="Opacity"
                 value={v.opacity}
                 min={0}
                 max={100}
+                formatValue={(n) => `${n}%`}
                 onChange={(opacity) => set({ opacity })}
             />
             <Fields.SegmentedField
@@ -46,11 +49,12 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
                         />
                     </div>
                     <Fields.ColorField label="Color" value={v.shadow.color} onChange={(color) => setShadow({ color })} />
-                    <Fields.NumberField
-                        label="Shadow opacity (%)"
+                    <Fields.SliderField
+                        label="Shadow opacity"
                         value={v.shadow.opacity}
                         min={0}
                         max={100}
+                        formatValue={(n) => `${n}%`}
                         onChange={(opacity) => setShadow({ opacity })}
                     />
                 </>

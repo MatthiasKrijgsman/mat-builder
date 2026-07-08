@@ -8,6 +8,7 @@ export { TextField, type TextFieldProps } from "./TextField.tsx";
 export { MergeTagTextField, type MergeTagTextFieldProps } from "./MergeTagTextField.tsx";
 export { TextAreaField, type TextAreaFieldProps } from "./TextAreaField.tsx";
 export { NumberField, type NumberFieldProps } from "./NumberField.tsx";
+export { SliderField, type SliderFieldProps } from "./SliderField.tsx";
 export { SegmentedField, type SegmentedFieldProps, type SegmentedFieldOption } from "./SegmentedField.tsx";
 export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./SelectField.tsx";
 export { ColorField, type ColorFieldProps } from "./ColorField.tsx";

@@ -253,7 +253,7 @@ export type { MergeTag } from "./react/merge-tags"; // { token, label } — lite
 // UI components (each independent & restylable — see 04)
 export { Canvas, Palette, Inspector, LayersPanel, Toolbar } from "./components";
 export * as Fields from "./components/fields"; // TextField, MergeTagTextField, NumberField,
-                                               // SelectField, ColorField, ToggleField, …
+                                               // SliderField, SelectField, ColorField, ToggleField, …
 ```
 
 ## 5. Repository layout (standalone repo, mirrors mat-ui)

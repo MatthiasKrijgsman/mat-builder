@@ -1,25 +1,36 @@
 import {
+    IconArrowAutofitHeight,
+    IconArrowAutofitWidth,
+    IconLayoutAlignBottom,
+    IconLayoutAlignCenter,
+    IconLayoutAlignLeft,
+    IconLayoutAlignMiddle,
+    IconLayoutAlignRight,
+    IconLayoutAlignTop,
+} from "@tabler/icons-react";
+import {
     defaultLayout,
     type HorizontalAlign,
     type LayoutValue,
     type VerticalAlign,
 } from "../../style-props/layout.ts";
 import * as Fields from "../fields/index.ts";
+import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
 import type { StyleGroupProps } from "./types.ts";
 
-const HORIZONTAL_OPTIONS: { label: string; value: HorizontalAlign }[] = [
-    { label: "Start", value: "start" },
-    { label: "Center", value: "center" },
-    { label: "End", value: "end" },
-    { label: "Stretch", value: "stretch" },
+const HORIZONTAL_OPTIONS: SegmentedFieldOption<HorizontalAlign>[] = [
+    { label: "Start", value: "start", Icon: IconLayoutAlignLeft },
+    { label: "Center", value: "center", Icon: IconLayoutAlignCenter },
+    { label: "End", value: "end", Icon: IconLayoutAlignRight },
+    { label: "Stretch", value: "stretch", Icon: IconArrowAutofitWidth },
 ];
 
-const VERTICAL_OPTIONS: { label: string; value: VerticalAlign }[] = [
-    { label: "Start", value: "start" },
-    { label: "Middle", value: "middle" },
-    { label: "End", value: "end" },
-    { label: "Stretch", value: "stretch" },
+const VERTICAL_OPTIONS: SegmentedFieldOption<VerticalAlign>[] = [
+    { label: "Start", value: "start", Icon: IconLayoutAlignTop },
+    { label: "Middle", value: "middle", Icon: IconLayoutAlignMiddle },
+    { label: "End", value: "end", Icon: IconLayoutAlignBottom },
+    { label: "Stretch", value: "stretch", Icon: IconArrowAutofitHeight },
 ];
 
 export interface LayoutGroupProps extends StyleGroupProps<LayoutValue> {

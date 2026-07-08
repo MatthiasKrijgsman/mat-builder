@@ -1,3 +1,4 @@
+import { IconGradienter, IconPhoto, IconSquareFilled, IconSquareOff } from "@tabler/icons-react";
 import {
     defaultBackground,
     defaultBackgroundImage,
@@ -7,14 +8,15 @@ import {
     type BackgroundValue,
 } from "../../style-props/background.ts";
 import * as Fields from "../fields/index.ts";
+import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
 import type { StyleGroupProps } from "./types.ts";
 
-const TYPE_OPTIONS: { label: string; value: BackgroundType }[] = [
-    { label: "None", value: "none" },
-    { label: "Solid", value: "solid" },
-    { label: "Gradient", value: "gradient" },
-    { label: "Image", value: "image" },
+const TYPE_OPTIONS: SegmentedFieldOption<BackgroundType>[] = [
+    { label: "None", value: "none", Icon: IconSquareOff },
+    { label: "Solid", value: "solid", Icon: IconSquareFilled },
+    { label: "Gradient", value: "gradient", Icon: IconGradienter },
+    { label: "Image", value: "image", Icon: IconPhoto },
 ];
 
 const SIZE_OPTIONS: { label: string; value: BackgroundImageSize }[] = [
