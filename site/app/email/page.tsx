@@ -26,6 +26,7 @@ import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email"
 import { TabButtons } from "@matthiaskrijgsman/mat-ui";
 import Link from "next/link";
 import { useState } from "react";
+import { dottedSurface, floatingPanel, transparentSurface } from "../floating-chrome";
 
 /*
  * The email builder (docs/06): the ./email preset + preview mode.
@@ -161,7 +162,8 @@ export default function EmailBuilderPage() {
 
     return (
         <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
-            <div className="flex h-screen flex-col">
+            {/* One continuous dotted surface; the top bar and panels float over it */}
+            <div className="flex h-screen flex-col" style={dottedSurface}>
                 <Topbar mode={mode} onModeChange={setMode} />
                 <MainArea mode={mode} />
             </div>
@@ -171,7 +173,7 @@ export default function EmailBuilderPage() {
 
 function Topbar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-2">
+        <header className={`z-30 mx-4 mt-4 flex shrink-0 items-center gap-3 px-4 py-2 ${floatingPanel}`}>
             <h1 className="text-sm font-semibold">Email builder</h1>
             <Link href="/" className="text-xs text-gray-400 hover:underline">
                 ← kitchen sink
@@ -193,17 +195,25 @@ function Topbar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode)
 
 function MainArea({ mode }: { mode: Mode }) {
     return (
-        <div className="flex min-h-0 flex-1">
-            <aside className="flex w-[400px] shrink-0 flex-col divide-y divide-gray-200 border-r border-gray-200 bg-white">
-                <Palette className="min-h-0 flex-1 overflow-y-auto" />
-                <LayersPanel className="h-2/5 shrink-0" />
+        <div className="relative min-h-0 flex-1">
+            {/* Wrapper, not className: the Artboard root is position:relative itself.
+                transparentSurface lets the root's dot layer show through, so there
+                is no phase seam where the canvas meets the app background */}
+            <div
+                className="absolute inset-y-0 left-[416px] right-[416px]"
+                style={transparentSurface}
+            >
+                {mode === "edit" ? (
+                    <Canvas className="h-full" artboardWidth={640} />
+                ) : (
+                    <EmailPreview className="h-full" initialWidth={640} />
+                )}
+            </div>
+            <aside className="pointer-events-none absolute inset-y-4 left-4 z-30 flex w-[400px] flex-col gap-4">
+                <Palette className={`pointer-events-auto min-h-0 flex-1 ${floatingPanel}`} />
+                <LayersPanel className={`pointer-events-auto h-2/5 shrink-0 ${floatingPanel}`} />
             </aside>
-            {mode === "edit" ? (
-                <Canvas className="min-h-0 min-w-0 flex-1" artboardWidth={640} />
-            ) : (
-                <EmailPreview className="min-h-0 min-w-0 flex-1" initialWidth={640} />
-            )}
-            <Inspector className="w-[400px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white" />
+            <Inspector className={`absolute inset-y-4 right-4 z-30 w-[400px] ${floatingPanel}`} />
         </div>
     );
 }

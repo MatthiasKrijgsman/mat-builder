@@ -1,12 +1,13 @@
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { Input, Divider } from "@matthiaskrijgsman/mat-ui";
+import { Input } from "@matthiaskrijgsman/mat-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findInsertLocation } from "../../core/commands.ts";
 import type { AnyBlockDefinition } from "../../core/registry.ts";
 import { makeNewBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { IconSearch } from "@tabler/icons-react";
+import { IconLayoutGrid, IconSearch } from "@tabler/icons-react";
+import { PanelHeader } from "../panel/PanelHeader.tsx";
 
 /*
  * Palette — see docs/04 §Palette. Grouped by category, searched over
@@ -58,17 +59,20 @@ export function Palette({ className }: PaletteProps) {
   }, [ registry, query ]);
 
   return (
-    <div className={ `mat-builder-palette flex flex-col gap-3 p-3 ${ className ?? "" }` }>
-      <Input
-        size="sm"
-        variant={'flat'}
-        Icon={IconSearch}
-        type="search"
-        placeholder="Search blocks…"
-        value={ query }
-        onChange={ (event) => setQuery(event.target.value) }
-      />
-      <Divider />
+    <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
+      <PanelHeader Icon={ IconLayoutGrid } title="Blocks" />
+      <div className="shrink-0 p-1">
+        <Input
+          size="sm"
+          variant={'flat'}
+          Icon={IconSearch}
+          type="search"
+          placeholder="Search blocks…"
+          value={ query }
+          onChange={ (event) => setQuery(event.target.value) }
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-1">
       { groups.map(([ category, definitions ]) => (
         <div key={ category } className="flex flex-col gap-1.5">
           <p
@@ -93,6 +97,7 @@ export function Palette({ className }: PaletteProps) {
           No blocks match &ldquo;{ query }&rdquo;.
         </p>
       ) }
+      </div>
     </div>
   );
 }

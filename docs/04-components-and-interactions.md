@@ -33,6 +33,7 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 │                                  ToggleField, SegmentedField, IconRadioField, …
 ├── LayersPanel                    hierarchy tree
 │   └── LayerRow                   icon + label, expand caret, drag source + drop target
+├── PanelHeader                    shared panel header: icon tile + title + actions + divider
 └── Toolbar                        undo/redo, zoom/device width, preview toggle, custom slots
 ```
 
@@ -66,8 +67,13 @@ Renders one named container of a block:
 - **Empty state**: a dashed placeholder with the container's `placeholder` text (e.g. "Drop content here") — also a full-surface drop target, so empty containers are easy targets.
 - Renders drop indicators (line between children, or container highlight for "drop into") during drags.
 
+### Panel anatomy (Palette / LayersPanel / Inspector)
+
+All three panels share the same anatomy so they read as one family — especially when the host floats them over the canvas (the playground does: full-bleed dotted canvas, panels as offset white rounded-`xl` cards with a border + soft shadow): a pinned `PanelHeader` (block-style icon in a gray rounded square, semibold title, optional trailing actions, closed off by a `Divider`), then a body that scrolls *internally* (`min-h-0 flex-1 overflow-y-auto`) so the header never scrolls away. `PanelHeader` is exported for hosts building custom panels that should match. Panels ship without background/border/shadow — the host's `className` decides flat-docked vs floating chrome.
+
 ### Palette
 
+- Pinned `PanelHeader` ("Blocks") and search input; the categorized grid scrolls below them.
 - Grouped by `category`, fuzzy search over `label` + `keywords`. Items render as square tinted tiles (icon in a colored rounded square, label below); each category gets a tint cycled from the `--mat-builder-palette-tint-*` token sets in registry order, so colors are consumer-rethemable and stable while searching.
 - Each `PaletteItem` is a Pragmatic `draggable` carrying `{ kind: "new-block", blockType }`.
 - **Click-to-add** as a complement to drag: clicking inserts into the current selection's nearest accepting container (or root) — good for accessibility and speed.
@@ -76,8 +82,8 @@ Renders one named container of a block:
 ### Inspector
 
 - Subscribes to `selectedId`. Empty state when nothing is selected (or shows the root/document settings — root is a block, so this is free).
-- Header: block icon, label, delete button, closed off by a `Divider`. (An earlier ancestor breadcrumb was dropped — the layers panel and `Escape`-to-parent cover upward navigation.)
-- Body: mounts the definition's `inspector` component with `{ id, props, update }`. `update` shallow-merges and coalesces history (03 §3).
+- Header: `PanelHeader` with the block icon, label and delete button. (An earlier ancestor breadcrumb was dropped — the layers panel and `Escape`-to-parent cover upward navigation.)
+- Body: mounts the definition's `inspector` component with `{ id, props, update }` in the scrolling body. `update` shallow-merges and coalesces history (03 §3).
 - **Field helpers** are thin wrappers around mat-ui inputs (label + control, builder-flavored layout) so application inspectors are mostly declarative one-liners; anything bespoke is just JSX composed from mat-ui directly. Shipped: `TextField`, `MergeTagTextField` (TextField plus a merge-tag insert menu in the input's button tray — degrades to a plain TextField when the provider has no `mergeTags`; see 06 §merge tags), `TextAreaField`, `RichTextField`, `NumberField`, `SliderField` (mat-ui `InputRange` with the current value shown at the track end — for bounded numeric settings like opacity and radius; pass `formatValue` to append units, e.g. `%`/`px`), `SelectField`, `SegmentedField` (mat-ui `TabButtons` as a segmented control; each option may carry an `Icon` to render icon-only, used for the alignment/fill-type/shadow controls), `ColorField`, `ToggleField`, `FontFamilyField` (searchable select over the email-safe stacks in `style-props/typography.ts`; clear = inherit).
 - **`InspectorGroup`** — a named, collapsible section (mat-ui `PanelLink` header). Collapse state is local, so it resets when the selection changes — accepted for now. Inspectors separate groups with mat-ui `Divider`s; loose (ungrouped) fields sit in a padded `flex flex-col gap-4 px-3 pb-4` wrapper above the first divider.
 - **Style groups** (`StyleGroups.*`) — reusable property sets built on `InspectorGroup`: `SizeGroup`, `BackgroundGroup`, `BorderGroup`, `SpacingGroup`, `EffectsGroup`, `LayoutGroup`, `TypographyGroup`. Each edits one object-valued prop and always emits the complete next object (see 03 §Style props). Groups with natural subsets take a `fields` filter (e.g. `<SpacingGroup fields={["margin"]} />`).
@@ -85,6 +91,7 @@ Renders one named container of a block:
 
 ### LayersPanel
 
+- Pinned `PanelHeader` ("Layers"); the tree scrolls below it (the scroller is the focus/keyboard + DnD auto-scroll target).
 - Tree of `LayerRow`s: expand caret (children present), block icon, label (definition label, or a block-provided `getDisplayName(props)` for nicer labels like the text content's first words), visibility of container names when a block has multiple containers (children grouped under subtle "left / right" headings).
 - Selection and hover are **bidirectionally synced** with the canvas (`selectedId` / `hoveredId` in the store; hover in the layers panel outlines the canvas block and vice versa).
 - Selecting a row auto-scrolls the canvas to the block; selecting on canvas expands + scrolls the tree.

@@ -1,12 +1,14 @@
-import { ButtonIconSquare, Divider, TableEmpty } from "@matthiaskrijgsman/mat-ui";
+import { ButtonIconSquare, TableEmpty } from "@matthiaskrijgsman/mat-ui";
 import { IconClick, IconTrash } from "@tabler/icons-react";
 import { useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
+import { PanelHeader } from "../panel/PanelHeader.tsx";
 
 /*
- * Inspector — see docs/04 §Inspector. Binds to the selection: breadcrumb of
- * ancestors, header with icon/label/delete, then the definition's inspector
- * component keyed by selectedId (switching blocks remounts the form, so no
- * stale local state). `update` shallow-merges and coalesces history.
+ * Inspector — see docs/04 §Inspector. Binds to the selection: header with
+ * icon/label/delete (PanelHeader, pinned), then the definition's inspector
+ * component keyed by selectedId in a scrolling body (switching blocks
+ * remounts the form, so no stale local state). `update` shallow-merges and
+ * coalesces history.
  */
 
 export interface InspectorPanelProps {
@@ -37,30 +39,22 @@ export function Inspector({ className }: InspectorPanelProps) {
 
   return (
     <div className={ `mat-builder-inspector flex flex-col gap-1 p-2 ${ className ?? "" }` }>
-      <header className="flex flex-col gap-2">
-        <div className={ 'flex flex-row items-center gap-2 pl-3 pr-1 py-1.5' }>
-          { Icon && <div className={ 'grid place-items-center h-8 w-8 rounded-lg bg-gray-100' }>
-              <Icon className="size-4 shrink-0 stroke-2 text-gray-800"/>
-          </div> }
-          <div className={ 'flex-1 break-all line-clamp-1 text-[1.125rem] font-semibold' }>{ label }</div>
-          <div className={ 'flex flex-row items-center gap-2 shrink-0' }>
-            { canDelete && (
-              <ButtonIconSquare
-                Icon={ IconTrash }
-                variant="transparent"
-                size="sm"
-                aria-label="Delete block"
-                className="ml-auto"
-                onClick={ () => actions.removeBlock(id) }
-              />
-            ) }
-          </div>
-        </div>
-        <Divider/>
-      </header>
+      <PanelHeader
+        Icon={ Icon }
+        title={ label }
+        actions={ canDelete && (
+          <ButtonIconSquare
+            Icon={ IconTrash }
+            variant="transparent"
+            size="sm"
+            aria-label="Delete block"
+            onClick={ () => actions.removeBlock(id) }
+          />
+        ) }
+      />
 
       { InspectorForm ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
           <InspectorForm
             key={ id }
             id={ id }
