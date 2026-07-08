@@ -42,4 +42,4 @@ Decisions agreed 2026-07-03; docs seeded from the claude-research exploration th
 3. **DnD**: palette → canvas insert, then sibling reorder, then reparent; layers panel last (reuses everything).
 4. **Email preset** (`src/email/`): root/section/text/button blocks + export pipeline + preview mode.
 5. **First consumer**: publish `0.x`, pilot the email builder in the Fuga backoffice; feed API friction back into the docs.
-6. Remaining blocks, polish (flash, announcements, empty states), keyboard shortcuts.
+6. Remaining blocks, polish (landing feedback, announcements, empty states), keyboard shortcuts.

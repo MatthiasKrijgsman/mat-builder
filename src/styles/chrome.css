@@ -1,0 +1,79 @@
+/*
+ * Block chrome frames (ChromeOverlay) — "Bold Mono" interaction states.
+ *
+ * Each frame is an absolutely-positioned div in the overlay layer above the
+ * artboard, placed at the block's measured rect. The rect (transform / width /
+ * height / clip-path) is written imperatively every frame and must NEVER
+ * transition — only outline-color, box-shadow and the pill animate. The ring
+ * width steps (1.5px ↔ 2px) switch instantly by design: crisp, not mushy.
+ */
+.mat-builder-chrome-frame {
+    border-radius: var(--mat-builder-chrome-radius);
+    outline-style: solid;
+    outline-offset: var(--mat-builder-chrome-ring-offset);
+    outline-width: var(--mat-builder-chrome-ring-width);
+    outline-color: transparent;
+    transition:
+        outline-color var(--mat-builder-duration-ring) ease,
+        box-shadow var(--mat-builder-duration-shadow) var(--mat-builder-ease-spring);
+}
+.mat-builder-chrome-frame[data-state="hover"] {
+    outline-color: var(--mat-builder-color-hover);
+    box-shadow: var(--mat-builder-chrome-shadow-hover);
+}
+.mat-builder-chrome-frame[data-state="selected"] {
+    outline-width: var(--mat-builder-chrome-ring-width-strong);
+    outline-color: var(--mat-builder-color-selection);
+    box-shadow: var(--mat-builder-chrome-shadow-selected);
+}
+.mat-builder-chrome-frame[data-state="dragging"] {
+    outline-width: var(--mat-builder-chrome-ring-width-strong);
+    outline-color: var(--mat-builder-color-selection);
+    box-shadow: var(--mat-builder-chrome-shadow-drag);
+}
+
+/* Label pill above a selected block (name only — actions live in the
+   inspector/keyboard); flips into the block's corner when the block top is
+   too close to the visible frame top. ~24px tall: with top -30px that
+   leaves a 6px gap above the ring. */
+.mat-builder-chrome-pill {
+    top: -30px;
+    left: -3px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    background: var(--mat-builder-color-selection);
+    color: var(--mat-builder-color-chrome-tag-fg);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+.mat-builder-chrome-pill[data-inside] {
+    top: 4px;
+    left: 4px;
+}
+
+/* The block element itself (BlockView wrapper) — lift-in-place drag treatment.
+   Ring/shadows live in the overlay; the block only scales (real content lifts)
+   and the overlay tracks the transformed rect. */
+.mat-builder-block {
+    transition: transform var(--mat-builder-duration-lift) var(--mat-builder-ease-spring);
+}
+.mat-builder-block[data-selected] {
+    cursor: grab;
+}
+.mat-builder-block[data-drag-source] {
+    transform: scale(var(--mat-builder-chrome-lift-scale));
+    opacity: var(--mat-builder-drag-source-opacity);
+    /* Best-effort: the browser owns the cursor during a native HTML5 drag */
+    cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mat-builder-block {
+        transition: none;
+    }
+    .mat-builder-block[data-drag-source] {
+        transform: none;
+    }
+}

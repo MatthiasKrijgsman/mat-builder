@@ -10,9 +10,28 @@
      * Placeholder set — grows with the components (phase 2+).
      * ───────────────────────────────────────────────────────────── */
 
-    /* Selection & hover chrome (BlockFrame) */
+    /* Selection & hover chrome (BlockFrame / ChromeOverlay) */
     --mat-builder-color-selection: #3b82f6;
-    --mat-builder-color-hover: color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+    --mat-builder-color-hover: color-mix(in srgb, var(--mat-builder-color-selection) 60%, transparent);
+
+    /* Animated block chrome ("Bold Mono" interaction states — chrome.css) */
+    --mat-builder-ease-spring: cubic-bezier(0.34, 1.6, 0.5, 1);
+    --mat-builder-duration-lift: 0.15s;
+    --mat-builder-duration-shadow: 0.25s;
+    --mat-builder-duration-ring: 0.15s;
+    --mat-builder-chrome-radius: 2px;
+    --mat-builder-chrome-ring-offset: 0px;
+    --mat-builder-chrome-ring-width: 1.5px;
+    --mat-builder-chrome-ring-width-strong: 2px;
+    --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.07);
+    --mat-builder-chrome-shadow-selected: 0 12px 30px
+        color-mix(in srgb, var(--mat-builder-color-selection) 20%, transparent);
+    --mat-builder-chrome-shadow-drag:
+        0 30px 60px color-mix(in srgb, var(--mat-builder-color-selection) 32%, transparent),
+        0 0 0 1.5px color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+    --mat-builder-chrome-lift-scale: 1.03;
+    /* Kept at 1 by default — the lift treatment replaces dimming; hosts can restore it */
+    --mat-builder-drag-source-opacity: 1;
 
     /* Drag and drop indicators */
     --mat-builder-color-drop-indicator: var(--mat-builder-color-selection);

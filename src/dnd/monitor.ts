@@ -1,5 +1,4 @@
 import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { triggerPostMoveFlash } from "@atlaskit/pragmatic-drag-and-drop-flourish/trigger-post-move-flash";
 import { announce, cleanup as cleanupLiveRegion } from "@atlaskit/pragmatic-drag-and-drop-live-region";
 import { useEffect } from "react";
 import type { BlockId } from "../core/types.ts";
@@ -24,7 +23,12 @@ export function useDndMonitor(instance: BuilderContextValue): void {
             onDragStart: ({ source }) => {
                 const data = source.data;
                 if (!isBuilderDrag(data, instanceId)) return;
-                store.getState().actions.setDrag(
+                const { actions } = store.getState();
+                // Grabbing a block selects it (native drag never fires click) —
+                // so on release it lands with the selected chrome, per the
+                // interaction spec's "stays selected after drop"
+                if (data.kind === "move-block") actions.select(data.blockId);
+                actions.setDrag(
                     data.kind === "new-block"
                         ? { kind: "new-block", blockType: data.blockType }
                         : { kind: "move-block", blockId: data.blockId },
@@ -53,14 +57,8 @@ export function useDndMonitor(instance: BuilderContextValue): void {
                 const type = dragBlockType(document, data);
                 const label = (type && registry.getDefinition(type)?.label) ?? type ?? "Block";
                 announce(`${label} ${data.kind === "new-block" ? "added" : "moved"}, position ${to.index + 1}`);
-
-                // Flash once React has committed the re-render of the landed block
-                requestAnimationFrame(() =>
-                    requestAnimationFrame(() => {
-                        const element = window.document.querySelector(`[data-block-id="${landedId}"]`);
-                        if (element instanceof HTMLElement) triggerPostMoveFlash(element);
-                    }),
-                );
+                // Visual landing feedback is the lift spring-back + selected
+                // chrome/pill entrance (chrome.css + ChromeOverlay) — no flash
             },
         });
 

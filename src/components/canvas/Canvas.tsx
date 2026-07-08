@@ -6,6 +6,7 @@ import { useBuilderState } from "../../react/hooks.ts";
 import { useBuilderKeyboard } from "../../react/keyboard.ts";
 import { Artboard } from "./Artboard.tsx";
 import { BlockView } from "./BlockView.tsx";
+import { ChromeOverlay } from "./ChromeOverlay.tsx";
 
 /*
  * Canvas — see docs/04 §Canvas. The editing surface: a focusable Artboard
@@ -52,21 +53,35 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
             tabIndex={-1}
             onKeyDown={onKeyDown}
             onClick={() => actions.select(null)} // blocks stop propagation, so this is empty-area only
-            frameStyle={
-                isRootSelected ? { boxShadow: "0 0 0 2px var(--mat-builder-color-selection)" } : undefined
-            }
+            // Root chrome stays on the frame itself (selecting the root IS selecting
+            // the artboard); the transition is always present so the ring/glow animate
+            // in AND out with the same spring as block chrome
+            frameStyle={{
+                transition:
+                    "box-shadow var(--mat-builder-duration-shadow) var(--mat-builder-ease-spring)",
+                ...(isRootSelected
+                    ? {
+                          boxShadow:
+                              "0 0 0 2px var(--mat-builder-color-selection), var(--mat-builder-chrome-shadow-selected)",
+                      }
+                    : undefined),
+            }}
             decoration={
-                isRootSelected && rootNode ? (
-                    <span
-                        className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none"
-                        style={{
-                            backgroundColor: "var(--mat-builder-color-selection)",
-                            color: "var(--mat-builder-color-chrome-tag-fg)",
-                        }}
-                    >
-                        {registry.getDefinition(rootNode.type)?.label ?? rootNode.type}
-                    </span>
-                ) : null
+                <>
+                    {isRootSelected && rootNode ? (
+                        <span
+                            className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none"
+                            style={{
+                                backgroundColor: "var(--mat-builder-color-selection)",
+                                color: "var(--mat-builder-color-chrome-tag-fg)",
+                            }}
+                        >
+                            {registry.getDefinition(rootNode.type)?.label ?? rootNode.type}
+                        </span>
+                    ) : null}
+                    {/* All non-root block chrome — outside the rounded clipping frame */}
+                    <ChromeOverlay scrollerRef={scrollRef} />
+                </>
             }
         >
             <div ref={scrollRef} className="mat-builder-artboard-scroll h-full overflow-y-auto">

@@ -1,0 +1,155 @@
+import { AnimatePresence, motion } from "motion/react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
+import type { BlockId } from "../../core/types.ts";
+import { useBuilderContext } from "../../react/context.ts";
+import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
+import { computeChromeGeometry, geometryChanged, type ChromeGeometry } from "./chrome-geometry.ts";
+
+/*
+ * ChromeOverlay — the per-block selection/hover chrome layer (docs/04
+ * §BlockFrame). Rendered in the artboard frame's relative wrapper (via the
+ * Artboard `decoration` slot), OUTSIDE the rounded overflow-hidden scroller,
+ * so rings/shadows/pills never clip — the "dedicated overlay layer" the docs
+ * describe. All frames draw from measured block rects, Figma-style.
+ *
+ * Motion split: rect placement is written imperatively by a rAF measure loop
+ * (instant — a spring-lagged ring during scroll would feel broken); only
+ * outline-color/box-shadow (CSS transitions in chrome.css) and the pill
+ * (motion/react) animate. The loop also tracks the drag lift/settle scale on
+ * the block, which ResizeObserver can't see (transforms don't change layout).
+ */
+
+type ChromeState = "hover" | "selected" | "dragging";
+
+export function ChromeOverlay({ scrollerRef }: { scrollerRef: RefObject<HTMLDivElement | null> }) {
+    const overlayRef = useRef<HTMLDivElement>(null);
+    const rootId = useBuilderState((s) => s.document.rootId);
+    const selectedId = useBuilderState((s) => s.selectedId);
+    const hoveredId = useBuilderState((s) => s.hoveredId);
+    const drag = useBuilderState((s) => s.drag);
+
+    const dragSourceId = drag?.kind === "move-block" ? drag.blockId : null;
+    // Keyed by blockId so hover → selected → dragging on one block morphs a
+    // single element and the CSS transitions carry ring/shadow between states.
+    // Root is skipped: its chrome lives on the artboard frame (Canvas).
+    const frames: { id: BlockId; state: ChromeState }[] = [];
+    const push = (id: BlockId | null, state: ChromeState) => {
+        if (id && id !== rootId && !frames.some((frame) => frame.id === id)) frames.push({ id, state });
+    };
+    push(dragSourceId, "dragging");
+    push(selectedId, "selected");
+    // Hover paints above a selected ancestor's frame; the store clears hover
+    // during drags, so the gate here is just against hovering the selection
+    if (!drag) push(hoveredId !== selectedId ? hoveredId : null, "hover");
+
+    return (
+        <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-20">
+            <AnimatePresence>
+                {frames.map((frame) => (
+                    <ChromeFrame
+                        key={frame.id}
+                        id={frame.id}
+                        state={frame.state}
+                        overlayRef={overlayRef}
+                        scrollerRef={scrollerRef}
+                    />
+                ))}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+interface ChromeFrameProps {
+    id: BlockId;
+    state: ChromeState;
+    overlayRef: RefObject<HTMLDivElement | null>;
+    scrollerRef: RefObject<HTMLDivElement | null>;
+}
+
+function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
+    const { registry } = useBuilderContext();
+    const frameRef = useRef<HTMLDivElement>(null);
+    const node = useBlockNode(id);
+    const isEditing = useBuilderState((s) => s.editing?.blockId === id);
+    const [pillInside, setPillInside] = useState(false);
+    // Hidden until the first successful measure — never flash at 0,0
+    const [attached, setAttached] = useState(false);
+
+    useLayoutEffect(() => {
+        const overlay = overlayRef.current;
+        const scroller = scrollerRef.current;
+        const frame = frameRef.current;
+        if (!overlay || !scroller || !frame) return;
+
+        let raf = 0;
+        let last: ChromeGeometry | null = null;
+        const tick = () => {
+            const target = scroller.querySelector(`[data-block-id="${CSS.escape(id)}"]`);
+            if (target instanceof HTMLElement) {
+                const geometry = computeChromeGeometry(
+                    target.getBoundingClientRect(),
+                    overlay.getBoundingClientRect(),
+                    scroller.getBoundingClientRect(),
+                );
+                if (!last || geometryChanged(last, geometry)) {
+                    // Placement is instant by design — only colors/shadows/pill animate
+                    frame.style.transform = `translate(${geometry.x}px, ${geometry.y}px)`;
+                    frame.style.width = `${geometry.width}px`;
+                    frame.style.height = `${geometry.height}px`;
+                    // Trim chrome scrolled out of the artboard viewport; generous
+                    // horizontal head-room keeps side rings/shadows intact
+                    frame.style.clipPath =
+                        geometry.clipTop || geometry.clipBottom
+                            ? `inset(${geometry.clipTop}px -60px ${geometry.clipBottom}px -60px)`
+                            : "none";
+                    if (geometry.pillInside !== last?.pillInside) setPillInside(geometry.pillInside);
+                    last = geometry;
+                }
+                setAttached(true);
+            }
+            raf = requestAnimationFrame(tick);
+        };
+        tick();
+        return () => cancelAnimationFrame(raf);
+    }, [id, overlayRef, scrollerRef]);
+
+    // Deleted while chromed: render nothing — the store reselects the parent,
+    // which mounts its own frame
+    if (!node) return null;
+
+    const definition = registry.getDefinition(node.type);
+    const label = definition?.getDisplayName?.(node.props) ?? definition?.label ?? node.type;
+    // The name-tag action bar yields to the pinned floating toolbar while
+    // inline-editing (both sit at the block's top edge); ring stays
+    const showPill = state === "selected" && !isEditing;
+
+    return (
+        <motion.div
+            ref={frameRef}
+            className="mat-builder-chrome-frame absolute left-0 top-0"
+            data-state={state}
+            style={{ visibility: attached ? "visible" : "hidden" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+        >
+            <AnimatePresence>
+                {showPill && (
+                    <motion.span
+                        className="mat-builder-chrome-pill pointer-events-auto absolute"
+                        data-inside={pillInside || undefined}
+                        // The artboard's empty-area click deselects — the pill must not bubble
+                        onClick={(event) => event.stopPropagation()}
+                        initial={{ y: 4, scale: 0.9, opacity: 0 }}
+                        animate={{ y: 0, scale: 1, opacity: 1 }}
+                        exit={{ y: 4, scale: 0.9, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.34, 1.6, 0.5, 1] }}
+                    >
+                        {label}
+                    </motion.span>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+}

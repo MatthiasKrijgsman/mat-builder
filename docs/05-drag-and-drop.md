@@ -10,7 +10,6 @@ Verified against the library as of 2026-07 (core `@atlaskit/pragmatic-drag-and-d
 | `@atlaskit/pragmatic-drag-and-drop-hitbox` | drop-position math: `closest-edge` (lists/grids), `list-item` (tree rows — the current recommendation; the older `tree-item` instruction API is legacy) |
 | `@atlaskit/pragmatic-drag-and-drop-react-drop-indicator` | indicator components (`box`, `list-item`, `group`, `border`) — we'll likely restyle/re-implement these to match our theme, they're small |
 | `@atlaskit/pragmatic-drag-and-drop-auto-scroll` | edge auto-scrolling for canvas + layers panel |
-| `@atlaskit/pragmatic-drag-and-drop-flourish` | `triggerPostMoveFlash` after drops |
 | `@atlaskit/pragmatic-drag-and-drop-live-region` | screen-reader announcements |
 | `@atlaskit/pragmatic-drag-and-drop-unit-testing` | jsdom drag simulation for tests |
 
@@ -116,7 +115,7 @@ monitorForElements({
 - **Layers rows**: line before/after with indent, ring for `combine`.
 - Indicators mount only while an edge/instruction is present (library performance guidance).
 - **Drag preview**: `setCustomNativeDragPreview` rendering a small chip (block icon + label) via `createPortal`, `pointerOutsideOfPreview` offset. Same preview for palette and canvas drags → consistent feel, and avoids photographing large blocks. Known platform limits: previews are centered under the pointer on iOS/Android; avoid CSS `transform` on previews/draggables (WebKit bugs).
-- Source block during drag: `opacity-40`; drop-target chrome suppressed on the source itself and its descendants.
+- Source block during drag: **lift-in-place** (docs/04 §BlockFrame) — grabbing selects the block, then `data-drag-source` scales it to 1.03 with the deep accent shadow drawn by the chrome overlay; it springs back with overshoot on drop/cancel. Dimming is off by default but restorable via `--mat-builder-drag-source-opacity`. The lift transform is safe against the WebKit preview caveat above: it's applied via the store's `drag` state, which Pragmatic sets *after* the native drag preview has been generated. Drop-target chrome stays suppressed on the source itself and its descendants.
 
 ## 6. Auto-scroll
 
