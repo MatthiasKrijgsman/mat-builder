@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import type { BlockId } from "../../core/types.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
-import { computeChromeGeometry, geometryChanged, type ChromeGeometry } from "./chrome-geometry.ts";
+import { computeChromeGeometry, geometryChanged, RING_SLACK, type ChromeGeometry } from "./chrome-geometry.ts";
 
 /*
  * ChromeOverlay — the per-block selection/hover chrome layer (docs/04
@@ -81,6 +81,11 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
         const frame = frameRef.current;
         if (!overlay || !scroller || !frame) return;
 
+        // Chrome may paint this far outside the artboard viewport — enough for
+        // the ring (live offset token + width), so edge-flush rings survive
+        // while shadows/rails are cut exactly at the sheet boundary
+        const ringAllowance = (parseFloat(getComputedStyle(frame).outlineOffset) || 0) + RING_SLACK;
+
         let raf = 0;
         let last: ChromeGeometry | null = null;
         const tick = () => {
@@ -90,18 +95,17 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
                     target.getBoundingClientRect(),
                     overlay.getBoundingClientRect(),
                     scroller.getBoundingClientRect(),
+                    ringAllowance,
                 );
                 if (!last || geometryChanged(last, geometry)) {
                     // Placement is instant by design — only colors/shadows/pill animate
                     frame.style.transform = `translate(${geometry.x}px, ${geometry.y}px)`;
                     frame.style.width = `${geometry.width}px`;
                     frame.style.height = `${geometry.height}px`;
-                    // Trim chrome scrolled out of the artboard viewport; generous
-                    // horizontal head-room keeps side rings/shadows intact
-                    frame.style.clipPath =
-                        geometry.clipTop || geometry.clipBottom
-                            ? `inset(${geometry.clipTop}px -60px ${geometry.clipBottom}px -60px)`
-                            : "none";
+                    // Always confine painting to the artboard viewport (all four
+                    // sides): glows never bleed onto the work surface, and the
+                    // ring of a block scrolled out dies at the frame edge
+                    frame.style.clipPath = `inset(${geometry.clipTop}px ${geometry.clipRight}px ${geometry.clipBottom}px ${geometry.clipLeft}px)`;
                     if (geometry.pillInside !== last?.pillInside) setPillInside(geometry.pillInside);
                     last = geometry;
                 }
