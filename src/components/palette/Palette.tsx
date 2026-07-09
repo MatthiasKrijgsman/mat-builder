@@ -1,5 +1,5 @@
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { Input } from "@matthiaskrijgsman/mat-ui";
+import { Divider, Input } from "@matthiaskrijgsman/mat-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findInsertLocation } from "../../core/commands.ts";
 import type { AnyBlockDefinition } from "../../core/registry.ts";
@@ -61,7 +61,7 @@ export function Palette({ className }: PaletteProps) {
   return (
     <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
       <PanelHeader Icon={ IconLayoutGrid } title="Blocks" />
-      <div className="shrink-0 p-1">
+      <div className="shrink-0 p-3">
         <Input
           size="sm"
           variant={'flat'}
@@ -72,7 +72,8 @@ export function Palette({ className }: PaletteProps) {
           onChange={ (event) => setQuery(event.target.value) }
         />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-1">
+      <Divider />
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       { groups.map(([ category, definitions ]) => (
         <div key={ category } className="flex flex-col gap-1.5">
           <p
@@ -93,7 +94,7 @@ export function Palette({ className }: PaletteProps) {
         </div>
       )) }
       { groups.length === 0 && (
-        <p className="text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+        <p className="text-sm font-medium" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
           No blocks match &ldquo;{ query }&rdquo;.
         </p>
       ) }
@@ -133,7 +134,7 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       className="group flex min-w-0 flex-col items-center gap-1.5 cursor-grab"
     >
       <div
-        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs transition-shadow group-hover:shadow-sm"
+        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs transition-shadow group-hover:shadow-xl"
         style={ {
           backgroundColor: `var(--mat-builder-palette-tint-${ tint }-bg)`,
           borderColor: `var(--mat-builder-palette-tint-${ tint }-border)`,
@@ -143,7 +144,7 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       >
         { Icon && <Icon className="size-5 shrink-0 stroke-2"/> }
       </div>
-      <span className="w-full truncate text-center text-xs font-medium">{ definition.label }</span>
+      <span className="w-full truncate text-center text-sm font-medium">{ definition.label }</span>
     </button>
   );
 }

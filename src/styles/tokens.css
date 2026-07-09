@@ -19,7 +19,7 @@
     --mat-builder-duration-lift: 0.15s;
     --mat-builder-duration-shadow: 0.25s;
     --mat-builder-duration-ring: 0.15s;
-    --mat-builder-chrome-radius: 2px;
+    --mat-builder-chrome-radius: 0px;
     --mat-builder-chrome-ring-offset: 0px;
     --mat-builder-chrome-ring-width: 1.5px;
     --mat-builder-chrome-ring-width-strong: 2px;

@@ -8,3 +8,7 @@
 html {
     font-size: 14px;
 }
+
+.input-label {
+    @apply text-sm font-medium text-stone-500!;
+}

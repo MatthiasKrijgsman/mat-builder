@@ -17,14 +17,14 @@ export interface PanelHeaderProps {
 
 export function PanelHeader({ Icon, title, actions }: PanelHeaderProps) {
     return (
-        <header className="flex shrink-0 flex-col gap-2">
-            <div className="flex flex-row items-center gap-2 py-1.5 pl-3 pr-1">
+        <header className="flex shrink-0 flex-col">
+            <div className="flex flex-row items-center gap-3 py-1.5 pl-3 pr-1">
                 {Icon && (
                     <div className="grid h-8 w-8 place-items-center rounded-lg bg-gray-100">
                         <Icon className="size-4 shrink-0 stroke-2 text-gray-800" />
                     </div>
                 )}
-                <div className="line-clamp-1 flex-1 break-all text-[1.125rem] font-semibold">{title}</div>
+                <div className="line-clamp-1 flex-1 break-all text-[1.125rem] font-semibold py-2">{title}</div>
                 {actions && <div className="flex shrink-0 flex-row items-center gap-2">{actions}</div>}
             </div>
             <Divider />

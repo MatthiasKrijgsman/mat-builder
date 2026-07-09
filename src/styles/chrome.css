@@ -40,7 +40,7 @@
     top: -30px;
     left: -3px;
     padding: 5px 12px;
-    border-radius: 9999px;
+    border-radius: 6px;
     background: var(--mat-builder-color-selection);
     color: var(--mat-builder-color-chrome-tag-fg);
     font-size: 14px;
