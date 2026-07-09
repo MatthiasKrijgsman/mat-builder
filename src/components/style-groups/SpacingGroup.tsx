@@ -31,9 +31,7 @@ function SidesEditor({ label, value, onChange }: { label: string; value: SideVal
     const set = (patch: Partial<SideValues>) => onChange({ ...value, ...patch });
     return (
         <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                {label}
-            </span>
+            <span className="input-label">{label}</span>
             <div className="grid grid-cols-2 gap-1.5">
                 <Fields.NumberField label="Top" value={value.top} onChange={(top) => set({ top })} />
                 <Fields.NumberField label="Right" value={value.right} onChange={(right) => set({ right })} />

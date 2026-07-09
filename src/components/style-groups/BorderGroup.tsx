@@ -12,9 +12,7 @@ export function BorderGroup({ value, onChange, label = "Border", defaultOpen }: 
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
             <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                    Width
-                </span>
+                <span className="input-label">Width</span>
                 <div className="grid grid-cols-2 gap-1.5">
                     <Fields.NumberField label="Top" value={width.top} min={0} max={12} onChange={(top) => setWidth({ top })} />
                     <Fields.NumberField label="Right" value={width.right} min={0} max={12} onChange={(right) => setWidth({ right })} />
