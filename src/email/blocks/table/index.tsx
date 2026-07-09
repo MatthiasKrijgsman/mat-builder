@@ -28,18 +28,23 @@ export const tableBlock = defineBlock<EmailTableProps>({
             const cells = props.cells.map((row, ri) => (ri === r ? row.map((v, ci) => (ci === c ? text : v)) : row));
             update({ cells });
         };
+        const rowCount = props.cells.length;
         return (
             <table style={emailTableStyles(props)}>
                 <tbody>
                     {props.cells.map((row, r) => (
                         <tr key={r}>
                             {row.map((cell, c) => (
-                                <td key={c} style={emailTableCellStyles(props, props.headerRow && r === 0)}>
+                                <td key={c} style={emailTableCellStyles(props, r, c, rowCount, row.length)}>
+                                    {/* Block-level with one line of min-height so an
+                                        EMPTY cell is still a double-click target
+                                        (the output renders   for the same height). */}
                                     <InlineText
                                         id={id}
                                         field={`cell-${r}-${c}`}
                                         value={cell}
                                         onChange={(text) => setCell(r, c, text)}
+                                        style={{ display: "block", minHeight: "1lh", cursor: "text" }}
                                     />
                                 </td>
                             ))}

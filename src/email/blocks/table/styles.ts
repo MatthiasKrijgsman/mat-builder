@@ -1,10 +1,12 @@
 import type { CSSProperties } from "react";
 import {
-    borderToCss,
+    cornerShorthand,
     defaultBorder,
     defaultEffects,
     defaultSpacing,
     effectsToCss,
+    normalizeBorderRadius,
+    normalizeBorderWidth,
     spacingToCss,
     uniformSides,
     type BorderValue,
@@ -28,7 +30,8 @@ export interface EmailTableProps {
     headerBackground: string;
     /** Inner padding of every cell, px. */
     cellPadding: number;
-    /** Cell borders (radius is ignored — email clients don't round cells). */
+    /** Cell borders; radius rounds the outer frame (best-effort — Outlook
+     * desktop ignores border-radius, same caveat as everywhere else). */
     border: BorderValue;
     spacing: SpacingValue;
     effects: EffectsValue;
@@ -56,19 +59,51 @@ export const tableRowCount = (props: EmailTableProps): number => props.cells.len
 export const tableColumnCount = (props: EmailTableProps): number =>
     props.cells.reduce((max, row) => Math.max(max, row.length), 0);
 
+/*
+ * Border model: `border-collapse: collapse` disables border-radius entirely,
+ * so the table uses SEPARATE borders with zero spacing — every cell draws its
+ * right+bottom edge, the first row/column adds top/left, and the corner cells
+ * carry the corner radii so backgrounds (header row) clip inside the frame.
+ */
+
+const hasRadius = (props: EmailTableProps): boolean => {
+    const radius = normalizeBorderRadius(props.border.radius);
+    return radius.topLeft > 0 || radius.topRight > 0 || radius.bottomRight > 0 || radius.bottomLeft > 0;
+};
+
 /** Outer table styles — shared by both renders. */
 export const emailTableStyles = (props: EmailTableProps): CSSProperties => ({
     width: "100%",
-    borderCollapse: "collapse",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    ...(hasRadius(props) ? { borderRadius: cornerShorthand(normalizeBorderRadius(props.border.radius)) } : {}),
     ...spacingToCss(props.spacing),
     ...effectsToCss(props.effects),
 });
 
-/** Cell styles for a body or header cell — shared by both renders. */
-export const emailTableCellStyles = (props: EmailTableProps, isHeader: boolean): CSSProperties => {
-    const { borderRadius: _radius, ...cellBorder } = borderToCss(props.border);
+/** Cell styles for cell (row, column) — shared by both renders. */
+export const emailTableCellStyles = (
+    props: EmailTableProps,
+    row: number,
+    column: number,
+    rowCount: number,
+    columnCount: number,
+): CSSProperties => {
+    const width = normalizeBorderWidth(props.border.width);
+    const radius = normalizeBorderRadius(props.border.radius);
+    const stroke = (px: number) => `${px}px ${props.border.style} ${props.border.color}`;
+    const isHeader = props.headerRow && row === 0;
+    const lastRow = row === rowCount - 1;
+    const lastColumn = column === columnCount - 1;
     return {
-        ...cellBorder,
+        ...(width.right > 0 ? { borderRight: stroke(width.right) } : {}),
+        ...(width.bottom > 0 ? { borderBottom: stroke(width.bottom) } : {}),
+        ...(row === 0 && width.top > 0 ? { borderTop: stroke(width.top) } : {}),
+        ...(column === 0 && width.left > 0 ? { borderLeft: stroke(width.left) } : {}),
+        ...(row === 0 && column === 0 && radius.topLeft > 0 ? { borderTopLeftRadius: radius.topLeft } : {}),
+        ...(row === 0 && lastColumn && radius.topRight > 0 ? { borderTopRightRadius: radius.topRight } : {}),
+        ...(lastRow && column === 0 && radius.bottomLeft > 0 ? { borderBottomLeftRadius: radius.bottomLeft } : {}),
+        ...(lastRow && lastColumn && radius.bottomRight > 0 ? { borderBottomRightRadius: radius.bottomRight } : {}),
         padding: props.cellPadding,
         textAlign: "left",
         verticalAlign: "top",
