@@ -27,6 +27,18 @@
 }
 
 /*
+ * The artboard renders output truth: hosts often antialias their app chrome
+ * (Tailwind's `antialiased`), but the email preview iframe and real clients
+ * use the platform default — subpixel text reads slightly darker/heavier, a
+ * visible "color mismatch" between canvas and preview. Pin the frame to the
+ * default so canvas text rasterizes exactly like the output.
+ */
+.mat-builder-artboard-frame {
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+}
+
+/*
  * Floating rich-text toolbar (portals to <body>, so not under a panel scope).
  * mat-ui's overflow-collapse measures items at natural width, but rendered
  * flex items could still shrink — the select triggers (font family, block
