@@ -107,8 +107,8 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
             ref={ref}
             data-container={container.name}
             data-parent-id={parentId}
-            className={className}
-            style={{ ...layoutStyle, ...highlight }}
+            className={`relative ${className}`}
+            style={layoutStyle}
         >
             {childIds.map((childId, index) => (
                 <BlockView
@@ -118,6 +118,12 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
                     layout={container.layout}
                 />
             ))}
+            {/* The ring paints ABOVE the children (not as the container's own
+                box-shadow, which sits in the background layer and shows through
+                transparent blocks — during a drag the lines read as the ring
+                "clipping" the lifted drag source). Below the sibling edge
+                indicator (z-20). */}
+            {highlight && <div className="pointer-events-none absolute inset-0 z-10" style={highlight} />}
         </div>
     );
 }
