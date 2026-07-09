@@ -12,14 +12,14 @@ import {
 import type { ContainerDef } from "../../../core/types.ts";
 import { EMAIL_LEAF_TYPES } from "../section/index.tsx";
 import {
+    COLUMN_COUNTS,
+    COLUMNS_RATIO_PRESETS,
     columnWidths,
-    COLUMNS_RATIOS,
     emailColumnsDefaults,
     emailColumnStyles,
     emailColumnsWrapperStyles,
     MAX_COLUMNS,
     type EmailColumnsProps,
-    type EmailColumnsRatio,
 } from "./styles.ts";
 
 /** Column cells accept everything sections do — leaves, nested sections, nested columns (docs/06). */
@@ -54,14 +54,25 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
             </div>
         );
     },
-    inspector: ({ props, update }) => (
+    inspector: ({ props, update }) => {
+        const count = columnWidths(props.ratio).length;
+        const presets = COLUMNS_RATIO_PRESETS[count] ?? [];
+        // A hand-written or legacy ratio not in the presets stays selectable.
+        const ratioOptions = presets.includes(props.ratio) ? presets : [props.ratio, ...presets];
+        return (
         <>
             <div className="flex flex-col gap-4 px-3 pb-4">
+                <Fields.SegmentedField
+                    label="Columns"
+                    value={String(count)}
+                    options={COLUMN_COUNTS.map((n) => ({ label: String(n), value: String(n) }))}
+                    onChange={(next) => update({ ratio: COLUMNS_RATIO_PRESETS[Number(next)][0] })}
+                />
                 <Fields.SelectField
                     label="Ratio"
                     value={props.ratio}
-                    options={COLUMNS_RATIOS}
-                    onChange={(ratio) => update({ ratio: ratio as EmailColumnsRatio })}
+                    options={ratioOptions}
+                    onChange={(ratio) => update({ ratio })}
                 />
             </div>
             <Divider />
@@ -79,5 +90,6 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
             <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
-    ),
+        );
+    },
 });
