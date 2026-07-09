@@ -27,6 +27,17 @@
 }
 
 /*
+ * Sleek scrollbars on every builder surface: slim thumb, no visible track.
+ * The standard properties cover Chrome 121+, Firefox, and Safari TP; they
+ * also make Chrome ignore any legacy ::-webkit-scrollbar styling.
+ */
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar, .mat-builder-canvas),
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar, .mat-builder-canvas) * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--mat-builder-color-scrollbar-thumb) transparent;
+}
+
+/*
  * Dividers inside panels sit as items of scrolling flex columns; once the
  * column overflows, flex shrinks their 1px extent to 0 and they vanish.
  * Pin both orientations of mat-ui's Divider (h-px / w-px).
