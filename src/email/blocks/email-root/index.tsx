@@ -1,3 +1,4 @@
+import { IconMail } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { BackgroundGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
@@ -7,6 +8,7 @@ import { Divider } from '@matthiaskrijgsman/mat-ui';
 export const emailRootBlock = defineBlock<EmailRootProps>({
   type: "email-root",
   label: "Email",
+  icon: IconMail,
   hidden: true,
   canDrag: false,
   canDelete: false,
