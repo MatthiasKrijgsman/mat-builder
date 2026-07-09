@@ -22,6 +22,15 @@ import { $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightP
 
 const FONT_OPTIONS = EMAIL_FONT_STACKS.map(({ name, stack }) => ({ value: stack, label: name }));
 
+/** Numeric weights that survive email clients on system/web-safe stacks. */
+const FONT_WEIGHT_OPTIONS = [
+    { value: "300", label: "Light" },
+    { value: "400", label: "Regular" },
+    { value: "500", label: "Medium" },
+    { value: "600", label: "Semibold" },
+    { value: "700", label: "Bold" },
+];
+
 /** Effective INHERITED text style, read from the editor root's computed
  * style — when the selection carries no inline style the controls show the
  * values the text actually renders with (the email-root base typography
@@ -62,6 +71,23 @@ function FontFamilyItem() {
             placeholder="Font"
             clearable
             minWidth={200}
+        />
+    );
+}
+
+/** Full weight scale next to the plain bold toggle — patches font-weight on
+ * the selection; the bold format bit (700) still wins where both are set. */
+function FontWeightItem() {
+    const { values, patch } = useLexicalSelectionStyle(["font-weight"]);
+    return (
+        <LexicalToolbarSelect
+            title="Font weight"
+            options={FONT_WEIGHT_OPTIONS}
+            value={values["font-weight"] || null}
+            onChange={(weight) => patch({ "font-weight": weight })}
+            placeholder="Weight"
+            clearable
+            minWidth={160}
         />
     );
 }
@@ -146,6 +172,7 @@ function TextColorItem() {
 export const selectionTypographyItems = () => (
     <>
         <FontFamilyItem />
+        <FontWeightItem />
         <FontSizeItem />
         <LineHeightItem />
         <LetterSpacingItem />

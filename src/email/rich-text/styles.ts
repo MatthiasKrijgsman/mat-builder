@@ -65,6 +65,7 @@ export const CODE_FONT_FAMILY = "'Courier New', Courier, monospace";
 const TEXT_STYLE_WHITELIST: Record<string, keyof CSSProperties> = {
     "font-family": "fontFamily",
     "font-size": "fontSize",
+    "font-weight": "fontWeight",
     "letter-spacing": "letterSpacing",
     "color": "color",
 };
