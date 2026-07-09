@@ -1,4 +1,5 @@
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
+import { AnimatePresence } from "motion/react";
 import { useEffect, useRef } from "react";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { useBuilderContext } from "../../react/context.ts";
@@ -7,6 +8,7 @@ import { useBuilderKeyboard } from "../../react/keyboard.ts";
 import { Artboard } from "./Artboard.tsx";
 import { BlockView } from "./BlockView.tsx";
 import { ChromeOverlay } from "./ChromeOverlay.tsx";
+import { ChromePill } from "./ChromePill.tsx";
 
 /*
  * Canvas — see docs/04 §Canvas. The editing surface: a focusable Artboard
@@ -68,17 +70,20 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
             }}
             decoration={
                 <>
-                    {isRootSelected && rootNode ? (
-                        <span
-                            className="absolute -top-6 left-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none"
-                            style={{
-                                backgroundColor: "var(--mat-builder-color-selection)",
-                                color: "var(--mat-builder-color-chrome-tag-fg)",
-                            }}
-                        >
-                            {registry.getDefinition(rootNode.type)?.label ?? rootNode.type}
-                        </span>
-                    ) : null}
+                    {/* Root name tag — same spring-animated pill as every other block
+                        (ChromeOverlay), but anchored to the artboard frame since
+                        selecting the root IS selecting the artboard. */}
+                    <AnimatePresence>
+                        {isRootSelected && rootNode && (
+                            <ChromePill
+                                label={
+                                    registry.getDefinition(rootNode.type)?.getDisplayName?.(rootNode.props) ??
+                                    registry.getDefinition(rootNode.type)?.label ??
+                                    rootNode.type
+                                }
+                            />
+                        )}
+                    </AnimatePresence>
                     {/* All non-root block chrome — outside the rounded clipping frame */}
                     <ChromeOverlay scrollerRef={scrollRef} />
                 </>

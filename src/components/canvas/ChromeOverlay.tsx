@@ -4,6 +4,7 @@ import type { BlockId } from "../../core/types.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 import { computeChromeGeometry, geometryChanged, RING_SLACK, type ChromeGeometry } from "./chrome-geometry.ts";
+import { ChromePill } from "./ChromePill.tsx";
 
 /*
  * ChromeOverlay — the per-block selection/hover chrome layer (docs/04
@@ -138,22 +139,7 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
         >
-            <AnimatePresence>
-                {showPill && (
-                    <motion.span
-                        className="mat-builder-chrome-pill pointer-events-auto absolute"
-                        data-inside={pillInside || undefined}
-                        // The artboard's empty-area click deselects — the pill must not bubble
-                        onClick={(event) => event.stopPropagation()}
-                        initial={{ y: 4, scale: 0.9, opacity: 0 }}
-                        animate={{ y: 0, scale: 1, opacity: 1 }}
-                        exit={{ y: 4, scale: 0.9, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: [0.34, 1.6, 0.5, 1] }}
-                    >
-                        {label}
-                    </motion.span>
-                )}
-            </AnimatePresence>
+            <AnimatePresence>{showPill && <ChromePill label={label} inside={pillInside} />}</AnimatePresence>
         </motion.div>
     );
 }
