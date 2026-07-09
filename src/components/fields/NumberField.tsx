@@ -1,4 +1,5 @@
 import { Input } from "@matthiaskrijgsman/mat-ui";
+import type { TablerIcon } from "@tabler/icons-react";
 
 export interface NumberFieldProps {
     label?: string;
@@ -8,6 +9,12 @@ export interface NumberFieldProps {
     max?: number;
     step?: number;
     description?: string;
+    /** Leading icon inside the input (mat-ui Input's Icon slot). */
+    Icon?: TablerIcon;
+    /** Shown when value is undefined — e.g. "Mix" for linked side inputs. */
+    placeholder?: string;
+    /** Native tooltip naming the field when there is no visible label. */
+    title?: string;
 }
 
 export function NumberField({ value, onChange, min, max, step, ...rest }: NumberFieldProps) {

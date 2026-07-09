@@ -71,7 +71,16 @@ describe("background", () => {
 
 describe("border", () => {
     it("width 0 emits no border but radius still applies", () => {
-        expect(borderToCss({ ...defaultBorder, radius: 8 })).toEqual({ borderRadius: 8 });
+        expect(borderToCss({ ...defaultBorder, radius: 8 })).toEqual({ borderRadius: "8px" });
+    });
+
+    it("per-corner radius emits the four-value shorthand", () => {
+        expect(
+            borderToCss({
+                ...defaultBorder,
+                radius: { topLeft: 8, topRight: 0, bottomRight: 8, bottomLeft: 0 },
+            }),
+        ).toEqual({ borderRadius: "8px 0px 8px 0px" });
     });
 
     it("uniform stroke emits the border shorthand", () => {
