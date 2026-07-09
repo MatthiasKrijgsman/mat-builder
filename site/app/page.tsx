@@ -84,10 +84,9 @@ const initialDocument: BuilderDocument = {
 export default function PlaygroundPage() {
     return (
         <BuilderProvider blocks={playgroundBlocks} defaultValue={initialDocument}>
-            {/* One continuous dotted surface; the top bar and panels float over it */}
-            <div className="flex h-screen flex-col" style={dottedSurface}>
-                <Topbar />
-                <div className="relative min-h-0 flex-1">
+            {/* One continuous dotted surface; the bottom bar and panels float over it */}
+            <div className="relative h-screen" style={dottedSurface}>
+                <div className="absolute inset-0">
                     {/* Wrapper, not className: the Artboard root is position:relative itself.
                         transparentSurface lets the root's dot layer show through, so there
                         is no phase seam where the canvas meets the app background */}
@@ -103,15 +102,18 @@ export default function PlaygroundPage() {
                     </aside>
                     <Inspector className={`absolute inset-y-4 right-4 z-30 w-[400px] ${floatingPanel}`} />
                 </div>
+                <BottomBar />
             </div>
         </BuilderProvider>
     );
 }
 
-function Topbar() {
+/** Floating app bar at the bottom, between the two side panels — offset from
+ * the panels by the same 16px the panels keep from the window edge. */
+function BottomBar() {
     const { undo, redo, canUndo, canRedo } = useEditor();
     return (
-        <header className={`z-30 mx-4 mt-4 flex shrink-0 items-center gap-3 px-4 py-2 ${floatingPanel}`}>
+        <header className={`absolute bottom-4 left-[calc(400px+2rem)] right-[calc(400px+2rem)] z-30 flex items-center gap-3 px-4 py-2 ${floatingPanel}`}>
             <h1 className="text-sm font-semibold">mat-builder playground</h1>
             <span className="text-xs text-gray-400">v{process.env.NEXT_PUBLIC_LIB_VERSION}</span>
             <div className="ml-auto flex items-center gap-1">

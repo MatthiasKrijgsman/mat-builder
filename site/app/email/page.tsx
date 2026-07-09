@@ -162,18 +162,20 @@ export default function EmailBuilderPage() {
 
     return (
         <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
-            {/* One continuous dotted surface; the top bar and panels float over it */}
-            <div className="flex h-screen flex-col" style={dottedSurface}>
-                <Topbar mode={mode} onModeChange={setMode} />
+            {/* One continuous dotted surface; the bottom bar and panels float over it */}
+            <div className="relative h-screen" style={dottedSurface}>
                 <MainArea mode={mode} />
+                <BottomBar mode={mode} onModeChange={setMode} />
             </div>
         </BuilderProvider>
     );
 }
 
-function Topbar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
+/** Floating app bar at the bottom, between the two side panels — offset from
+ * the panels by the same 16px the panels keep from the window edge. */
+function BottomBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className={`z-30 mx-4 mt-4 flex shrink-0 items-center gap-3 px-4 py-2 ${floatingPanel}`}>
+        <header className={`absolute bottom-4 left-[calc(400px+2rem)] right-[calc(400px+2rem)] z-30 flex items-center gap-3 px-4 py-2 ${floatingPanel}`}>
             <h1 className="text-sm font-semibold">Email builder</h1>
             <Link href="/" className="text-xs text-gray-400 hover:underline">
                 ← kitchen sink
@@ -195,7 +197,7 @@ function Topbar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode)
 
 function MainArea({ mode }: { mode: Mode }) {
     return (
-        <div className="relative min-h-0 flex-1">
+        <div className="absolute inset-0">
             {/* Wrapper, not className: the Artboard root is position:relative itself.
                 transparentSurface lets the root's dot layer show through, so there
                 is no phase seam where the canvas meets the app background */}
