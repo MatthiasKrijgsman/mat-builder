@@ -26,7 +26,8 @@ import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
  */
 
 const INDENT_PX = 14;
-const ROW_BASE_PADDING = 6;
+/** Chevron column width — ancestor guide lines center on it. */
+const CHEVRON_PX = 20;
 
 function computeOperations(
     document: BuilderDocument,
@@ -136,40 +137,60 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
             <div
                 ref={ref}
                 data-layer-id={id}
-                className="relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pr-3 font-medium select-none"
-                style={{ paddingLeft: ROW_BASE_PADDING + depth * INDENT_PX, ...rowBackground }}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    actions.select(id);
-                }}
-                onPointerOver={(event) => {
-                    event.stopPropagation();
-                    actions.hover(id);
-                }}
-                onPointerOut={(event) => {
-                    event.stopPropagation();
-                    actions.hover(null);
-                }}
+                className="relative flex items-center gap-2 py-0.5 select-none"
+                style={{ paddingLeft: depth * INDENT_PX }}
             >
+                {/* Ancestor depth guides — one hairline per level, centered on
+                    that level's chevron column; stacked rows read as one line */}
+                {Array.from({ length: depth }, (_, level) => (
+                    <span
+                        key={level}
+                        aria-hidden
+                        className="pointer-events-none absolute inset-y-0 w-px"
+                        style={{
+                            left: level * INDENT_PX + CHEVRON_PX / 2,
+                            backgroundColor: "var(--mat-builder-color-panel-border)",
+                        }}
+                    />
+                ))}
                 {hasChildren ? (
                     <button
                         type="button"
                         aria-label={isExpanded ? "Collapse" : "Expand"}
-                        className="flex size-4 shrink-0 items-center justify-center rounded hover:bg-black/5"
+                        className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[var(--border-radius-menu-item)] transition-colors hover:bg-[var(--color-dropdown-item-bg-hover)]"
                         onClick={(event) => {
                             event.stopPropagation();
                             actions.toggleExpanded(id);
                         }}
                     >
                         <IconChevronRight
-                            className={`size-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                            className={`size-4 text-[var(--color-input-icon-button-icon)] transition-transform ${isExpanded ? "rotate-90" : ""}`}
                         />
                     </button>
                 ) : (
-                    <span className="size-4 shrink-0" />
+                    <span className="size-5 shrink-0" />
                 )}
-                {Icon && <Icon className="size-4 text-stone-400 shrink-0" />}
-                <span className="truncate">{label}</span>
+                {/* The select button — mat-ui dropdown-item chrome, fills the row */}
+                <button
+                    type="button"
+                    className="dropdown-item flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[var(--border-radius-menu-item)] border border-transparent bg-transparent px-2 font-[number:var(--font-weight-panel-link)] font-[family-name:var(--font-family-base)] transition-all duration-[var(--control-transition-duration)] focus:outline-none"
+                    style={rowBackground}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        actions.select(id);
+                    }}
+                    onPointerOver={(event) => {
+                        event.stopPropagation();
+                        actions.hover(id);
+                    }}
+                    onPointerOut={(event) => {
+                        event.stopPropagation();
+                        actions.hover(null);
+                    }}
+                >
+                    {Icon && <Icon className="size-4 shrink-0 text-[var(--color-input-icon-button-icon)]" />}
+                    <span className="truncate">{label}</span>
+                </button>
                 {instruction && <InstructionIndicator instruction={instruction} depth={depth} />}
             </div>
 
@@ -180,7 +201,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
                             <p
                                 className="py-0.5 text-[10px] font-medium uppercase tracking-wide"
                                 style={{
-                                    paddingLeft: ROW_BASE_PADDING + (depth + 1) * INDENT_PX,
+                                    paddingLeft: (depth + 1) * INDENT_PX + CHEVRON_PX + 8,
                                     color: "var(--mat-builder-color-panel-muted-fg)",
                                 }}
                             >
@@ -204,7 +225,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
 function InstructionIndicator({ instruction, depth }: { instruction: Instruction; depth: number }) {
     const color = "var(--mat-builder-color-drop-indicator)";
     const thickness = "var(--mat-builder-drop-indicator-thickness)";
-    const left = ROW_BASE_PADDING + depth * INDENT_PX;
+    const left = depth * INDENT_PX;
 
     if (instruction.operation === "combine") {
         return (
