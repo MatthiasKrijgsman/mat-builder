@@ -129,7 +129,7 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       className="group flex min-w-0 flex-col items-center gap-1.5 cursor-grab"
     >
       <div
-        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs transition-shadow group-hover:shadow-xl"
+        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs shadow-current/15 transition-shadow group-hover:shadow-xl group-hover:shadow-current/25"
         style={ {
           backgroundColor: `var(--mat-builder-palette-tint-${ tint }-bg)`,
           borderColor: `var(--mat-builder-palette-tint-${ tint }-border)`,
