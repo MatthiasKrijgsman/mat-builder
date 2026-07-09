@@ -16,10 +16,18 @@ const t = (text: string, extra: Record<string, unknown> = {}) => ({ type: "text"
 const render = (content: string): string => renderToStaticMarkup(<RichText content={content} />);
 
 describe("RichText", () => {
-    it("renders the default content as a margined paragraph", () => {
+    it("renders the default content as a paragraph without a trailing margin", () => {
         const html = render(DEFAULT_TEXT_CONTENT);
         expect(html).toContain("Lorem ipsum dolor sit amet");
-        expect(html).toMatch(/<p style="margin:0 0 12px">/);
+        // The single (thus last) top-level block drops its bottom margin —
+        // spacing between blocks is the container gap's job.
+        expect(html).toMatch(/<p style="margin:0 0 12px;margin-bottom:0">/);
+    });
+
+    it("keeps inter-paragraph margins but drops the last one", () => {
+        const html = render(richTextParagraphs("first", "second"));
+        expect(html).toMatch(/<p style="margin:0 0 12px">first<\/p>/);
+        expect(html).toMatch(/<p style="margin:0 0 12px;margin-bottom:0">second<\/p>/);
     });
 
     it("maps every format bit to inline styles", () => {
@@ -84,7 +92,7 @@ describe("RichText", () => {
 
     it("renders headings with px sizes and matching px line-heights", () => {
         const html = render(richTextHeading("Big", "h1"));
-        expect(html).toMatch(/<h1 style="font-size:40px;line-height:48px;font-weight:500;margin:0 0 12px">/);
+        expect(html).toMatch(/<h1 style="font-size:40px;line-height:48px;font-weight:500;margin:0 0 12px;margin-bottom:0">/);
         const h6 = render(richTextHeading("Small", "h6"));
         expect(h6).toContain("font-size:16px;line-height:19px");
     });

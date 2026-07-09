@@ -98,6 +98,25 @@
     border-left: 4px solid #e4e4e7;
     font-style: italic;
 }
+/* The LAST top-level block drops its bottom margin — matches render.tsx's
+ * isLast handling so edit mode stays pixel-equal to the idle/output render.
+ * (A trailing margin collapses out at zero padding but gets contained once
+ * padding is set, making 1px of bottom padding grow the block by 13px.) */
+[contenteditable="true"]
+    > :where(
+        .mat-builder-rt-p,
+        .mat-builder-rt-h1,
+        .mat-builder-rt-h2,
+        .mat-builder-rt-h3,
+        .mat-builder-rt-h4,
+        .mat-builder-rt-h5,
+        .mat-builder-rt-h6,
+        .mat-builder-rt-ul,
+        .mat-builder-rt-ol,
+        .mat-builder-rt-quote
+    ):last-child {
+    margin-bottom: 0;
+}
 .mat-builder-rt-link {
     color: #067df7;
     text-decoration: underline;

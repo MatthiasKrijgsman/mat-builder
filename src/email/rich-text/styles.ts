@@ -45,8 +45,9 @@ export const HEADING_SIZES: Record<string, number> = {
 };
 
 /* The paragraph margin lives here (not on the block container) so
- * multi-paragraph text spaces itself and the last paragraph provides the
- * block's bottom spacing. */
+ * multi-paragraph text spaces itself; the LAST top-level block drops it
+ * (render.tsx isLast + the [contenteditable] :last-child rule in style.css) —
+ * spacing between blocks is the container gap's job. */
 export const PARAGRAPH_STYLES: CSSProperties = { margin: "0 0 12px" };
 export const UL_STYLES: CSSProperties = { listStyleType: "disc", paddingLeft: 24, margin: "0 0 12px" };
 export const OL_STYLES: CSSProperties = { listStyleType: "decimal", paddingLeft: 24, margin: "0 0 12px" };

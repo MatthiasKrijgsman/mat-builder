@@ -86,7 +86,14 @@ interface RenderOptions {
 const renderChildren = (node: RichElementNode, options: RenderOptions): ReactNode[] =>
     (node.children ?? []).map((child, index) => renderNode(child, index, options));
 
-const renderNode = (node: RichNode, key: number, options: RenderOptions): ReactNode => {
+/** The last top-level block drops its bottom margin — block spacing is the
+ * container gap's job, and a trailing margin otherwise collapses out of the
+ * block at zero padding but gets contained the moment padding is set (a 1px
+ * bottom padding used to grow the block by 13px). Kept in sync with the
+ * editing surface's [contenteditable] :last-child rule in src/style.css. */
+const LAST_BLOCK_STYLES: CSSProperties = { marginBottom: 0 };
+
+const renderNode = (node: RichNode, key: number, options: RenderOptions, isLast = false): ReactNode => {
     switch (node.type) {
         case "text":
             return renderText(node as RichTextNode, key);
@@ -105,7 +112,7 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions): ReactN
             const element = node as RichElementNode;
             const children = renderChildren(element, options);
             return (
-                <p key={key} style={{ ...PARAGRAPH_STYLES, ...blockOverrides(element) }}>
+                <p key={key} style={{ ...PARAGRAPH_STYLES, ...(isLast ? LAST_BLOCK_STYLES : undefined), ...blockOverrides(element) }}>
                     {/* An empty paragraph still takes a line (matches the editor). */}
                     {children.length ? children : " "}
                 </p>
@@ -115,14 +122,14 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions): ReactN
             const element = node as RichHeadingNode;
             const Tag = HEADING_SIZES[element.tag] ? element.tag : "h2";
             return (
-                <Tag key={key} style={{ ...heading(HEADING_SIZES[Tag]), ...blockOverrides(element) }}>
+                <Tag key={key} style={{ ...heading(HEADING_SIZES[Tag]), ...(isLast ? LAST_BLOCK_STYLES : undefined), ...blockOverrides(element) }}>
                     {renderChildren(element, options)}
                 </Tag>
             );
         }
         case "quote":
             return (
-                <blockquote key={key} style={{ ...BLOCKQUOTE_STYLES, ...blockOverrides(node as RichElementNode) }}>
+                <blockquote key={key} style={{ ...BLOCKQUOTE_STYLES, ...(isLast ? LAST_BLOCK_STYLES : undefined), ...blockOverrides(node as RichElementNode) }}>
                     {renderChildren(node as RichElementNode, options)}
                 </blockquote>
             );
@@ -130,13 +137,13 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions): ReactN
             const element = node as RichListNode;
             if (element.listType === "number") {
                 return (
-                    <ol key={key} start={element.start && element.start !== 1 ? element.start : undefined} style={OL_STYLES}>
+                    <ol key={key} start={element.start && element.start !== 1 ? element.start : undefined} style={{ ...OL_STYLES, ...(isLast ? LAST_BLOCK_STYLES : undefined) }}>
                         {renderChildren(element, options)}
                     </ol>
                 );
             }
             return (
-                <ul key={key} style={UL_STYLES}>
+                <ul key={key} style={{ ...UL_STYLES, ...(isLast ? LAST_BLOCK_STYLES : undefined) }}>
                     {renderChildren(element, options)}
                 </ul>
             );
@@ -203,7 +210,14 @@ export interface RichTextProps {
 export const RichText = ({ content, renderMergeTag }: RichTextProps) => {
     const document = parseDocument(content);
     if (!document) return null;
-    return <>{renderChildren(document.root, { renderMergeTag })}</>;
+    const children = document.root.children ?? [];
+    return (
+        <>
+            {children.map((child, index) =>
+                renderNode(child, index, { renderMergeTag }, index === children.length - 1),
+            )}
+        </>
+    );
 };
 
 const collectPlain = (node: RichNode, out: string[]): void => {
