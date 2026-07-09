@@ -76,12 +76,7 @@ export function Palette({ className }: PaletteProps) {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
       { groups.map(([ category, definitions ]) => (
         <div key={ category } className="flex flex-col gap-1.5">
-          <p
-            className="text-[11px] font-medium uppercase tracking-wide"
-            style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
-          >
-            { category }
-          </p>
+          <p className="input-label">{ category }</p>
           <div className={'grid grid-cols-5 gap-x-2 gap-y-2.5'}>
           { definitions.map((definition) => (
             <PaletteItem
