@@ -37,10 +37,11 @@ import { dottedSurface, floatingPanel, transparentSurface } from "../floating-ch
 /** Consumer-provided personalization tokens (docs/06 §merge tags) — the
  * Mailchimp-style entry proves the library assumes no delimiter syntax. */
 const mergeTags: MergeTag[] = [
-    { token: "{{first_name}}", label: "First name" },
-    { token: "{{last_name}}", label: "Last name" },
-    { token: "{{invoice_url}}", label: "Invoice URL" },
-    { token: "*|COMPANY|*", label: "Company" },
+    { token: "{{first_name}}", label: "First name", group: "Contact" },
+    { token: "{{last_name}}", label: "Last name", group: "Contact" },
+    { token: "{{invoice_url}}", label: "Invoice URL", group: "Billing" },
+    { token: "*|COMPANY|*", label: "Company", group: "Billing" },
+    { token: "{{unsubscribe_url}}", label: "Unsubscribe URL" },
 ];
 
 const textNode = (text: string) => ({ type: "text", version: 1, detail: 0, format: 0, mode: "normal", style: "", text });

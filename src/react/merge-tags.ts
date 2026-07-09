@@ -11,4 +11,8 @@ export interface MergeTag {
     token: string;
     /** Human-readable name shown in insert menus and on canvas chips. */
     label: string;
+    /** Optional group name — tags sharing one render under a labeled section
+     * in the insert menu. Sections (and ungrouped tags) keep the order of
+     * their first appearance in the provider's tag list. */
+    group?: string;
 }

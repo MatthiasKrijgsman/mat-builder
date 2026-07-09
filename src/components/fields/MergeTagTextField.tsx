@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import { IconBraces } from "@tabler/icons-react";
-import { DropdownButton, DropdownMenu, Input, InputIconButton, InputIconButtonTray } from "@matthiaskrijgsman/mat-ui";
+import { DropdownMenu, Input, InputIconButton, InputIconButtonTray } from "@matthiaskrijgsman/mat-ui";
 import { useMergeTags } from "../../react/hooks.ts";
+import { MergeTagList } from "../inline/MergeTagList.tsx";
 import { TextField, type TextFieldProps } from "./TextField.tsx";
 
 /*
@@ -52,12 +53,12 @@ export function MergeTagTextField({ value, onChange, ...rest }: MergeTagTextFiel
                         {/* The no-op onClick opts the icon into pointer-events + hover
                             styling (mat-ui keys interactivity off its presence); the
                             actual toggle lives on DropdownMenu's trigger wrapper. */}
-                        <DropdownMenu placement="bottom-end" trigger={<InputIconButton Icon={IconBraces} onClick={() => {}} />}>
-                            {tags.map((tag) => (
-                                <DropdownButton key={tag.token} onClick={() => insert(tag.token)}>
-                                    {tag.label}
-                                </DropdownButton>
-                            ))}
+                        <DropdownMenu
+                            placement="bottom-end"
+                            minWidth={220}
+                            trigger={<InputIconButton Icon={IconBraces} onClick={() => {}} />}
+                        >
+                            <MergeTagList tags={tags} onInsert={(tag) => insert(tag.token)} />
                         </DropdownMenu>
                     </InputIconButtonTray>
                 }
