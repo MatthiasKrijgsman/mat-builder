@@ -1,5 +1,8 @@
-import { InputLabel, TabButtons } from "@matthiaskrijgsman/mat-ui";
+import { InputLabel, TabButtons, Tooltip } from "@matthiaskrijgsman/mat-ui";
 import type { TablerIcon } from "@tabler/icons-react";
+
+/** The sizing mat-ui's TabButtons gives an icon-only tab at size="sm". */
+const iconClasses = "h-[var(--control-size-sm-icon)] w-[var(--control-size-sm-icon)] shrink-0";
 
 export interface SegmentedFieldOption<T extends string> {
     label: string;
@@ -24,8 +27,16 @@ export function SegmentedField<T extends string>({ label, value, onChange, optio
                 size="sm"
                 fullWidth={true}
                 tabs={options.map((option) => ({
-                    label: option.Icon ? undefined : option.label,
-                    Icon: option.Icon,
+                    // Icon tabs render the icon inside a Tooltip naming the
+                    // option (passed as the label node — TabButtons has no
+                    // per-tab tooltip hook).
+                    label: option.Icon ? (
+                        <Tooltip content={option.label} className="inline-flex">
+                            <option.Icon className={iconClasses} />
+                        </Tooltip>
+                    ) : (
+                        option.label
+                    ),
                     active: option.value === value,
                     onClick: () => onChange(option.value),
                 }))}
