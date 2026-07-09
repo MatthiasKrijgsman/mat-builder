@@ -27,6 +27,15 @@
 }
 
 /*
+ * Dividers inside panels sit as items of scrolling flex columns; once the
+ * column overflows, flex shrinks their 1px extent to 0 and they vanish.
+ * Pin both orientations of mat-ui's Divider (h-px / w-px).
+ */
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar) :where(.h-px, .w-px) {
+    flex-shrink: 0;
+}
+
+/*
  * Inline rich text editing surface (InlineRichText's Lexical theme classes).
  *
  * KEEP IN SYNC with src/email/rich-text/styles.ts — the idle canvas view and
