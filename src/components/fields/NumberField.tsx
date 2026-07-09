@@ -24,7 +24,7 @@ export function NumberField({ value, onChange, min, max, step, ...rest }: Number
             value={value ?? ""}
             onChange={(event) => {
                 const parsed = event.target.valueAsNumber;
-                if (!Number.isNaN(parsed)) onChange(parsed);
+                if (!Number.isNaN(parsed)) onChange(clamp(parsed));
             }}
             onKeyDown={(event) => {
                 // Shift+arrow steps ×10, like Figma; plain arrows keep the

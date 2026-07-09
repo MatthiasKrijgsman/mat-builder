@@ -62,12 +62,11 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
             )}
             {show("color") && <Fields.ColorField label="Color" value={v.color} onChange={(color) => set({ color })} />}
             {show("opacity") && (
-                <Fields.SliderField
+                <Fields.NumberField
                     label="Text opacity"
                     value={v.opacity}
                     min={0}
                     max={100}
-                    formatValue={(n) => `${n}%`}
                     onChange={(opacity) => set({ opacity })}
                 />
             )}

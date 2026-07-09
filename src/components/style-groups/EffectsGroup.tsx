@@ -17,12 +17,11 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
     const setShadow = (patch: Partial<EffectsValue["shadow"]>) => set({ shadow: { ...v.shadow, ...patch } });
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
-            <Fields.SliderField
+            <Fields.NumberField
                 label="Opacity"
                 value={v.opacity}
                 min={0}
                 max={100}
-                formatValue={(n) => `${n}%`}
                 onChange={(opacity) => set({ opacity })}
             />
             <Fields.SegmentedField
@@ -49,12 +48,11 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
                         />
                     </div>
                     <Fields.ColorField label="Color" value={v.shadow.color} onChange={(color) => setShadow({ color })} />
-                    <Fields.SliderField
+                    <Fields.NumberField
                         label="Shadow opacity"
                         value={v.shadow.opacity}
                         min={0}
                         max={100}
-                        formatValue={(n) => `${n}%`}
                         onChange={(opacity) => setShadow({ opacity })}
                     />
                 </>
