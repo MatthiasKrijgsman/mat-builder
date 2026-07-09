@@ -27,6 +27,18 @@
 }
 
 /*
+ * Floating rich-text toolbar (portals to <body>, so not under a panel scope).
+ * mat-ui's overflow-collapse measures items at natural width, but rendered
+ * flex items could still shrink — the select triggers (font family, block
+ * type) were the only squishable ones and clamped to "F…". Pin every item to
+ * its measured width; the collapse logic owns overflow.
+ * Candidate to upstream into mat-ui's LexicalToolbarItems.
+ */
+.lexical-floating-toolbar .lexical-tb-btn {
+    flex-shrink: 0;
+}
+
+/*
  * Sleek scrollbars on every builder surface: slim thumb, no visible track.
  * The standard properties cover Chrome 121+, Firefox, and Safari TP; they
  * also make Chrome ignore any legacy ::-webkit-scrollbar styling.
