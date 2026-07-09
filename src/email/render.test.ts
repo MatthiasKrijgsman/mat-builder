@@ -268,6 +268,33 @@ describe("renderEmail", () => {
         expect(html).toContain("second");
     });
 
+    it("renders the table block as a native <table> with header styling", async () => {
+        let document = buildDemoEmail();
+        const section = document.blocks[document.rootId].children.main[0];
+        const table = insertBlock(
+            document,
+            { type: "table", at: { parentId: section, container: "content", index: 2 } },
+            registry,
+        );
+        document = updateProps(table.document, {
+            id: table.blockId,
+            patch: {
+                cells: [
+                    ["Plan", "Price"],
+                    ["Pro", "$12"],
+                ],
+                headerRow: true,
+            },
+        });
+        const { html } = await renderEmail(document);
+        expect(html).toContain("border-collapse:collapse");
+        // header cell: bold + background; body cell: plain
+        expect(html).toMatch(/<td[^>]*font-weight:600[^>]*>[^<]*Plan/);
+        expect(html).toMatch(/<td[^>]*>[^<]*\$12/);
+        // 1px default cell borders
+        expect(html).toMatch(/<td[^>]*border:1px solid/);
+    });
+
     it("renders paragraphs with an explicit inline margin", async () => {
         const { html } = await renderEmail(buildDemoEmail());
         // Without an inline margin the canvas (preflight: 0) and the preview

@@ -12,7 +12,7 @@ import {
 import { emailSectionDefaults, emailSectionStyles, type EmailSectionProps } from "./styles.ts";
 
 /** Leaf types (no containers of their own) — what column cells accept. */
-export const EMAIL_LEAF_TYPES = ["text", "button", "image", "divider", "spacer"];
+export const EMAIL_LEAF_TYPES = ["text", "button", "image", "divider", "spacer", "table"];
 
 export const sectionBlock = defineBlock<EmailSectionProps>({
     type: "section",

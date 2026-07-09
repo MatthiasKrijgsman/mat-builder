@@ -9,6 +9,7 @@ import { buttonEmail } from "./blocks/button/email.tsx";
 import { imageEmail } from "./blocks/image/email.tsx";
 import { dividerEmail } from "./blocks/divider/email.tsx";
 import { spacerEmail } from "./blocks/spacer/email.tsx";
+import { tableEmail } from "./blocks/table/email.tsx";
 import type { AnyEmailRenderer } from "./types.ts";
 
 /*
@@ -40,6 +41,7 @@ export const emailRenderers: Record<string, AnyEmailRenderer> = {
     image: imageEmail,
     divider: dividerEmail,
     spacer: spacerEmail,
+    table: tableEmail,
 };
 
 /**
