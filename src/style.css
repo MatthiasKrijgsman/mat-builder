@@ -9,6 +9,24 @@
 @import "./styles/chrome.css";
 
 /*
+ * Input labels inside builder panels.
+ *
+ * mat-ui's InputLabel reads --color-input-label-text, so overriding that
+ * token on the panel roots rethemes mat-ui-rendered labels; the .input-label
+ * rule styles the library's own labels that opt into the same class.
+ * Scoped to the panels so host-app forms outside the builder are untouched.
+ */
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar) {
+    --color-input-label-text: var(--mat-builder-color-input-label);
+}
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar) .input-label {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    color: var(--mat-builder-color-input-label);
+}
+
+/*
  * Inline rich text editing surface (InlineRichText's Lexical theme classes).
  *
  * KEEP IN SYNC with src/email/rich-text/styles.ts — the idle canvas view and

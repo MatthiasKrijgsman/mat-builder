@@ -66,6 +66,9 @@
     /* Panels (inspector & friends) */
     --mat-builder-color-panel-muted-fg: #71717a;
     --mat-builder-color-panel-border: #e4e4e7;
+    /* Field/group labels in panels — also feeds mat-ui's InputLabel via
+       --color-input-label-text (see style.css panel scope) */
+    --mat-builder-color-input-label: #78716c;
 
     /* Palette category tints — assigned to categories in registry order,
        cycling. Each set is tile background / tile border / icon color.
