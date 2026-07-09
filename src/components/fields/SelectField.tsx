@@ -18,9 +18,15 @@ export function SelectField({ value, onChange, options, ...rest }: SelectFieldPr
             {...rest}
             value={value ?? ""}
             options={options.map((option) =>
-                typeof option === "string" ? { label: option, value: option } : option,
+                // Plain-string options are stored values (e.g. "solid") — show
+                // them capitalized; explicit { label, value } stays untouched.
+                typeof option === "string" ? { label: capitalize(option), value: option } : option,
             )}
             onChange={(event) => onChange(event.target.value)}
         />
     );
+}
+
+function capitalize(value: string): string {
+    return value.charAt(0).toUpperCase() + value.slice(1);
 }
