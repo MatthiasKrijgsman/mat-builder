@@ -38,7 +38,7 @@ export const tableBlock = defineBlock<EmailTableProps>({
                                 <td key={c} style={emailTableCellStyles(props, r, c, rowCount, row.length)}>
                                     {/* Block-level with one line of min-height so an
                                         EMPTY cell is still a double-click target
-                                        (the output renders   for the same height). */}
+                                        (the output renders &nbsp; for the same height). */}
                                     <InlineText
                                         id={id}
                                         field={`cell-${r}-${c}`}
