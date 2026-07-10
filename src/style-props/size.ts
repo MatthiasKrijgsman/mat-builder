@@ -34,10 +34,22 @@ const modeToCss = (mode: SizeMode, px: number, pct: number): CSSProperties["widt
     : mode === "percent" ? `${pct}%`
     : "auto";
 
-export const sizeToCss = (v?: SizeValue): CSSProperties => {
+/**
+ * `margins` — the block's own margin sides, when it has a margin axis.
+ * "full" means fill the AVAILABLE width, so horizontal margins subtract from
+ * the 100% (margins sit outside the width; a plain 100% + margins overflows
+ * the container). calc() is fine on the canvas and modern clients; Outlook
+ * desktop ignores it and falls back to auto table sizing — same best-effort
+ * tier as margins on tables generally (docs/06 caveats).
+ */
+export const sizeToCss = (v?: SizeValue, margins?: { left: number; right: number }): CSSProperties => {
     if (!v) return {};
+    const horizontal = (margins?.left ?? 0) + (margins?.right ?? 0);
     return {
-        width: modeToCss(v.width, v.widthPx, v.widthPct ?? DEFAULT_WIDTH_PCT),
+        width:
+            v.width === "full" && horizontal > 0
+                ? `calc(100% - ${horizontal}px)`
+                : modeToCss(v.width, v.widthPx, v.widthPct ?? DEFAULT_WIDTH_PCT),
         // "full"/"percent" heights have no meaning in email flow — treated as auto
         height: v.height === "fixed" ? v.heightPx : "auto",
     };

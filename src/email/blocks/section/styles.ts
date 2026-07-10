@@ -39,7 +39,8 @@ export const emailSectionDefaults: EmailSectionProps = {
 };
 
 export const emailSectionStyles = (props: EmailSectionProps): CSSProperties => ({
-    ...sizeToCss(props.size),
+    // Margins subtract from a "full" width instead of overflowing the parent
+    ...sizeToCss(props.size, props.spacing?.margin),
     ...backgroundToCss(props.background),
     ...borderToCss(props.border),
     ...spacingToCss(props.spacing),

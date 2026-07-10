@@ -186,6 +186,14 @@ describe("size", () => {
         expect(sizeToCss({ width: "percent", widthPx: 300, height: "hug", heightPx: 100 }).width).toBe("50%");
     });
 
+    it("full width subtracts horizontal margins instead of overflowing", () => {
+        const size = { width: "full", widthPx: 300, height: "hug", heightPx: 100 } as const;
+        expect(sizeToCss(size, { left: 24, right: 16 }).width).toBe("calc(100% - 40px)");
+        // no margins → plain 100%; other modes ignore margins
+        expect(sizeToCss(size, { left: 0, right: 0 }).width).toBe("100%");
+        expect(sizeToCss({ ...size, width: "fixed" }, { left: 24, right: 24 }).width).toBe(300);
+    });
+
     it("only fixed height emits a px height; full height is auto in email flow", () => {
         expect(sizeToCss({ width: "hug", widthPx: 300, height: "fixed", heightPx: 120 }).height).toBe(120);
         expect(sizeToCss({ width: "hug", widthPx: 300, height: "full", heightPx: 120 }).height).toBe("auto");
