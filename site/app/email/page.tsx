@@ -335,23 +335,20 @@ export default function EmailBuilderPage() {
         <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
             {/* One continuous dotted surface; the top bar and panels float over it */}
             <div className="relative h-screen" style={dottedSurface}>
-                <MainArea mode={mode} />
-                <TopBar mode={mode} onModeChange={setMode} />
+                <MainArea mode={mode} onModeChange={setMode} />
             </div>
         </BuilderProvider>
     );
 }
 
-/** Floating app bar at the top, between the two side panels — offset from
- * the panels by the same 16px the panels keep from the window edge. The
- * title mirrors the panels' PanelHeader look (icon in a tinted square,
- * 1.125rem semibold) so the bar reads as part of the same chrome. */
+/** Floating app bar at the top of the center column, offset from the side
+ * panels by the same 16px the panels keep from the window edge. Sits in
+ * flow above the canvas so the artboard fits (and resize-clamps) against
+ * it rather than expanding underneath. The title mirrors the panels'
+ * PanelHeader look (1.125rem semibold) so the bar reads as the same chrome. */
 function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className={`absolute top-4 left-[calc(400px+2rem)] right-[calc(400px+2rem)] z-30 flex items-center gap-3 px-3 py-1.5 ${floatingPanel}`}>
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-gray-100">
-                <IconMail className="size-4 shrink-0 stroke-2 text-gray-800" />
-            </div>
+        <header className={`z-30 mx-4 mt-4 flex shrink-0 items-center gap-3 pl-5 pr-3 py-2 ${floatingPanel}`}>
             <h1 className="text-[1.125rem] font-semibold">Email builder</h1>
             <div className="ml-auto flex items-center gap-3">
                 <TabButtons
@@ -368,21 +365,27 @@ function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode)
     );
 }
 
-function MainArea({ mode }: { mode: Mode }) {
+function MainArea({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
         <div className="absolute inset-0">
-            {/* Wrapper, not className: the Artboard root is position:relative itself.
-                transparentSurface lets the root's dot layer show through, so there
-                is no phase seam where the canvas meets the app background */}
+            {/* Center column: top bar in flow, canvas filling the rest — the
+                canvas surface starts below the bar, so the artboard cannot
+                expand behind it. Wrapper, not className: the Artboard root is
+                position:relative itself. transparentSurface lets the root's
+                dot layer show through, so there is no phase seam where the
+                canvas meets the app background */}
             <div
-                className="absolute inset-y-0 left-[416px] right-[416px]"
+                className="absolute inset-y-0 left-[416px] right-[416px] flex flex-col"
                 style={transparentSurface}
             >
-                {mode === "edit" ? (
-                    <Canvas className="h-full" artboardWidth={640} />
-                ) : (
-                    <EmailPreview className="h-full" initialWidth={640} />
-                )}
+                <TopBar mode={mode} onModeChange={onModeChange} />
+                <div className="min-h-0 flex-1">
+                    {mode === "edit" ? (
+                        <Canvas className="h-full" artboardWidth={640} />
+                    ) : (
+                        <EmailPreview className="h-full" initialWidth={640} />
+                    )}
+                </div>
             </div>
             <aside className="pointer-events-none absolute inset-y-4 left-4 z-30 flex w-[400px] flex-col gap-4">
                 <Palette className={`pointer-events-auto min-h-0 flex-1 ${floatingPanel}`} />
