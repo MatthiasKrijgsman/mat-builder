@@ -12,6 +12,23 @@ import { renderEmail } from "./render.ts";
  * Read-only; render inside <BuilderProvider> (usually swapped with <Canvas>).
  */
 
+/*
+ * The iframe is a separate document, so the builder's slim-scrollbar CSS
+ * (style.css) can't reach it — without this the preview shows the fat
+ * platform-default scrollbar while the editing canvas shows the thin one.
+ * Inject the same treatment into the preview document, resolving the thumb
+ * token from the host page (tokens live on :root). Preview-only chrome —
+ * the export pipeline's HTML is untouched.
+ */
+function withPreviewScrollbar(html: string): string {
+    const thumb =
+        getComputedStyle(document.documentElement)
+            .getPropertyValue("--mat-builder-color-scrollbar-thumb")
+            .trim() || "rgb(0 0 0 / 0.2)";
+    const style = `<style>html{scrollbar-width:thin;scrollbar-color:${thumb} transparent}</style>`;
+    return html.includes("</head>") ? html.replace("</head>", `${style}</head>`) : style + html;
+}
+
 export interface EmailPreviewProps {
     className?: string;
     /** Initial artboard width in px */
@@ -34,7 +51,7 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
         const timer = setTimeout(() => {
             renderEmail(document)
                 .then((result) => {
-                    if (!cancelled) setHtml(result.html);
+                    if (!cancelled) setHtml(withPreviewScrollbar(result.html));
                 })
                 .catch((error: unknown) => {
                     if (!cancelled) setHtml(`<pre style="padding:16px;color:#b91c1c">${String(error)}</pre>`);
