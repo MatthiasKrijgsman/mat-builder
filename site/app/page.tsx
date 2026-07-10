@@ -380,9 +380,9 @@ function MainArea({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mod
                 <TopBar mode={mode} onModeChange={onModeChange} />
                 <div className="min-h-0 flex-1">
                     {mode === "edit" ? (
-                        <Canvas className="h-full" artboardWidth={640} />
+                        <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />
                     ) : (
-                        <EmailPreview className="h-full" initialWidth={640} />
+                        <EmailPreview className="h-full" initialWidth="fill" initialHeight="fill" />
                     )}
                 </div>
             </div>

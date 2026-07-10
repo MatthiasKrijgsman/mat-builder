@@ -18,10 +18,12 @@ import {
  */
 
 export interface ArtboardProps extends HTMLAttributes<HTMLDivElement> {
-    /** Initial frame width in px (email default: 600) */
-    initialWidth?: number;
-    /** Initial frame height in px */
-    initialHeight?: number;
+    /** Initial frame width in px (email default: 600), or "fill" to fit the
+     * surface — the frame keeps filling on window resize until the user drags
+     * a size of their own. */
+    initialWidth?: number | "fill";
+    /** Initial frame height in px, or "fill" (see initialWidth) */
+    initialHeight?: number | "fill";
     /** Mount-time frame size — overrides initialWidth/Height when set (e.g. a
      * persisted user-dragged size); later prop changes are ignored, the
      * artboard owns its size while mounted. */
@@ -59,11 +61,25 @@ export function Artboard(props: ArtboardProps) {
     } = props;
     const surfaceRef = useRef<HTMLDivElement>(null);
 
-    const [size, setSize] = useState(persistedSize ?? { width: initialWidth, height: initialHeight });
+    const [size, setSize] = useState(
+        persistedSize ?? {
+            // "fill" paints one frame at the range max, then the mount-time
+            // ResizeObserver fit (before paint) clamps it to the surface.
+            width: initialWidth === "fill" ? WIDTH_RANGE.max : initialWidth,
+            height: initialHeight === "fill" ? HEIGHT_RANGE.max : initialHeight,
+        },
+    );
     const sizeRef = useRef(size);
     sizeRef.current = size;
-    /** The size the user last chose by dragging — what we restore toward when the window grows back */
-    const preferredRef = useRef(size);
+    /** The size the user last chose by dragging — what we restore toward when
+     * the window grows back. Infinity ("fill" with no drag yet) always fits
+     * the surface, so the frame tracks window resizes until a drag pins it. */
+    const preferredRef = useRef(
+        persistedSize ?? {
+            width: initialWidth === "fill" ? Infinity : initialWidth,
+            height: initialHeight === "fill" ? Infinity : initialHeight,
+        },
+    );
     // Kept in a ref so the pointer handlers never close over a stale callback
     const onSizeChangeRef = useRef(onSizeChange);
     onSizeChangeRef.current = onSizeChange;

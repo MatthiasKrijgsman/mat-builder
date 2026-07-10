@@ -21,10 +21,11 @@ import { ChromePill } from "./ChromePill.tsx";
 
 export interface CanvasProps {
     className?: string;
-    /** Initial artboard width in px (email default: 600) */
-    artboardWidth?: number;
-    /** Initial artboard height in px */
-    artboardHeight?: number;
+    /** Initial artboard width in px (email default: 600), or "fill" to fit
+     * the surface until the user drags a size */
+    artboardWidth?: number | "fill";
+    /** Initial artboard height in px, or "fill" */
+    artboardHeight?: number | "fill";
 }
 
 export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }: CanvasProps) {

@@ -31,10 +31,11 @@ function withPreviewScrollbar(html: string): string {
 
 export interface EmailPreviewProps {
     className?: string;
-    /** Initial artboard width in px */
-    initialWidth?: number;
-    /** Initial artboard height in px */
-    initialHeight?: number;
+    /** Initial artboard width in px, or "fill" to fit the surface until the
+     * user drags a size */
+    initialWidth?: number | "fill";
+    /** Initial artboard height in px, or "fill" */
+    initialHeight?: number | "fill";
     debounceMs?: number;
 }
 
