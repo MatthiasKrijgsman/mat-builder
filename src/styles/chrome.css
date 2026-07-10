@@ -62,6 +62,12 @@
 .mat-builder-block[data-selected] {
     cursor: grab;
 }
+/* While inline editing, the editable surface owns the pointer — cursor is
+   inherited, so the selected block's grab would otherwise show over the text.
+   The contenteditable only exists in edit mode (idle renders static text). */
+.mat-builder-block [contenteditable="true"] {
+    cursor: text;
+}
 .mat-builder-block[data-drag-source] {
     transform: scale(var(--mat-builder-chrome-lift-scale));
     opacity: var(--mat-builder-drag-source-opacity);
