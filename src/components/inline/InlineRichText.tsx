@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { SelectionAlwaysOnDisplay } from "@lexical/react/LexicalSelectionAlwaysOnDisplay";
 import { COMMAND_PRIORITY_HIGH, KEY_ESCAPE_COMMAND } from "lexical";
 import {
     lexicalDefaultToolbarItems,
@@ -172,6 +173,12 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 placeholder={placeholder}
                 autoFocus
             >
+                {/* Keeps the selection highlight painted while focus moves to a
+                    toolbar input (font size etc.) — the editor state retains the
+                    selection, but the browser drops the visual highlight the
+                    moment another element takes focus, which reads as "my
+                    selection was lost". */}
+                <SelectionAlwaysOnDisplay />
                 <LineHeightPlugin />
                 <ExitOnEscapePlugin onExit={exit} />
                 <LexicalFloatingToolbar open render={renderToolbar} renderSecondRow={renderSecondRow} />

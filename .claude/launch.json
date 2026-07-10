@@ -3,8 +3,11 @@
   "configurations": [
     {
       "name": "site",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@matthiaskrijgsman/mat-builder-site", "exec", "next", "dev"],
+      "runtimeExecutable": "zsh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/v20.15.1/bin:$PATH\" && pnpm --filter @matthiaskrijgsman/mat-builder-site exec next dev"
+      ],
       "port": 6007,
       "autoPort": true
     }
