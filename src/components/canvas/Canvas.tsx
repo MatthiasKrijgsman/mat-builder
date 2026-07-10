@@ -1,6 +1,6 @@
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { AnimatePresence } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState } from "../../react/hooks.ts";
@@ -28,13 +28,16 @@ export interface CanvasProps {
 }
 
 export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }: CanvasProps) {
-    const { registry, instanceId } = useBuilderContext();
+    const { store, registry, instanceId } = useBuilderContext();
     const rootId = useBuilderState((s) => s.document.rootId);
     const rootNode = useBuilderState((s) => s.document.blocks[s.document.rootId]);
     const isRootSelected = useBuilderState((s) => s.selectedId === s.document.rootId);
     const actions = useBuilderState((s) => s.actions);
     const onKeyDown = useBuilderKeyboard();
     const scrollRef = useRef<HTMLDivElement>(null);
+    // Mount-time read (no subscription — the Artboard owns its size while
+    // mounted): a size the user dragged on another surface carries over.
+    const [persistedSize] = useState(() => store.getState().artboardSize);
 
     useEffect(() => {
         const element = scrollRef.current;
@@ -50,6 +53,8 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
             className={`mat-builder-canvas outline-none ${className ?? ""}`}
             initialWidth={artboardWidth}
             initialHeight={artboardHeight}
+            size={persistedSize}
+            onSizeChange={(size) => actions.setArtboardSize(size)}
             // Focusable so keyboard shortcuts are active exactly while the canvas has focus;
             // clicking anywhere inside focuses it natively.
             tabIndex={-1}

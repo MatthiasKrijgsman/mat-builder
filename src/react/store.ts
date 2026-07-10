@@ -46,9 +46,17 @@ export interface EditingTarget {
     field: string;
 }
 
+/** User-dragged artboard frame size (see Artboard's preferred size). */
+export interface ArtboardSize {
+    width: number;
+    height: number;
+}
+
 export interface EditorActions {
     select(id: BlockId | null): void;
     hover(id: BlockId | null): void;
+    /** Persists the user-dragged artboard size so surface swaps (edit ⇄ preview) keep it */
+    setArtboardSize(size: ArtboardSize): void;
     /** Enters inline editing for a block field (also selects the block) */
     startEditing(id: BlockId, field: string): void;
     stopEditing(): void;
@@ -89,6 +97,10 @@ export interface EditorState {
      * all merge-tag UI. Editor configuration, not document state — never in
      * history snapshots. */
     mergeTags: MergeTag[];
+    /** The artboard size the user last dragged — null until a drag. UI state
+     * shared by every artboard surface (Canvas, EmailPreview, …) so swapping
+     * surfaces retains the frame; never in history snapshots. */
+    artboardSize: ArtboardSize | null;
     history: HistoryState;
     actions: EditorActions;
 }
@@ -148,12 +160,18 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
             drag: null,
             mergeTags: options.mergeTags ?? [],
+            artboardSize: null,
             history: createHistory(),
 
             actions: {
                 select,
                 hover: (id) => {
                     if (get().hoveredId !== id) set({ hoveredId: id });
+                },
+                setArtboardSize: (artboardSize) => {
+                    const current = get().artboardSize;
+                    if (current?.width === artboardSize.width && current?.height === artboardSize.height) return;
+                    set({ artboardSize });
                 },
                 startEditing: (id, field) => {
                     if (!get().document.blocks[id]) return;

@@ -22,6 +22,13 @@ export interface ArtboardProps extends HTMLAttributes<HTMLDivElement> {
     initialWidth?: number;
     /** Initial frame height in px */
     initialHeight?: number;
+    /** Mount-time frame size — overrides initialWidth/Height when set (e.g. a
+     * persisted user-dragged size); later prop changes are ignored, the
+     * artboard owns its size while mounted. */
+    size?: { width: number; height: number } | null;
+    /** Fires with the user's new preferred size on drag-resize (not on
+     * shrink-to-fit clamps) — pair with `size` to persist across remounts. */
+    onSizeChange?: (size: { width: number; height: number }) => void;
     /** Merged onto the frame element (e.g. a selection ring) */
     frameStyle?: CSSProperties;
     /** Rendered in the frame's relative wrapper, alongside the resize handles */
@@ -38,15 +45,28 @@ const clamp = (value: number, range: { min: number; max: number }) =>
     Math.min(Math.max(value, range.min), range.max);
 
 export function Artboard(props: ArtboardProps) {
-    const { className, initialWidth = 600, initialHeight = 720, frameStyle, decoration, children, style, ...rest } =
-        props;
+    const {
+        className,
+        initialWidth = 600,
+        initialHeight = 720,
+        size: persistedSize,
+        onSizeChange,
+        frameStyle,
+        decoration,
+        children,
+        style,
+        ...rest
+    } = props;
     const surfaceRef = useRef<HTMLDivElement>(null);
 
-    const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
+    const [size, setSize] = useState(persistedSize ?? { width: initialWidth, height: initialHeight });
     const sizeRef = useRef(size);
     sizeRef.current = size;
     /** The size the user last chose by dragging — what we restore toward when the window grows back */
     const preferredRef = useRef(size);
+    // Kept in a ref so the pointer handlers never close over a stale callback
+    const onSizeChangeRef = useRef(onSizeChange);
+    onSizeChangeRef.current = onSizeChange;
 
     // Keep the frame within the surface as the window resizes: shrink to fit,
     // and grow back toward the user's preferred size when space returns.
@@ -97,6 +117,7 @@ export function Artboard(props: ArtboardProps) {
                         ? { ...current, width: clamp(startSize + delta, widthRange) }
                         : { ...current, height: clamp(startSize + delta, heightRange) };
                 preferredRef.current = next; // dragging sets the new preferred size
+                onSizeChangeRef.current?.(next);
                 return next;
             });
         };

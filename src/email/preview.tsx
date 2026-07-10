@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Artboard } from "../components/canvas/Artboard.tsx";
+import { useBuilderContext } from "../react/context.ts";
 import { useBuilderState } from "../react/hooks.ts";
 import { renderEmail } from "./render.ts";
 
@@ -21,8 +22,12 @@ export interface EmailPreviewProps {
 }
 
 export function EmailPreview({ className, initialWidth = 600, initialHeight = 720, debounceMs = 300 }: EmailPreviewProps) {
+    const { store } = useBuilderContext();
     const document = useBuilderState((s) => s.document);
+    const actions = useBuilderState((s) => s.actions);
     const [html, setHtml] = useState<string>("");
+    // Mount-time read — a size the user dragged on the Canvas carries over
+    const [persistedSize] = useState(() => store.getState().artboardSize);
 
     useEffect(() => {
         let cancelled = false;
@@ -46,6 +51,8 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
             className={`mat-builder-email-preview ${className ?? ""}`}
             initialWidth={initialWidth}
             initialHeight={initialHeight}
+            size={persistedSize}
+            onSizeChange={(size) => actions.setArtboardSize(size)}
         >
             <iframe title="Email preview" srcDoc={html} className="h-full w-full border-0" />
         </Artboard>
