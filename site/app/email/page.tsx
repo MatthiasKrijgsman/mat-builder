@@ -23,7 +23,7 @@ import {
 } from "@matthiaskrijgsman/mat-builder";
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
 import { TabButtons } from "@matthiaskrijgsman/mat-ui";
-import Link from "next/link";
+import { IconMail } from "@tabler/icons-react";
 import { useState } from "react";
 import { dottedSurface, floatingPanel, transparentSurface } from "../floating-chrome";
 
@@ -333,24 +333,26 @@ export default function EmailBuilderPage() {
 
     return (
         <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
-            {/* One continuous dotted surface; the bottom bar and panels float over it */}
+            {/* One continuous dotted surface; the top bar and panels float over it */}
             <div className="relative h-screen" style={dottedSurface}>
                 <MainArea mode={mode} />
-                <BottomBar mode={mode} onModeChange={setMode} />
+                <TopBar mode={mode} onModeChange={setMode} />
             </div>
         </BuilderProvider>
     );
 }
 
-/** Floating app bar at the bottom, between the two side panels — offset from
- * the panels by the same 16px the panels keep from the window edge. */
-function BottomBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
+/** Floating app bar at the top, between the two side panels — offset from
+ * the panels by the same 16px the panels keep from the window edge. The
+ * title mirrors the panels' PanelHeader look (icon in a tinted square,
+ * 1.125rem semibold) so the bar reads as part of the same chrome. */
+function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className={`absolute bottom-4 left-[calc(400px+2rem)] right-[calc(400px+2rem)] z-30 flex items-center gap-3 px-4 py-2 ${floatingPanel}`}>
-            <h1 className="text-sm font-semibold">Email builder</h1>
-            <Link href="/" className="text-xs text-gray-400 hover:underline">
-                ← kitchen sink
-            </Link>
+        <header className={`absolute top-4 left-[calc(400px+2rem)] right-[calc(400px+2rem)] z-30 flex items-center gap-3 px-3 py-1.5 ${floatingPanel}`}>
+            <div className="grid h-8 w-8 place-items-center rounded-lg bg-gray-100">
+                <IconMail className="size-4 shrink-0 stroke-2 text-gray-800" />
+            </div>
+            <h1 className="text-[1.125rem] font-semibold">Email builder</h1>
             <div className="ml-auto flex items-center gap-3">
                 <TabButtons
                     size="sm"
