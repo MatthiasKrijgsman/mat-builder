@@ -23,7 +23,7 @@ The docs are living documents: when an implementation decision deviates from the
 
 This is a pnpm workspace (`pnpm-workspace.yaml`) with two packages, mirroring the mat-ui repo:
 - **Root** (`@matthiaskrijgsman/mat-builder`) — the published library, built with Vite from `src/`
-- **`site/`** (`@matthiaskrijgsman/mat-builder-site`, private) — the Next.js playground app (port 6007), depends on the library via `workspace:*`. This is the primary development surface — most iteration happens here, not in consuming projects.
+- **`site/`** (`@matthiaskrijgsman/mat-builder-site`, private) — the Next.js playground app (port 6007), depends on the library via `workspace:*`. This is the primary development surface — most iteration happens here, not in consuming projects. The playground **is** the email builder (root page, `site/app/page.tsx`); it's statically exported (`output: "export"`, basePath `/mat-builder`) and auto-deployed to GitHub Pages at <https://matthiaskrijgsman.github.io/mat-builder/> on every push to `main` (`.github/workflows/deploy-site.yml`).
 
 ## Commands
 
