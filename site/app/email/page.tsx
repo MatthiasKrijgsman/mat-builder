@@ -14,7 +14,6 @@ import {
     LayersPanel,
     Palette,
     richTextMergeTagNode,
-    richTextParagraph,
     symmetricSides,
     SYSTEM_FONT_STACK,
     UndoRedoButtons,
@@ -44,44 +43,80 @@ const mergeTags: MergeTag[] = [
     { token: "{{unsubscribe_url}}", label: "Unsubscribe URL" },
 ];
 
-const textNode = (text: string) => ({ type: "text", version: 1, detail: 0, format: 0, mode: "normal", style: "", text });
+/*
+ * Sample document — a fictional "Northwind" July invoice. Deliberately uses
+ * every block type in the preset (image, rich text with merge-tag chips,
+ * table, button, spacer, columns, divider) so the demo doubles as a visual
+ * smoke test.
+ */
 
-/** Intro copy with merge-tag chips baked in, so the feature shows on load. */
-const introCopyContent = JSON.stringify({
-    root: {
-        type: "root",
-        version: 1,
-        direction: null,
-        format: "",
-        indent: 0,
-        children: [
-            {
-                type: "paragraph",
-                version: 1,
-                direction: null,
-                format: "",
-                indent: 0,
-                children: [
-                    textNode("Hi "),
-                    richTextMergeTagNode("{{first_name}}", "First name"),
-                    textNode(" — your "),
-                    richTextMergeTagNode("*|COMPANY|*", "Company"),
-                    textNode(" invoice for July is attached. You can view and download it any time from your dashboard."),
-                ],
-            },
-        ],
-    },
-});
+const text = (t: string, style = "") => ({ type: "text", version: 1, detail: 0, format: 0, mode: "normal", style, text: t });
+const paragraph = (children: unknown[], align = "") => ({ type: "paragraph", version: 1, children, direction: null, format: align, indent: 0 });
+const heading = (tag: "h1" | "h2" | "h3", children: unknown[], align = "") => ({ type: "heading", version: 1, tag, children, direction: null, format: align, indent: 0 });
+const richDoc = (...children: unknown[]) => JSON.stringify({ root: { type: "root", version: 1, children, direction: null, format: "", indent: 0 } });
+
+const MUTED = "color: #78716c";
+const SMALL_MUTED = "font-size: 12px;color: #a1a1aa";
+
+const heroContent = richDoc(
+    heading("h2", [text("Your July invoice is ready", "color: #18181b")]),
+    paragraph([
+        text("Hi "),
+        richTextMergeTagNode("{{first_name}}", "First name"),
+        text(" — thanks for building with Northwind. Here\u2019s the monthly summary for "),
+        richTextMergeTagNode("*|COMPANY|*", "Company"),
+        text(": everything at a glance, no surprises."),
+    ]),
+);
+
+const invoiceLabel = richDoc(
+    paragraph([text("INVOICE \u2014 JULY 2026", "font-size: 12px;letter-spacing: 2px;font-weight: 600;color: #a1a1aa")]),
+);
+
+const invoiceNote = richDoc(
+    paragraph([text("All amounts in EUR. VAT (21%) included where applicable.", SMALL_MUTED)]),
+);
+
+const ctaContent = richDoc(
+    paragraph([text("Auto-pay is scheduled for August 1st", "font-size: 18px;font-weight: 600;color: #ffffff")], "center"),
+    paragraph([text("No action needed \u2014 or review the invoice first:", "font-size: 13px;color: #a1a1aa")], "center"),
+);
+
+const questionsContent = richDoc(
+    paragraph([text("Questions?", "font-weight: 600;color: #18181b")]),
+    paragraph([text("Just reply to this email \u2014 a human answers within a day.", SMALL_MUTED)]),
+);
+
+const billingContent = richDoc(
+    paragraph([text("Billed to", "font-weight: 600;color: #18181b")]),
+    paragraph([
+        richTextMergeTagNode("*|COMPANY|*", "Company"),
+        text(" \u00b7 attn. ", SMALL_MUTED),
+        richTextMergeTagNode("{{first_name}}", "First name"),
+        text(" ", SMALL_MUTED),
+        richTextMergeTagNode("{{last_name}}", "Last name"),
+    ]),
+);
+
+const footerContent = richDoc(
+    paragraph([text("Northwind Cloud BV \u00b7 Herengracht 100 \u00b7 Amsterdam", SMALL_MUTED)], "center"),
+    paragraph([
+        text("You receive invoice emails for your active subscription. Prefer fewer emails? ", SMALL_MUTED),
+        richTextMergeTagNode("{{unsubscribe_url}}", "Unsubscribe URL"),
+    ], "center"),
+);
 
 /** Neutral section style-group values — spread and override per section. */
 const sectionBase = {
     size: { ...defaultSize, width: "full" as const },
     background: defaultBackground,
     border: defaultBorder,
-    spacing: { padding: uniformSides(24), margin: uniformSides(0) },
+    spacing: { padding: symmetricSides(24, 24), margin: uniformSides(0) },
     effects: defaultEffects,
     layout: defaultLayout,
 };
+
+const textBase = { spacing: defaultSpacing, effects: defaultEffects, layout: defaultLayout };
 
 const initialDocument: BuilderDocument = {
     version: 1,
@@ -94,48 +129,123 @@ const initialDocument: BuilderDocument = {
                 backgroundColor: "#f4f4f5",
                 background: { ...defaultBackground, type: "solid", color: "#ffffff" },
                 contentWidth: 600,
-                spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
+                spacing: { padding: symmetricSides(32, 12), margin: uniformSides(0) },
                 typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
-                previewText: "Your July invoice is ready",
+                previewText: "Your July invoice \u2014 \u20ac97.00, auto-pay on August 1st",
             },
-            children: { main: ["intro", "cta"] },
+            children: { main: ["brand", "hero", "invoice", "cta", "details", "footer"] },
         },
-        intro: {
-            id: "intro",
+
+        /* Brand row */
+        brand: {
+            id: "brand",
             type: "section",
-            props: { ...sectionBase },
-            children: { content: ["intro-title", "intro-copy"] },
+            props: { ...sectionBase, spacing: { padding: symmetricSides(20, 24), margin: uniformSides(0) } },
+            children: { content: ["brand-name"] },
         },
-        "intro-title": {
-            id: "intro-title",
+        "brand-name": {
+            id: "brand-name",
             type: "text",
             props: {
-                // Per-range typography lives inside the content (docs/06)
-                content: richTextParagraph("Your invoice is ready", "font-size: 20px;color: #18181b"),
+                ...textBase,
+                content: richDoc(
+                    paragraph([text("N O R T H W I N D", "font-size: 13px;letter-spacing: 3px;font-weight: 600;color: #57534e")], "center"),
+                ),
+            },
+            children: {},
+        },
+
+        /* Hero: image + heading + intro copy */
+        hero: {
+            id: "hero",
+            type: "section",
+            props: { ...sectionBase, layout: { ...defaultLayout, gap: 16 } },
+            children: { content: ["hero-image", "hero-copy"] },
+        },
+        "hero-image": {
+            id: "hero-image",
+            type: "image",
+            props: {
+                src: "https://picsum.photos/seed/northwind-july/1104/400",
+                alt: "July at Northwind",
+                href: "",
+                size: { width: "full" as const, widthPx: 552, height: "hug" as const, heightPx: 200 },
+                layout: { ...defaultLayout, horizontal: "center" as const },
+                border: { ...defaultBorder, radius: 10 },
                 spacing: defaultSpacing,
                 effects: defaultEffects,
             },
             children: {},
         },
-        "intro-copy": {
-            id: "intro-copy",
+        "hero-copy": {
+            id: "hero-copy",
             type: "text",
+            props: { ...textBase, content: heroContent },
+            children: {},
+        },
+
+        /* Invoice: label + table + note */
+        invoice: {
+            id: "invoice",
+            type: "section",
             props: {
-                content: introCopyContent,
+                ...sectionBase,
+                spacing: { padding: { top: 8, right: 24, bottom: 8, left: 24 }, margin: uniformSides(0) },
+                layout: { ...defaultLayout, gap: 12 },
+            },
+            children: { content: ["invoice-label", "invoice-table", "invoice-note"] },
+        },
+        "invoice-label": {
+            id: "invoice-label",
+            type: "text",
+            props: { ...textBase, content: invoiceLabel },
+            children: {},
+        },
+        "invoice-table": {
+            id: "invoice-table",
+            type: "table",
+            props: {
+                cells: [
+                    ["Item", "Qty", "Amount"],
+                    ["Pro plan", "1", "\u20ac49.00"],
+                    ["Additional seats", "4", "\u20ac36.00"],
+                    ["Priority support", "1", "\u20ac12.00"],
+                    ["Total", "", "\u20ac97.00"],
+                ],
+                headerRow: true,
+                headerBackground: "#f4f4f5",
+                cellPadding: 10,
+                border: { width: uniformSides(1), style: "solid" as const, color: "#e7e5e4", radius: 8 },
                 spacing: defaultSpacing,
                 effects: defaultEffects,
             },
             children: {},
         },
+        "invoice-note": {
+            id: "invoice-note",
+            type: "text",
+            props: { ...textBase, content: invoiceNote },
+            children: {},
+        },
+
+        /* CTA: dark card with button */
         cta: {
             id: "cta",
             type: "section",
             props: {
                 ...sectionBase,
-                background: { ...defaultBackground, type: "solid", color: "#fafafa" },
-                border: { ...defaultBorder, radius: 8 },
+                background: { ...defaultBackground, type: "solid", color: "#1c1917" },
+                border: { ...defaultBorder, radius: 12 },
+                spacing: { padding: symmetricSides(28, 28), margin: { top: 16, right: 24, bottom: 16, left: 24 } },
+                layout: { ...defaultLayout, horizontal: "center" as const, gap: 16 },
             },
-            children: { content: ["cta-button"] },
+            children: { content: ["cta-copy", "cta-button"] },
+        },
+        "cta-copy": {
+            id: "cta-copy",
+            type: "text",
+            props: { ...textBase, content: ctaContent },
+            children: {},
         },
         "cta-button": {
             id: "cta-button",
@@ -144,13 +254,73 @@ const initialDocument: BuilderDocument = {
                 label: "View invoice",
                 href: "{{invoice_url}}",
                 size: defaultSize,
-                background: { ...defaultBackground, type: "solid", color: "#18181b" },
-                border: { ...defaultBorder, radius: 6 },
-                typography: { ...defaultTypography, color: "#ffffff", align: "center" },
-                spacing: { padding: symmetricSides(12, 20), margin: uniformSides(0) },
-                layout: { ...defaultLayout, horizontal: "center" },
+                background: { ...defaultBackground, type: "solid", color: "#ffffff" },
+                border: { ...defaultBorder, radius: 8 },
+                typography: { ...defaultTypography, color: "#1c1917", align: "center" as const },
+                spacing: { padding: symmetricSides(12, 24), margin: uniformSides(0) },
+                layout: { ...defaultLayout, horizontal: "center" as const },
                 effects: defaultEffects,
             },
+            children: {},
+        },
+
+        /* Details: two columns */
+        details: {
+            id: "details",
+            type: "columns",
+            props: {
+                ratio: "50/50",
+                layout: { ...defaultLayout, gap: 24 },
+                background: defaultBackground,
+                border: defaultBorder,
+                spacing: { padding: symmetricSides(8, 24), margin: uniformSides(0) },
+                effects: defaultEffects,
+            },
+            children: { "col-1": ["details-questions"], "col-2": ["details-billing"] },
+        },
+        "details-questions": {
+            id: "details-questions",
+            type: "text",
+            props: { ...textBase, content: questionsContent },
+            children: {},
+        },
+        "details-billing": {
+            id: "details-billing",
+            type: "text",
+            props: { ...textBase, content: billingContent },
+            children: {},
+        },
+
+        /* Footer: divider + small print */
+        footer: {
+            id: "footer",
+            type: "section",
+            props: {
+                ...sectionBase,
+                spacing: { padding: { top: 8, right: 24, bottom: 24, left: 24 }, margin: uniformSides(0) },
+            },
+            children: { content: ["footer-divider", "footer-spacer", "footer-copy"] },
+        },
+        "footer-divider": {
+            id: "footer-divider",
+            type: "divider",
+            props: {
+                color: "#e7e5e4",
+                thickness: 1,
+                spacing: { padding: uniformSides(0), margin: symmetricSides(8, 0) },
+            },
+            children: {},
+        },
+        "footer-spacer": {
+            id: "footer-spacer",
+            type: "spacer",
+            props: { height: 8 },
+            children: {},
+        },
+        "footer-copy": {
+            id: "footer-copy",
+            type: "text",
+            props: { ...textBase, content: footerContent },
             children: {},
         },
     },
