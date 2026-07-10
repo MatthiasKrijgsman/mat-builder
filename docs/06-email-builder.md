@@ -117,7 +117,7 @@ Output: the walker's `merge-tag` case emits the literal token as escaped text; `
 
 ## Preview mode
 
-The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry (a Toolbar `PreviewToggle` can wrap it later — hosts currently swap `<Canvas/>` for `<EmailPreview/>` themselves, see `site/app/email/page.tsx`):
+The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry (a Toolbar `PreviewToggle` can wrap it later — hosts currently swap `<Canvas/>` for `<EmailPreview/>` themselves, see `site/app/page.tsx`):
 
 - Debounced call to `renderEmail(doc)` (client-side is fine — `render` works in the browser) → `<iframe srcDoc={html} />`.
 - The iframe isolates the email from the app's Tailwind preflight/global CSS — rendering the output HTML inline in the app DOM would be contaminated by it, which is why preview uses an iframe even though the editing canvas doesn't.

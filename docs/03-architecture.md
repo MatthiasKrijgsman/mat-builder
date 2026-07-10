@@ -270,7 +270,7 @@ mat-builder/
       canvas/  palette/  inspector/  layers/  toolbar/
       fields/                 # shared inspector field helpers (wrapping mat-ui inputs)
     email/                    # email block set + server-safe renderer (see 06)
-  site/                       # playground app (kitchen-sink builders, theming demos)
+  site/                       # playground app (the email builder — deployed to GitHub Pages on push to main)
   docs/                       # these documents
 ```
 
