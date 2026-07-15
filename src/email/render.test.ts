@@ -291,9 +291,10 @@ describe("renderEmail", () => {
         const { html } = await renderEmail(document);
         // separate borders (collapse would disable border-radius)
         expect(html).toContain("border-collapse:separate");
-        // header cell: bold + background; body cell: plain
-        expect(html).toMatch(/<td[^>]*font-weight:600[^>]*>[^<]*Plan/);
-        expect(html).toMatch(/<td[^>]*>[^<]*\$12/);
+        // Cells are rich text; plain strings (legacy documents) are wrapped
+        // into a paragraph on read — header cell: bold + background.
+        expect(html).toMatch(/<td[^>]*font-weight:600[^>]*>\s*<p[^>]*>[^<]*Plan/);
+        expect(html).toMatch(/<td[^>]*>\s*<p[^>]*>[^<]*\$12/);
         // 1px default cell borders: every cell right+bottom, first row adds top
         expect(html).toMatch(/<td[^>]*border-right:1px solid[^>]*border-bottom:1px solid[^>]*border-top:1px solid/);
         // radius rounds the frame and the corner cells

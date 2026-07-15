@@ -31,6 +31,24 @@ const FONT_WEIGHT_OPTIONS = [
     { value: "700", label: "Bold" },
 ];
 
+/** First family of a stack, unquoted + lowercased, for loose stack matching. */
+const firstFamily = (stack: string): string =>
+    (stack.split(",")[0] ?? "").trim().replace(/^['"]|['"]$/g, "");
+
+/** Display label for an inherited font-family: the matching option's name,
+ * or the stack's first family verbatim when it's not one of ours. */
+const inheritedFontLabel = (computedFamily: string): string => {
+    const first = firstFamily(computedFamily).toLowerCase();
+    const option = FONT_OPTIONS.find((o) => firstFamily(o.value).toLowerCase() === first);
+    return option?.label ?? (firstFamily(computedFamily) || "Font");
+};
+
+/** Display label for an inherited font-weight ("400" → "Regular"). */
+const inheritedWeightLabel = (computedWeight: string): string => {
+    const normalized = computedWeight === "normal" ? "400" : computedWeight === "bold" ? "700" : computedWeight;
+    return FONT_WEIGHT_OPTIONS.find((o) => o.value === normalized)?.label ?? normalized;
+};
+
 /** Effective INHERITED text style, read from the editor root's computed
  * style — when the selection carries no inline style the controls show the
  * values the text actually renders with (the email-root base typography
@@ -40,6 +58,8 @@ function useInheritedTextStyle() {
     const root = editor.getRootElement();
     if (!root) {
         return {
+            fontFamily: "",
+            fontWeight: "400",
             fontSize: defaultTypography.fontSize,
             lineHeight: defaultTypography.lineHeight,
             letterSpacing: defaultTypography.letterSpacing,
@@ -51,6 +71,8 @@ function useInheritedTextStyle() {
     const lineHeightPx = Number.parseFloat(computed.lineHeight); // NaN for "normal"
     const letterSpacing = Number.parseFloat(computed.letterSpacing) || 0; // "normal" → 0
     return {
+        fontFamily: computed.fontFamily,
+        fontWeight: computed.fontWeight,
         fontSize,
         lineHeight: Number.isNaN(lineHeightPx)
             ? defaultTypography.lineHeight
@@ -62,13 +84,18 @@ function useInheritedTextStyle() {
 
 function FontFamilyItem() {
     const { values, patch } = useLexicalSelectionStyle(["font-family"]);
+    const inherited = useInheritedTextStyle();
+    // No inline style on the selection → show the font the text actually
+    // renders with (the inherited one), not a "Font" placeholder.
+    const label = inheritedFontLabel(inherited.fontFamily);
     return (
         <LexicalToolbarSelect
             title="Font family"
             options={FONT_OPTIONS}
             value={values["font-family"] || null}
             onChange={(stack) => patch({ "font-family": stack })}
-            placeholder="Font"
+            placeholder={label}
+            clearLabel={`Default (${label})`}
             clearable
             minWidth={200}
         />
@@ -79,13 +106,16 @@ function FontFamilyItem() {
  * the selection; the bold format bit (700) still wins where both are set. */
 function FontWeightItem() {
     const { values, patch } = useLexicalSelectionStyle(["font-weight"]);
+    const inherited = useInheritedTextStyle();
+    const label = inheritedWeightLabel(inherited.fontWeight);
     return (
         <LexicalToolbarSelect
             title="Font weight"
             options={FONT_WEIGHT_OPTIONS}
             value={values["font-weight"] || null}
             onChange={(weight) => patch({ "font-weight": weight })}
-            placeholder="Weight"
+            placeholder={label}
+            clearLabel={`Default (${label})`}
             clearable
             minWidth={160}
         />

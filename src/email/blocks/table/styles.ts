@@ -15,15 +15,18 @@ import {
 } from "../../../style-props/index.ts";
 
 /*
- * Table — a data table (rows × columns of plain-text cells). Real <table>
+ * Table — a data table (rows × columns of rich-text cells). Real <table>
  * markup is the one layout primitive every email client renders natively,
- * so both renders emit the same structure. Cell text is edited in place on
- * the canvas (InlineText per cell); row/column counts change in the
- * inspector, preserving existing cell content.
+ * so both renders emit the same structure. Cell content is edited in place
+ * on the canvas (InlineRichText per cell — the same surface as the Text
+ * block); row/column counts change in the inspector, preserving existing
+ * cell content. Cells stored as plain strings by older versions are wrapped
+ * via ensureRichText wherever they're read.
  */
 
 export interface EmailTableProps {
-    /** Row-major plain-text cells — cells[row][column]. */
+    /** Row-major cells — cells[row][column]; serialized rich text (legacy
+     * documents may still hold plain strings — normalize with ensureRichText). */
     cells: string[][];
     /** Style the first row as a header (bold + headerBackground). */
     headerRow: boolean;

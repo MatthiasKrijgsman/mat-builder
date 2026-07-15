@@ -199,6 +199,9 @@ const parseDocument = (content: string): RichTextDocument | null => {
     return null;
 };
 
+/** Whether stored content is a rich text document (vs. legacy plain text). */
+export const isRichTextContent = (content: string): boolean => parseDocument(content) !== null;
+
 export interface RichTextProps {
     /** Serialized editor state JSON (see rich-text/types.ts). */
     content: string;

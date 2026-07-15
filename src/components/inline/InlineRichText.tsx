@@ -82,6 +82,65 @@ const richTextTheme = {
     },
 };
 
+/** Caret range at viewport coordinates (Chromium/WebKit vs Firefox API). */
+function rangeFromPoint(x: number, y: number): Range | null {
+    const doc = document as Document & {
+        caretRangeFromPoint?: (x: number, y: number) => Range | null;
+        caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
+    };
+    if (doc.caretRangeFromPoint) return doc.caretRangeFromPoint(x, y);
+    const position = doc.caretPositionFromPoint?.(x, y);
+    if (!position) return null;
+    const range = document.createRange();
+    range.setStart(position.offsetNode, position.offset);
+    range.collapse(true);
+    return range;
+}
+
+/** Focuses the editing surface with the caret at the double-click point —
+ * replacing AutoFocusPlugin, which puts the caret at the END of the document
+ * (a long text then scrolls all the way down on double-click). The clicked
+ * word is selected where the engine supports it (native double-click
+ * semantics); without a point (programmatic session start) it falls back to
+ * the default end-of-document focus. */
+function FocusAtPointPlugin({ point }: { point: () => { x: number; y: number } | null }) {
+    const [editor] = useLexicalComposerContext();
+    useEffect(() => {
+        const at = point();
+        if (!at) {
+            editor.focus();
+            return;
+        }
+        // Double rAF: at effect time Lexical hasn't reconciled the document
+        // into the contentEditable yet, so a caret-from-point lookup would
+        // miss the text and leave the caret at the document start.
+        let raf = requestAnimationFrame(() => {
+            raf = requestAnimationFrame(() => {
+                const root = editor.getRootElement();
+                if (!root) return;
+                // The point is already in view — preventScroll stops the
+                // browser from scrolling the caret into view first.
+                root.focus({ preventScroll: true });
+                const range = rangeFromPoint(at.x, at.y);
+                if (!range || !root.contains(range.startContainer)) return;
+                try {
+                    // Non-standard but Chromium/WebKit: grow the caret to the
+                    // word, matching native double-click semantics.
+                    (range as Range & { expand?: (unit: string) => void }).expand?.("word");
+                } catch {
+                    // collapsed caret is fine
+                }
+                const selection = window.getSelection();
+                selection?.removeAllRanges();
+                selection?.addRange(range);
+                // Lexical picks the DOM selection up via selectionchange.
+            });
+        });
+        return () => cancelAnimationFrame(raf);
+    }, [editor, point]);
+    return null;
+}
+
 /** Escape ends the editing session (handled here, not the builder keyboard —
  * focus is inside a contentEditable, where builder shortcuts are inert). */
 function ExitOnEscapePlugin({ onExit }: { onExit: () => void }) {
@@ -123,6 +182,17 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
     const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Where the session-starting double-click landed. Read (not consumed) by
+    // FocusAtPointPlugin — StrictMode runs the plugin's effect twice, so a
+    // destructive read would lose the point to the discarded first run. It
+    // clears when the session ends so a later programmatic session start
+    // (no click) doesn't reuse a stale point.
+    const clickPointRef = useRef<{ x: number; y: number } | null>(null);
+    const readClickPoint = useCallback(() => clickPointRef.current, []);
+    useEffect(() => {
+        if (!isEditing) clickPointRef.current = null;
+    }, [isEditing]);
+
     const exit = useCallback(() => {
         actions.stopEditing();
         focusCanvas(containerRef.current);
@@ -154,6 +224,7 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 onDoubleClick={(event) => {
                     event.stopPropagation();
                     event.preventDefault(); // no native word-selection flash under the editor
+                    clickPointRef.current = { x: event.clientX, y: event.clientY };
                     actions.startEditing(id, field);
                 }}
             >
@@ -171,7 +242,7 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 nodes={EXTRA_NODES}
                 theme={richTextTheme}
                 placeholder={placeholder}
-                autoFocus
+                autoFocus={false}
             >
                 {/* Keeps the selection highlight painted while focus moves to a
                     toolbar input (font size etc.) — the editor state retains the
@@ -180,8 +251,11 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                     selection was lost". */}
                 <SelectionAlwaysOnDisplay />
                 <LineHeightPlugin />
+                <FocusAtPointPlugin point={readClickPoint} />
                 <ExitOnEscapePlugin onExit={exit} />
-                <LexicalFloatingToolbar open render={renderToolbar} renderSecondRow={renderSecondRow} />
+                {/* Anchored to the selection so the bar sits near the cursor
+                    instead of snapping to the top/bottom of a long text. */}
+                <LexicalFloatingToolbar open render={renderToolbar} renderSecondRow={renderSecondRow} anchorToSelection />
             </LexicalInline>
         </div>
     );

@@ -4,6 +4,8 @@
  * these so the stored shape has one source of truth.
  */
 
+import { isRichTextContent } from "./render.tsx";
+
 const textNode = (text: string, style?: string) => ({
     type: "text",
     version: 1,
@@ -72,6 +74,12 @@ export const richTextHeading = (text: string, tag: "h1" | "h2" | "h3" | "h4" | "
             indent: 0,
         },
     });
+
+/** Normalizes possibly-plain stored text to rich text — passes documents
+ * through untouched and wraps legacy plain strings (e.g. table cells stored
+ * before cells became rich text) in a single paragraph. */
+export const ensureRichText = (content: string): string =>
+    isRichTextContent(content) ? content : richTextParagraph(content);
 
 /** A merge-tag node (docs/06 §merge tags) for composing documents in samples
  * and tests; matches MergeTagNode.exportJSON on the editor side. */
