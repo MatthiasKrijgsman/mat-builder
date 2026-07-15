@@ -52,8 +52,8 @@ importers:
         specifier: 0.45.0
         version: 0.45.0
       '@matthiaskrijgsman/mat-ui':
-        specifier: ^0.0.62
-        version: 0.0.62(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
+        specifier: ^0.0.63
+        version: 0.0.63(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
       '@react-email/render':
         specifier: ^2.0.10
         version: 2.0.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -142,8 +142,8 @@ importers:
         specifier: workspace:*
         version: link:..
       '@matthiaskrijgsman/mat-ui':
-        specifier: ^0.0.62
-        version: 0.0.62(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
+        specifier: ^0.0.63
+        version: 0.0.63(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)
       '@tabler/icons-react':
         specifier: ^3.34.1
         version: 3.44.0(react@19.2.7)
@@ -827,8 +827,8 @@ packages:
     peerDependencies:
       yjs: '>=13.5.22'
 
-  '@matthiaskrijgsman/mat-ui@0.0.62':
-    resolution: {integrity: sha512-SWPWVR3p8hFslR9F72MUZ+LNUAiKi2ij7ZTmCFHOon3aYOqkcQCRAedqaSwSFItQ9n1evyCvM1pZTDjTB4oA7Q==}
+  '@matthiaskrijgsman/mat-ui@0.0.63':
+    resolution: {integrity: sha512-DRVZkxmay4ZKsA5IJ7F9KWPkWr5wN2367lZaH74HqNLXC3wtc6U0PjmRKsZOKTrR/jjQqA5zOWlUso2G5xBdNg==}
     peerDependencies:
       '@floating-ui/react': ^0.27.16
       '@lexical/link': 0.45.0
@@ -3168,7 +3168,7 @@ snapshots:
       lexical: 0.45.0
       yjs: 13.6.31
 
-  '@matthiaskrijgsman/mat-ui@0.0.62(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)':
+  '@matthiaskrijgsman/mat-ui@0.0.63(@floating-ui/react@0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(@tabler/icons-react@3.44.0(react@19.2.7))(lexical@0.45.0)(motion@12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react-dropzone@15.0.0(react@19.2.7))(react-merge-refs@3.0.2(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@floating-ui/react': 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@lexical/link': 0.45.0
