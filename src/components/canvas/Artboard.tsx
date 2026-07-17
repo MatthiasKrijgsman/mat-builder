@@ -18,9 +18,9 @@ import {
  */
 
 export interface ArtboardProps extends HTMLAttributes<HTMLDivElement> {
-    /** Initial frame width in px (email default: 600), or "fill" to fit the
-     * surface — the frame keeps filling on window resize until the user drags
-     * a size of their own. */
+    /** Initial frame width in px (email default: 600), or "fill" to size to
+     * 80% of the surface — the frame keeps tracking the surface on window
+     * resize until the user drags a size of their own. */
     initialWidth?: number | "fill";
     /** Initial frame height in px, or "fill" (see initialWidth) */
     initialHeight?: number | "fill";
@@ -41,6 +41,8 @@ export interface ArtboardProps extends HTMLAttributes<HTMLDivElement> {
 
 const WIDTH_RANGE = { min: 320, max: 1400 };
 const HEIGHT_RANGE = { min: 240, max: 2400 };
+/** "fill" sizes the frame to this fraction of the surface, not edge-to-edge */
+const FILL_FRACTION = 0.8;
 /** Space kept between the frame and the surface edge — must match the p-6 wrapper padding, and is what keeps the resize bars (14px outside the frame) inside the surface. */
 const ARTBOARD_MARGIN = 24;
 const clamp = (value: number, range: { min: number; max: number }) =>
@@ -92,9 +94,19 @@ export function Artboard(props: ArtboardProps) {
         const observer = new ResizeObserver(() => {
             const maxWidth = Math.max(WIDTH_RANGE.min, surface.clientWidth - ARTBOARD_MARGIN * 2);
             const maxHeight = Math.max(HEIGHT_RANGE.min, surface.clientHeight - ARTBOARD_MARGIN * 2);
+            // "fill" (Infinity preferred) targets a fraction of the surface;
+            // user-dragged sizes only clamp to what fits.
+            const fill = (surfaceSize: number, max: number, range: { min: number; max: number }) =>
+                Math.max(range.min, Math.min(surfaceSize * FILL_FRACTION, max));
             setSize((current) => {
-                const width = Math.min(preferredRef.current.width, maxWidth);
-                const height = Math.min(preferredRef.current.height, maxHeight);
+                const width =
+                    preferredRef.current.width === Infinity
+                        ? fill(surface.clientWidth, maxWidth, WIDTH_RANGE)
+                        : Math.min(preferredRef.current.width, maxWidth);
+                const height =
+                    preferredRef.current.height === Infinity
+                        ? fill(surface.clientHeight, maxHeight, HEIGHT_RANGE)
+                        : Math.min(preferredRef.current.height, maxHeight);
                 return width === current.width && height === current.height ? current : { width, height };
             });
         });
