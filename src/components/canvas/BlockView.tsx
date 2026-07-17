@@ -13,6 +13,7 @@ import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
+import { pressStartedInInlineEditor } from "../inline/focus.ts";
 import { ContainerSlot } from "./ContainerSlot.tsx";
 
 /*
@@ -135,7 +136,9 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
             // stopPropagation everywhere: the innermost block under the pointer wins
             onClick={(event) => {
                 event.stopPropagation();
-                actions.select(id);
+                // A text drag released over this block clicks the common
+                // ancestor — selecting here would end the editing session
+                if (!pressStartedInInlineEditor()) actions.select(id);
             }}
             onPointerOver={(event) => {
                 event.stopPropagation();

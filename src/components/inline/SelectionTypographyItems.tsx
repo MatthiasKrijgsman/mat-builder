@@ -1,4 +1,5 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { $getSelection, $isRangeSelection, SKIP_DOM_SELECTION_TAG, type LexicalEditor } from "lexical";
 import {
     LexicalAlignButtons,
     LexicalToolbarColor,
@@ -6,6 +7,7 @@ import {
     LexicalToolbarNumber,
     LexicalToolbarSelect,
     useLexicalSelectionStyle,
+    useLexicalToolbar,
 } from "@matthiaskrijgsman/mat-ui";
 import { defaultTypography, EMAIL_FONT_STACKS, hexToRgba, parseColorToHexOpacity } from "../../style-props/index.ts";
 import { $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightPlugin.tsx";
@@ -102,18 +104,38 @@ function FontFamilyItem() {
     );
 }
 
+/** Skips pulling DOM selection/focus back into the contentEditable when a
+ * toolbar field owns focus — same guard as mat-ui's selection-style patch. */
+const focusPreservingTag = (editor: LexicalEditor): { tag: string } | undefined => {
+    const root = editor.getRootElement();
+    const editorHasFocus = Boolean(root && root.contains(root.ownerDocument.activeElement));
+    return editorHasFocus ? undefined : { tag: SKIP_DOM_SELECTION_TAG };
+};
+
 /** Full weight scale next to the plain bold toggle — patches font-weight on
- * the selection; the bold format bit (700) still wins where both are set. */
+ * the selection, kept in sync with the bold format bit: bold shows as 700
+ * unless an explicit inline weight overrides it, and choosing a non-bold
+ * weight clears the bit (or the lit B button would contradict the text). */
 function FontWeightItem() {
+    const [editor] = useLexicalComposerContext();
     const { values, patch } = useLexicalSelectionStyle(["font-weight"]);
+    const { state } = useLexicalToolbar();
     const inherited = useInheritedTextStyle();
     const label = inheritedWeightLabel(inherited.fontWeight);
     return (
         <LexicalToolbarSelect
             title="Font weight"
             options={FONT_WEIGHT_OPTIONS}
-            value={values["font-weight"] || null}
-            onChange={(weight) => patch({ "font-weight": weight })}
+            value={values["font-weight"] || (state.isBold ? "700" : null)}
+            onChange={(weight) => {
+                patch({ "font-weight": weight });
+                if (state.isBold && weight !== "700") {
+                    editor.update(() => {
+                        const selection = $getSelection();
+                        if ($isRangeSelection(selection)) selection.formatText("bold");
+                    }, focusPreservingTag(editor));
+                }
+            }}
             placeholder={label}
             clearLabel={`Default (${label})`}
             clearable
@@ -147,7 +169,9 @@ function LineHeightItem() {
             title="Line height (multiplier)"
             prefix="Lh"
             value={value ?? inherited.lineHeight}
-            onChange={(multiplier) => editor.update(() => $setLineHeightOnSelection(multiplier))}
+            onChange={(multiplier) =>
+                editor.update(() => $setLineHeightOnSelection(multiplier), focusPreservingTag(editor))
+            }
             min={0.5}
             max={3}
             step={0.1}

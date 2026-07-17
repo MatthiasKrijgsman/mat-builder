@@ -5,6 +5,7 @@ import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState } from "../../react/hooks.ts";
 import { useBuilderKeyboard } from "../../react/keyboard.ts";
+import { pressStartedInInlineEditor, trackPressOrigin } from "../inline/focus.ts";
 import { Artboard } from "./Artboard.tsx";
 import { BlockView } from "./BlockView.tsx";
 import { ChromeOverlay } from "./ChromeOverlay.tsx";
@@ -60,7 +61,13 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
             // clicking anywhere inside focuses it natively.
             tabIndex={-1}
             onKeyDown={onKeyDown}
-            onClick={() => actions.select(null)} // blocks stop propagation, so this is empty-area only
+            onPointerDownCapture={(event) => trackPressOrigin(event.target)}
+            // Blocks stop propagation, so this is empty-area only — except a
+            // text drag released outside its editor, whose click lands on the
+            // common ancestor (the guard keeps it from ending the session).
+            onClick={() => {
+                if (!pressStartedInInlineEditor()) actions.select(null);
+            }}
             // Root chrome stays on the frame itself (selecting the root IS selecting
             // the artboard); the transition is always present so the ring/glow animate
             // in AND out with the same spring as block chrome

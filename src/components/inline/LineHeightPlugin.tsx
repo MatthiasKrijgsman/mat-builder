@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
+    $getNodeByKey,
     $getSelection,
     $getState,
     $isParagraphNode,
@@ -10,6 +11,7 @@ import {
     ParagraphNode,
     type ElementNode,
     type LexicalEditor,
+    type NodeMutation,
 } from "lexical";
 import { $isHeadingNode, HeadingNode } from "@lexical/rich-text";
 import { mergeRegister } from "@lexical/utils";
@@ -19,9 +21,11 @@ import { LINE_HEIGHT_STATE_KEY } from "../../email/rich-text/index.ts";
  * Paragraph/heading line-height as a NodeState (docs/06): Lexical does NOT
  * serialize element `style`, so a plain node.setStyle() would silently drop
  * on save/reload. The multiplier persists under the node's `"$"` bag (where
- * the rich-text serializer reads it) and a node transform mirrors it into a
- * live inline style so the editor shows it. Transforms run on every existing
- * node at registration, so loaded documents style immediately.
+ * the rich-text serializer reads it), and mutation listeners paint it onto
+ * the live DOM elements — Lexical's reconciler never applies ElementNode
+ * styles itself (only text-align/indent), so this is the ONLY way the editor
+ * shows it. `skipInitialization: false` replays existing nodes as `created`,
+ * so loaded documents style immediately.
  */
 
 const lineHeightState = createState(LINE_HEIGHT_STATE_KEY, {
@@ -30,13 +34,8 @@ const lineHeightState = createState(LINE_HEIGHT_STATE_KEY, {
 });
 
 /** The same %-form the serializer emits — keep in sync with rich-text/render.tsx. */
-const lineHeightStyle = (multiplier: number | undefined): string =>
-    multiplier === undefined ? "" : `line-height: ${Math.round(multiplier * 100)}%`;
-
-const syncNodeStyle = (node: ElementNode): void => {
-    const style = lineHeightStyle($getState(node, lineHeightState));
-    if (node.getStyle() !== style) node.setStyle(style);
-};
+const lineHeightCss = (multiplier: number | undefined): string =>
+    multiplier === undefined ? "" : `${Math.round(multiplier * 100)}%`;
 
 /** Block elements (paragraph/heading) covered by the current selection. */
 const $selectedLineHeightTargets = (): ElementNode[] => {
@@ -81,9 +80,20 @@ export function LineHeightPlugin() {
     const [editor] = useLexicalComposerContext();
 
     useEffect(() => {
+        const paint = (mutations: Map<string, NodeMutation>) => {
+            editor.getEditorState().read(() => {
+                for (const [key, mutation] of mutations) {
+                    if (mutation === "destroyed") continue;
+                    const element = editor.getElementByKey(key);
+                    const node = $getNodeByKey(key);
+                    if (!element || !node) continue;
+                    element.style.lineHeight = lineHeightCss($getState(node, lineHeightState));
+                }
+            });
+        };
         return mergeRegister(
-            editor.registerNodeTransform(ParagraphNode, syncNodeStyle),
-            editor.registerNodeTransform(HeadingNode, syncNodeStyle),
+            editor.registerMutationListener(ParagraphNode, paint, { skipInitialization: false }),
+            editor.registerMutationListener(HeadingNode, paint, { skipInitialization: false }),
         );
     }, [editor]);
 

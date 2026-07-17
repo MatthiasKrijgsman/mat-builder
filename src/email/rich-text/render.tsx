@@ -60,7 +60,9 @@ const blockOverrides = (node: RichElementNode): CSSProperties => {
 const renderText = (node: RichTextNode, key: number): ReactNode => {
     const format = node.format ?? 0;
     const css: CSSProperties = parseTextStyle(node.style);
-    if (format & TEXT_FORMAT.bold) css.fontWeight = 700;
+    // Explicit inline weight wins over the bold bit — matching the editor,
+    // where the inline style beats the .mat-builder-rt-bold class.
+    if (format & TEXT_FORMAT.bold && css.fontWeight === undefined) css.fontWeight = 700;
     if (format & TEXT_FORMAT.italic) css.fontStyle = "italic";
     const decorations = [
         format & TEXT_FORMAT.underline ? "underline" : null,
