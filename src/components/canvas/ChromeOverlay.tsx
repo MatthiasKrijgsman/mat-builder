@@ -44,7 +44,17 @@ export function ChromeOverlay({ scrollerRef }: { scrollerRef: RefObject<HTMLDivE
     if (!drag) push(hoveredId !== selectedId ? hoveredId : null, "hover");
 
     return (
-        <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-20">
+        // overflow-hidden contains LAYOUT: frames are sized to measured block
+        // rects, which can be far taller than the artboard (long text blocks) —
+        // clip-path confines painting only, and without containment those boxes
+        // grow the work surface's scroll area. Bounds are expanded by the ring
+        // allowance so edge-flush rings still paint; the clip-path trims at the
+        // same boundary, so nothing visible changes.
+        <div
+            ref={overlayRef}
+            className="pointer-events-none absolute z-20 overflow-hidden"
+            style={{ inset: `calc(-1 * (var(--mat-builder-chrome-ring-offset) + ${RING_SLACK}px))` }}
+        >
             <AnimatePresence>
                 {frames.map((frame) => (
                     <ChromeFrame
