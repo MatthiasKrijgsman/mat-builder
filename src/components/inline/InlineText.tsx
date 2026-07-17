@@ -5,6 +5,7 @@ import type { BlockId } from "../../core/types.ts";
 import { useBuilderState, useMergeTags } from "../../react/hooks.ts";
 import { MergeTagPlainItem } from "./MergeTagItems.tsx";
 import { focusCanvas } from "./focus.ts";
+import { useSelectionDrag } from "./use-selection-drag.ts";
 
 /*
  * Inline-editable plain text (single line) for block edit renders — the
@@ -43,6 +44,8 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
     const hasMergeTags = useMergeTags().length > 0;
     const ref = useRef<HTMLSpanElement>(null);
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+    // The bar sits right where a selection sweep happens — hide it mid-drag
+    const selecting = useSelectionDrag(ref, isEditing);
 
     const exit = useCallback(() => {
         actions.stopEditing();
@@ -156,7 +159,7 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
                 // Content-sized (a label is far narrower than its toolbar);
                 // needs mat-ui >= 0.0.60, where overflow-collapse measures
                 // content-sized bars correctly.
-                <FloatingToolbarShell anchor={anchor} open matchAnchorWidth={false} secondRow={toolbarSecondRow}>
+                <FloatingToolbarShell anchor={anchor} open={!selecting} matchAnchorWidth={false} secondRow={toolbarSecondRow}>
                     {toolbar}
                     <MergeTagPlainItem onInsert={insertToken} divider={Boolean(toolbar)} />
                 </FloatingToolbarShell>

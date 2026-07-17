@@ -18,6 +18,7 @@ import { LineHeightPlugin } from "./LineHeightPlugin.tsx";
 import { MergeTagChip, MergeTagNode } from "./MergeTagNode.tsx";
 import { mergeTagItems } from "./MergeTagItems.tsx";
 import { focusCanvas } from "./focus.ts";
+import { useSelectionDrag } from "./use-selection-drag.ts";
 
 /*
  * Inline-editable rich text for block edit renders (docs/04, docs/06).
@@ -181,6 +182,8 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
     const actions = useBuilderState((s) => s.actions);
     const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
     const containerRef = useRef<HTMLDivElement>(null);
+    // The bar sits right where a selection sweep happens — hide it mid-drag
+    const selecting = useSelectionDrag(containerRef, isEditing);
 
     // Where the session-starting double-click landed. Read (not consumed) by
     // FocusAtPointPlugin — StrictMode runs the plugin's effect twice, so a
@@ -255,7 +258,12 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 <ExitOnEscapePlugin onExit={exit} />
                 {/* Anchored to the selection so the bar sits near the cursor
                     instead of snapping to the top/bottom of a long text. */}
-                <LexicalFloatingToolbar open render={renderToolbar} renderSecondRow={renderSecondRow} anchorToSelection />
+                <LexicalFloatingToolbar
+                    open={!selecting}
+                    render={renderToolbar}
+                    renderSecondRow={renderSecondRow}
+                    anchorToSelection
+                />
             </LexicalInline>
         </div>
     );
