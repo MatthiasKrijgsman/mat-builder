@@ -65,7 +65,7 @@ export const tableBlock = defineBlock<EmailTableProps>({
             update({ cells: resizeTableCells(props.cells, nextRows, nextColumns) });
         return (
             <>
-                <div className="flex flex-col gap-4 px-3 pb-4">
+                <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
                     <div className="grid grid-cols-2 gap-1.5">
                         <Fields.NumberField
                             label="Rows"

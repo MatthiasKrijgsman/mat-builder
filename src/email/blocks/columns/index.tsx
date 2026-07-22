@@ -61,7 +61,7 @@ export const columnsBlock = defineBlock<EmailColumnsProps>({
         const ratioOptions = presets.includes(props.ratio) ? presets : [props.ratio, ...presets];
         return (
         <>
-            <div className="flex flex-col gap-4 px-3 pb-4">
+            <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
                 <Fields.SegmentedField
                     label="Columns"
                     value={String(count)}

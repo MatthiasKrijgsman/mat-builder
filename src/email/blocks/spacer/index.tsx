@@ -22,7 +22,7 @@ export const spacerBlock = defineBlock<EmailSpacerProps>({
         />
     ),
     inspector: ({ props, update }) => (
-        <div className="flex flex-col gap-4 px-3 pb-4">
+        <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
             <Fields.NumberField
                 label="Height"
                 value={props.height}

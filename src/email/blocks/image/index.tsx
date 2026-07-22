@@ -35,7 +35,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
         ),
     inspector: ({ props, update }) => (
         <>
-            <div className="flex flex-col gap-4 px-3 pb-4">
+            <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
                 <Fields.TextField label="Image URL" value={props.src} onChange={(src) => update({ src })} />
                 <Fields.TextField label="Alt text" value={props.alt} onChange={(alt) => update({ alt })} />
                 <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />

@@ -25,7 +25,7 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
   ),
   inspector: ({ props, update }) => (
     <>
-      <div className={'flex flex-col gap-4 px-3 pb-4'}>
+      <div className={'flex flex-col gap-4 px-3 pb-4 pt-2'}>
         <Fields.TextField
           label="Preview text"
           value={ props.previewText }
