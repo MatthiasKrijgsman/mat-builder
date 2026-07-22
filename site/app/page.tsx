@@ -24,7 +24,7 @@ import {
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
 import { TabButtons } from "@matthiaskrijgsman/mat-ui";
 import { useState } from "react";
-import { dottedSurface, floatingPanel, transparentSurface } from "./floating-chrome";
+import { dockedPanel, dottedSurface, transparentSurface } from "./floating-chrome";
 
 /*
  * The email builder (docs/06): the ./email preset + preview mode.
@@ -340,14 +340,14 @@ export default function EmailBuilderPage() {
     );
 }
 
-/** Floating app bar at the top of the center column, offset from the side
- * panels by the same 16px the panels keep from the window edge. Sits in
- * flow above the canvas so the artboard fits (and resize-clamps) against
- * it rather than expanding underneath. The title mirrors the panels'
- * PanelHeader look (1.125rem semibold) so the bar reads as the same chrome. */
+/** App bar docked full-width at the top of the screen, above the side
+ * panels and canvas. Sits in flow above the work area so the artboard fits
+ * (and resize-clamps) below it rather than expanding underneath. The title
+ * mirrors the inspector's block header look (1.125rem semibold) so the bar
+ * reads as the same chrome. */
 function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className={`z-30 mx-4 mt-4 flex shrink-0 items-center gap-3 pl-5 pr-3 py-2 ${floatingPanel}`}>
+        <header className={`z-30 flex shrink-0 items-center gap-3 border-b py-2 pl-5 pr-3 ${dockedPanel}`}>
             <h1 className="text-[1.125rem] font-semibold">Email builder</h1>
             <div className="ml-auto flex items-center gap-3">
                 <TabButtons
@@ -366,31 +366,34 @@ function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode)
 
 function MainArea({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <div className="absolute inset-0">
-            {/* Center column: top bar in flow, canvas filling the rest — the
-                canvas surface starts below the bar, so the artboard cannot
-                expand behind it. Wrapper, not className: the Artboard root is
-                position:relative itself. transparentSurface lets the root's
-                dot layer show through, so there is no phase seam where the
-                canvas meets the app background */}
-            <div
-                className="absolute inset-y-0 left-[416px] right-[416px] flex flex-col"
-                style={transparentSurface}
-            >
-                <TopBar mode={mode} onModeChange={onModeChange} />
-                <div className="min-h-0 flex-1">
+        <div className="absolute inset-0 flex flex-col">
+            <TopBar mode={mode} onModeChange={onModeChange} />
+            {/* Work area below the bar: canvas column between the docked panels */}
+            <div className="relative min-h-0 flex-1">
+                {/* Canvas column. Wrapper, not className: the Artboard root is
+                    position:relative itself. transparentSurface lets the root's
+                    dot layer show through, so there is no phase seam where the
+                    canvas meets the app background */}
+                <div
+                    className="absolute inset-y-0 left-(--mat-builder-sidebar-width) right-(--mat-builder-sidebar-width)"
+                    style={transparentSurface}
+                >
                     {mode === "edit" ? (
                         <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />
                     ) : (
                         <EmailPreview className="h-full" initialWidth="fill" initialHeight="fill" />
                     )}
                 </div>
+                <aside
+                    className={`absolute inset-y-0 left-0 z-30 flex w-(--mat-builder-sidebar-width) flex-col border-r ${dockedPanel}`}
+                >
+                    <Palette className="min-h-0 flex-1" />
+                    <LayersPanel className="min-h-0 flex-1 border-t border-stone-200" />
+                </aside>
+                <Inspector
+                    className={`absolute inset-y-0 right-0 z-30 w-(--mat-builder-sidebar-width) border-l ${dockedPanel}`}
+                />
             </div>
-            <aside className="pointer-events-none absolute inset-y-4 left-4 z-30 flex w-[400px] flex-col gap-4">
-                <Palette className={`pointer-events-auto min-h-0 flex-1 ${floatingPanel}`} />
-                <LayersPanel className={`pointer-events-auto h-2/5 shrink-0 ${floatingPanel}`} />
-            </aside>
-            <Inspector className={`absolute inset-y-4 right-4 z-30 w-[400px] ${floatingPanel}`} />
         </div>
     );
 }

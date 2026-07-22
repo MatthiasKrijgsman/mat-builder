@@ -1,11 +1,9 @@
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
-import { IconListTree } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState } from "../../react/hooks.ts";
 import { useBuilderKeyboard } from "../../react/keyboard.ts";
-import { PanelHeader } from "../panel/PanelHeader.tsx";
 import { LayerRow } from "./LayerRow.tsx";
 
 /*
@@ -48,7 +46,6 @@ export function LayersPanel({ className }: LayersPanelProps) {
 
     return (
         <div className={`mat-builder-layers flex flex-col gap-1 p-2 ${className ?? ""}`}>
-            <PanelHeader Icon={IconListTree} title="Layers" />
             <div
                 ref={scrollRef}
                 tabIndex={-1}

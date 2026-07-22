@@ -6,8 +6,7 @@ import type { AnyBlockDefinition } from "../../core/registry.ts";
 import { makeNewBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { IconLayoutGrid, IconSearch } from "@tabler/icons-react";
-import { PanelHeader } from "../panel/PanelHeader.tsx";
+import { IconSearch } from "@tabler/icons-react";
 
 /*
  * Palette — see docs/04 §Palette. Grouped by category, searched over
@@ -60,7 +59,6 @@ export function Palette({ className }: PaletteProps) {
 
   return (
     <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
-      <PanelHeader Icon={ IconLayoutGrid } title="Blocks" />
       <div className="shrink-0 p-3">
         <Input
           size="sm"

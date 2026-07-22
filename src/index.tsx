@@ -44,7 +44,6 @@ export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
 export { Artboard, type ArtboardProps } from "./components/canvas/Artboard.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
-export { PanelHeader, type PanelHeaderProps } from "./components/panel/PanelHeader.tsx";
 export { InspectorGroup, type InspectorGroupProps } from "./components/inspector/InspectorGroup.tsx";
 export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
 export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";

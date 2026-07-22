@@ -1,17 +1,17 @@
 import type { CSSProperties } from "react";
 
 /*
- * Shared chrome for the floating editor layout: one continuous dotted
- * surface on the app root, with the top bar and the three panels floating
- * over it as white rounded cards.
+ * Shared chrome for the docked editor layout: a full-width top bar and
+ * edge-docked side panels around one continuous dotted canvas surface.
  */
 
-/** Card chrome for the floating top bar and panels. */
-export const floatingPanel =
-    "overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg shadow-gray-200/50";
+/** Base chrome for the docked top bar and side panels — square-cornered
+ * white surfaces. Each usage adds its own border side(s); the border color
+ * here applies to whichever sides are enabled. */
+export const dockedPanel = "overflow-hidden border-stone-200 bg-white";
 
-/** The canvas's dotted work-surface, painted on the app root so the top bar
- * and panels all float over one continuous surface. */
+/** The canvas's dotted work-surface, painted on the app root so the canvas
+ * column sits on one continuous surface. */
 export const dottedSurface: CSSProperties = {
     backgroundColor: "var(--mat-builder-color-canvas-bg)",
     backgroundImage: "radial-gradient(circle, var(--mat-builder-color-canvas-dot) 1px, transparent 1px)",

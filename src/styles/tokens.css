@@ -64,6 +64,8 @@
     --mat-builder-color-missing-fg: #b91c1c;
 
     /* Panels (inspector & friends) */
+    /* Width of the side panel columns (palette/layers left, inspector right) */
+    --mat-builder-sidebar-width: 300px;
     --mat-builder-color-panel-muted-fg: #71717a;
     --mat-builder-color-panel-border: #e4e4e7;
     /* Field/group labels in panels — also feeds mat-ui's InputLabel via

@@ -58,7 +58,7 @@ function LinkedFields({ label, expanded, onToggle, toggleTitle, children }: Link
                     <ButtonIconSquare
                         Icon={IconBoxModel2}
                         size="sm"
-                        variant={expanded ? "secondary" : "transparent"}
+                        variant={expanded ? "primary" : "transparent"}
                         aria-label={toggleTitle}
                         aria-pressed={expanded}
                         onClick={onToggle}
