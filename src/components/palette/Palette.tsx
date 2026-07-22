@@ -75,7 +75,7 @@ export function Palette({ className }: PaletteProps) {
       { groups.map(([ category, definitions ]) => (
         <div key={ category } className="flex flex-col gap-1.5">
           <p className="input-label">{ category }</p>
-          <div className={'grid grid-cols-5 gap-x-2 gap-y-2.5'}>
+          <div className={'grid grid-cols-4 gap-x-2 gap-y-2.5'}>
           { definitions.map((definition) => (
             <PaletteItem
               key={ definition.type }
@@ -127,7 +127,7 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       className="group flex min-w-0 flex-col items-center gap-1.5 cursor-grab"
     >
       <div
-        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs shadow-current/15 transition-shadow group-hover:shadow-xl group-hover:shadow-current/25"
+        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs shadow-current/15 transition-shadow duration-150 group-hover:shadow-xl group-hover:shadow-current/25"
         style={ {
           backgroundColor: `var(--mat-builder-palette-tint-${ tint }-bg)`,
           borderColor: `var(--mat-builder-palette-tint-${ tint }-border)`,
