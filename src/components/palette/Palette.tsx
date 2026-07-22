@@ -7,6 +7,7 @@ import { makeNewBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { IconSearch } from "@tabler/icons-react";
+import { tintByCategory, tintCssVar } from "./tints.ts";
 
 /*
  * Palette — see docs/04 §Palette. Grouped by category, searched over
@@ -19,24 +20,12 @@ export interface PaletteProps {
   className?: string;
 }
 
-/** Number of --mat-builder-palette-tint-* sets defined in styles/tokens.css. */
-const PALETTE_TINT_COUNT = 7;
-
 export function Palette({ className }: PaletteProps) {
   const { registry } = useBuilderContext();
   const [ query, setQuery ] = useState("");
 
-  // Category → tint index, assigned in registry order over the *unfiltered*
-  // definitions so colors stay stable while searching.
-  const tintByCategory = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const definition of registry.definitions) {
-      if (definition.hidden) continue;
-      const category = definition.category ?? "Blocks";
-      if (!map.has(category)) map.set(category, (map.size % PALETTE_TINT_COUNT) + 1);
-    }
-    return map;
-  }, [ registry ]);
+  // Category → tint index (shared with the layer tree, see ./tints.ts).
+  const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -80,7 +69,7 @@ export function Palette({ className }: PaletteProps) {
             <PaletteItem
               key={ definition.type }
               definition={ definition }
-              tint={ tintByCategory.get(category) ?? 1 }
+              tint={ tintMap.get(category) ?? 1 }
             />
           )) }
           </div>
@@ -129,10 +118,10 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       <div
         className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs shadow-current/15 transition-shadow duration-150 group-hover:shadow-xl group-hover:shadow-current/25"
         style={ {
-          backgroundColor: `var(--mat-builder-palette-tint-${ tint }-bg)`,
-          borderColor: `var(--mat-builder-palette-tint-${ tint }-border)`,
+          backgroundColor: tintCssVar(tint, "bg"),
+          borderColor: tintCssVar(tint, "border"),
           // icons draw with currentColor, so the tile sets the icon color
-          color: `var(--mat-builder-palette-tint-${ tint }-fg)`,
+          color: tintCssVar(tint, "fg"),
         } }
       >
         { Icon && <Icon className="size-5 shrink-0 stroke-2"/> }

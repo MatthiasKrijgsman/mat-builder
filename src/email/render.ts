@@ -2,8 +2,7 @@ import { pretty, render } from "@react-email/render";
 import { createElement, Fragment, type ReactElement } from "react";
 import type { BlockId, BuilderDocument } from "../core/types.ts";
 import { emailRootEmail } from "./blocks/email-root/email.tsx";
-import { sectionEmail } from "./blocks/section/email.tsx";
-import { columnsEmail } from "./blocks/columns/email.tsx";
+import { containerEmail } from "./blocks/container/email.tsx";
 import { textEmail } from "./blocks/text/email.tsx";
 import { buttonEmail } from "./blocks/button/email.tsx";
 import { imageEmail } from "./blocks/image/email.tsx";
@@ -34,8 +33,7 @@ export { withVerticalGap } from "./gap.ts";
 /** Output renderer per block type — the server-side counterpart of the editor preset. */
 export const emailRenderers: Record<string, AnyEmailRenderer> = {
     "email-root": emailRootEmail,
-    section: sectionEmail,
-    columns: columnsEmail,
+    container: containerEmail,
     text: textEmail,
     button: buttonEmail,
     image: imageEmail,

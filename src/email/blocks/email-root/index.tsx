@@ -1,7 +1,8 @@
 import { IconMail } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
-import { BackgroundGroup, SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
+import { SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
+import { defaultBackground } from "../../../style-props/index.ts";
 import { emailRootBodyStyles, emailRootContainerStyles, emailRootDefaults, type EmailRootProps } from "./styles.ts";
 import { Divider } from '@matthiaskrijgsman/mat-ui';
 
@@ -14,8 +15,15 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
   canDelete: false,
   defaultProps: emailRootDefaults,
   containers: [
-    { name: "main", layout: "vertical", accepts: [ "section", "columns" ], placeholder: "Add a section" },
+    { name: "main", layout: "vertical", accepts: [ "container" ], placeholder: "Add a container" },
   ],
+  // New documents start with one white container — it owns the content
+  // background (the root only paints the page behind it).
+  onCreate: () => ({
+    children: {
+      main: [ { type: "container", props: { background: { ...defaultBackground, type: "solid", color: "#FFFFFF" } } } ],
+    },
+  }),
   editRender: ({ props, containers }) => (
     <div style={ emailRootBodyStyles(props) }>
       <div style={ { ...emailRootContainerStyles(props), margin: "0 auto", width: "100%" } }>
@@ -51,12 +59,6 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
         fields={ [ "fontFamily", "fontSize", "lineHeight", "letterSpacing", "color" ] }
         value={ props.typography }
         onChange={ (typography) => update({ typography }) }
-      />
-      <Divider />
-      <BackgroundGroup
-        label="Content background"
-        value={ props.background }
-        onChange={ (background) => update({ background }) }
       />
       <Divider />
       <SpacingGroup

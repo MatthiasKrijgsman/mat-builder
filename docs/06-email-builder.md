@@ -16,9 +16,8 @@ Style props are the shared **style groups** (03 §Style props): `size`, `backgro
 
 | Block | Containers | Output mapping (react-email) | Style groups | Bespoke props |
 |---|---|---|---|---|
-| `email-root` (hidden) | `main` (vertical) | `Html > Head > Preview > Body > Container` | background (content container), spacing (padding → Body; keeps page bg visible on narrow screens), typography (base, no align) | backgroundColor (page), contentWidth, previewText |
-| `section` | `content` (vertical) | `Section` | size (width), background, border, spacing, effects, layout (horizontal + gap) | — |
-| `columns` | `col-1…col-4` (static; the ratio decides how many are *active* — children in a deactivated column stay in the document and layers tree, hidden from render/export until switched back) | `Section > Row > Column*` | background, border, spacing, effects, layout (vertical + gap between columns) | column count (2–4) + per-count ratio preset; stored as one percent string (`"25/50/25"`), so any hand-written combination keeps working |
+| `email-root` (hidden) | `main` (vertical; `onCreate` seeds one white container, so new documents never start empty) | `Html > Head > Preview > Body > Container` | spacing (padding → Body; keeps page bg visible on narrow screens), typography (base, no align) | backgroundColor (page — content backgrounds belong to containers, so there is no separate "content background"), contentWidth, previewText |
+| `container` | `content` (direction-driven: vertical stacks, horizontal lays children out as equal-width columns — Figma-style; replaced the earlier `section`/`columns` pair) | vertical: `Section` (a fixed height or off-top vertical align adds a single `Row > Column` cell so `height`/`vertical-align` land on a td); horizontal: `Section > Row > Column` per direct child, equal-split widths | size (width + height), background, border, spacing, effects, layout (horizontal + vertical + gap) | direction (`"vertical"` \| `"horizontal"`, TabButtons toggle in the inspector) |
 | `text` | — | `Markdown` (both renders — parity for free) | layout (vertical self-align), spacing, effects | text as **markdown** (headings/bold/italic/links/lists via the inspector's Lexical editor — there is no separate heading block) |
 | `button` | — | `Button` (padded `<a>`) | size (width), background, border, typography, spacing (padding = inner, margin = outer), layout (horizontal + vertical self-align), effects | label, href |
 | `image` | — | `Img` (+ optional `Link` wrapper) | size (width), border, spacing (padding only), effects, layout (horizontal self-align via auto margins + vertical self-align) | src, alt, href |
@@ -28,7 +27,7 @@ Style props are the shared **style groups** (03 §Style props): `size`, `backgro
 
 **Email caveats (best-effort by design):** gradients and background images emit `background-image` plus a solid `background-color` fallback (Outlook desktop ignores the image — VML wrappers are out of scope); the button restricts its BackgroundGroup to `modes={["none","solid","gradient"]}`; `box-shadow` and `opacity` are ignored by Outlook; margins on tables are unreliable — the button emits its outer margin as wrapper-`Section` padding instead; fixed-width sections stay left-aligned (cross-client centering of fixed tables is out of scope); percentage widths emit as style only — the image keeps its width ATTRIBUTE px-only, so Outlook desktop degrades percent-width images to intrinsic size capped at 100%; `layout.gap` renders as table-safe `paddingBottom` wrapper divs (`withVerticalGap` in `src/email/gap.ts`), matching the canvas's flex-gap; "full" height and "stretch" alignment have no email equivalent and degrade to auto/left; per-block vertical self-alignment (`layout.vertical` on text/button/image) emits a best-effort `vertical-align` that only takes effect where the block participates in a table-cell context — border widths are per-side (`BorderValue.width` is a `SideValues`; legacy single-number documents are normalized on read).
 
-The hierarchy is expressed entirely through container `accepts` rules — the generic builder enforces it; no email-specific code in the core. `email-root.main` accepts `["section", "columns"]`; `section.content` accepts the leaves **plus `section` and `columns`** (sections nest as padded/background groupings and can wrap a column layout — a UX-feedback revision of the originally rigid root → section/columns → leaves plan); `columns.col-*` accepts the same full list, so sections and column layouts can nest inside column cells too.
+The hierarchy is expressed entirely through container `accepts` rules — the generic builder enforces it; no email-specific code in the core. `email-root.main` accepts `["container"]`; `container.content` accepts the leaves **plus `container`**, so containers nest freely (padded/background groupings, rows inside stacks, stacks inside row cells). The container's canvas layout follows its `direction` prop via the core's `ContainerDef.getLayout`/`getSlotStyle` hooks (added for this block): the slot switches vertical/horizontal per instance and mirrors the email output's equal-width cells with `*:flex-1` plus a `layout.vertical`-derived `align-items`.
 
 ## Two renders per block (D2), organized for parity
 
@@ -67,7 +66,7 @@ Why the split matters for bundling: `editRender`/`inspector` are client componen
 
 ```ts
 // @matthiaskrijgsman/mat-builder/email          (editor preset — client)
-export const emailBlocks: BlockDefinition[] = [rootBlock, sectionBlock, …];
+export const emailBlocks: BlockDefinition[] = [rootBlock, containerBlock, …];
 
 // @matthiaskrijgsman/mat-builder/email/render   (server-safe — no editor imports)
 export const emailRenderers: Record<string, EmailRenderer> = { button: buttonEmail, … };

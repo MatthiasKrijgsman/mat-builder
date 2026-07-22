@@ -10,22 +10,21 @@ import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich
 
 const registry = createRegistry(emailBlocks);
 
-/** email-root > section > (text, button) built through the real preset + commands. */
+/** email-root > container > (text, button) built through the real preset + commands. */
 function buildDemoEmail(): BuilderDocument {
     let document = createDocument(registry, "email-root", { previewText: "Preview snippet" });
-    const root = document.rootId;
+    // The root's onCreate seeds one container — build inside it
+    const containerId = document.blocks[document.rootId].children.main[0];
 
-    const section = insertBlock(document, { type: "section", at: { parentId: root, container: "main", index: 0 } }, registry);
-    document = section.document;
     const text = insertBlock(
         document,
-        { type: "text", at: { parentId: section.blockId, container: "content", index: 0 } },
+        { type: "text", at: { parentId: containerId, container: "content", index: 0 } },
         registry,
     );
     document = updateProps(text.document, { id: text.blockId, patch: { content: richTextParagraph("Hello from mat-builder") } });
     const button = insertBlock(
         document,
-        { type: "button", at: { parentId: section.blockId, container: "content", index: 1 } },
+        { type: "button", at: { parentId: containerId, container: "content", index: 1 } },
         registry,
     );
     document = updateProps(button.document, {
@@ -38,6 +37,15 @@ function buildDemoEmail(): BuilderDocument {
 describe("email preset", () => {
     it("produces documents that pass validation", () => {
         expect(validateDocument(buildDemoEmail(), registry)).toEqual([]);
+    });
+
+    it("seeds new documents with one white container", () => {
+        const document = createDocument(registry, "email-root");
+        const main = document.blocks[document.rootId].children.main;
+        expect(main).toHaveLength(1);
+        const seeded = document.blocks[main[0]];
+        expect(seeded.type).toBe("container");
+        expect(seeded.props.background).toMatchObject({ type: "solid", color: "#FFFFFF" });
     });
 });
 
@@ -60,15 +68,15 @@ describe("renderEmail", () => {
         expect(text).not.toContain("<html");
     });
 
-    it("renders columns, image, divider and spacer", async () => {
+    it("renders horizontal containers as equal-width columns, plus image, divider and spacer", async () => {
         let document = buildDemoEmail();
         const root = document.rootId;
 
-        const cols = insertBlock(document, { type: "columns", at: { parentId: root, container: "main", index: 1 } }, registry);
-        document = cols.document;
+        const row = insertBlock(document, { type: "container", at: { parentId: root, container: "main", index: 1 } }, registry);
+        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal" } });
         const headingText = insertBlock(
             document,
-            { type: "text", at: { parentId: cols.blockId, container: "col-1", index: 0 } },
+            { type: "text", at: { parentId: row.blockId, container: "content", index: 0 } },
             registry,
         );
         document = updateProps(headingText.document, {
@@ -77,27 +85,44 @@ describe("renderEmail", () => {
         });
         const image = insertBlock(
             document,
-            { type: "image", at: { parentId: cols.blockId, container: "col-2", index: 0 } },
+            { type: "image", at: { parentId: row.blockId, container: "content", index: 1 } },
             registry,
         );
         document = updateProps(image.document, {
             id: image.blockId,
             patch: { src: "https://example.com/pic.png", alt: "A picture", href: "https://example.com/target" },
         });
-        const sectionId = document.blocks[root].children.main[0];
-        document = insertBlock(document, { type: "divider", at: { parentId: sectionId, container: "content", index: 0 } }, registry).document;
-        document = insertBlock(document, { type: "spacer", at: { parentId: sectionId, container: "content", index: 0 } }, registry).document;
+        const containerId = document.blocks[root].children.main[0];
+        document = insertBlock(document, { type: "divider", at: { parentId: containerId, container: "content", index: 0 } }, registry).document;
+        document = insertBlock(document, { type: "spacer", at: { parentId: containerId, container: "content", index: 0 } }, registry).document;
 
         expect(validateDocument(document, registry)).toEqual([]);
         const { html } = await renderEmail(document);
 
         expect(html).toContain("Column heading");
         expect(html).toMatch(/<h2[^>]*>[\s\S]*Column heading/);
-        expect(html).toContain("width:50%"); // two active columns from the 50/50 preset
+        expect(html).toContain("width:50.00%"); // two children → equal split
         expect(html).toContain('src="https://example.com/pic.png"');
         expect(html).toContain('href="https://example.com/target"');
         expect(html).toContain("border-top:1px solid #e4e4e7"); // divider
         expect(html).toContain("height:24px"); // spacer
+    });
+
+    it("renders a fixed height and vertical alignment into the email output", async () => {
+        let document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const size = document.blocks[containerId].props.size as Record<string, unknown>;
+        document = updateProps(document, {
+            id: containerId,
+            patch: {
+                size: { ...size, height: "fixed", heightPx: 240 },
+                layout: { horizontal: "start", vertical: "middle", gap: 0 },
+            },
+        });
+
+        const { html } = await renderEmail(document);
+        // Height + vertical-align land on a td so email clients honor them
+        expect(html).toMatch(/<td[^>]*height:240px[^>]*vertical-align:middle|<td[^>]*vertical-align:middle[^>]*height:240px/);
     });
 
     it("renders style groups (gradient, border, shadow, gap) into email-safe CSS", async () => {
@@ -309,13 +334,13 @@ describe("renderEmail", () => {
         expect(html).toMatch(/<p[^>]*margin:0 0 12px/);
     });
 
-    it("renders nested sections and columns inside sections", async () => {
+    it("renders nested containers, including a horizontal row inside a vertical container", async () => {
         let document = buildDemoEmail();
-        const outerSection = document.blocks[document.rootId].children.main[0];
+        const outer = document.blocks[document.rootId].children.main[0];
 
         const inner = insertBlock(
             document,
-            { type: "section", at: { parentId: outerSection, container: "content", index: 0 } },
+            { type: "container", at: { parentId: outer, container: "content", index: 0 } },
             registry,
         );
         document = inner.document;
@@ -326,18 +351,26 @@ describe("renderEmail", () => {
         );
         document = updateProps(innerText.document, {
             id: innerText.blockId,
-            patch: { content: richTextParagraph("Nested section copy") },
+            patch: { content: richTextParagraph("Nested container copy") },
         });
-        document = insertBlock(
+        const nestedRow = insertBlock(
             document,
-            { type: "columns", at: { parentId: outerSection, container: "content", index: 1 } },
+            { type: "container", at: { parentId: outer, container: "content", index: 1 } },
             registry,
-        ).document;
+        );
+        document = updateProps(nestedRow.document, { id: nestedRow.blockId, patch: { direction: "horizontal" } });
+        for (const index of [0, 1]) {
+            document = insertBlock(
+                document,
+                { type: "spacer", at: { parentId: nestedRow.blockId, container: "content", index } },
+                registry,
+            ).document;
+        }
 
         expect(validateDocument(document, registry)).toEqual([]);
         const { html } = await renderEmail(document);
-        expect(html).toContain("Nested section copy");
-        expect(html).toContain("width:50%"); // columns rendered from inside the section
+        expect(html).toContain("Nested container copy");
+        expect(html).toContain("width:50.00%"); // the nested row's equal-split cells
     });
 
     it("images without a src render nothing", async () => {

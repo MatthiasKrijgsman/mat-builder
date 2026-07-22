@@ -66,8 +66,14 @@
     /* Panels (inspector & friends) */
     /* Width of the side panel columns (palette/layers left, inspector right) */
     --mat-builder-sidebar-width: 300px;
+    /* Primary text in panels — layer-row labels, etc. Soft, not pure black. */
+    --mat-builder-color-panel-fg: #3f3f46;
     --mat-builder-color-panel-muted-fg: #71717a;
     --mat-builder-color-panel-border: #e4e4e7;
+    /* Layer tree rows */
+    --mat-builder-color-layer-row-selected-bg: var(--mat-builder-color-selection);
+    --mat-builder-color-layer-row-selected-fg: #ffffff;
+    --mat-builder-color-layer-row-hover-bg: color-mix(in srgb, var(--mat-builder-color-panel-fg) 6%, transparent);
     /* Field/group labels in panels — also feeds mat-ui's InputLabel via
        --color-input-label-text (see style.css panel scope) */
     --mat-builder-color-input-label: #78716c;

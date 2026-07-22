@@ -1,19 +1,20 @@
 import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
 import { draggable, dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import {
-    attachInstruction,
-    extractInstruction,
-    type Availability,
-    type Instruction,
+  attachInstruction,
+  type Availability,
+  extractInstruction,
+  type Instruction,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/list-item";
 import { IconChevronRight } from "@tabler/icons-react";
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 import { canDropAt } from "../../core/commands.ts";
 import type { BlockRegistry } from "../../core/registry.ts";
 import type { BlockId, BlockLocation, BuilderDocument } from "../../core/types.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
-import { dragBlockType, resolveCombineLocation, type DragLike } from "../../dnd/resolve.ts";
+import { dragBlockType, type DragLike, resolveCombineLocation } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 
@@ -25,221 +26,243 @@ import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
  * from the live drag via the store, and re-checked by the commands on drop.
  */
 
-const INDENT_PX = 14;
-/** Chevron column width — ancestor guide lines center on it. */
-const CHEVRON_PX = 20;
+/** Per-depth indentation, applied as left padding *inside* the row so the
+ *  selection highlight always spans the full panel width. */
+const INDENT_PX = 16;
+/** Base left padding of a row's content (the row's own gutter). */
+const ROW_PAD_LEFT = 8;
+/** Chevron / spacer / icon glyph box (size-4). Kept equal so leaf and
+ *  parent rows align their icons in one column. */
+const GLYPH_PX = 16;
+/** Flex gap between chevron, icon and label. */
+const GAP_PX = 10;
 
 function computeOperations(
-    document: BuilderDocument,
-    registry: BlockRegistry,
-    drag: DragLike,
-    rowId: BlockId,
-    location: BlockLocation | undefined,
+  document: BuilderDocument,
+  registry: BlockRegistry,
+  drag: DragLike,
+  rowId: BlockId,
+  location: BlockLocation | undefined,
 ): Record<"reorder-before" | "reorder-after" | "combine", Availability> {
-    const type = dragBlockType(document, drag);
-    const movingId = drag.kind === "move-block" ? drag.blockId : undefined;
-    if (!type || movingId === rowId) {
-        return { "reorder-before": "not-available", "reorder-after": "not-available", combine: "not-available" };
-    }
+  const type = dragBlockType(document, drag);
+  const movingId = drag.kind === "move-block" ? drag.blockId : undefined;
+  if (!type || movingId === rowId) {
+    return { "reorder-before": "not-available", "reorder-after": "not-available", combine: "not-available" };
+  }
 
-    const reorder: Availability =
-        location && canDropAt(document, registry, type, location, movingId) ? "available" : "not-available";
-    // Drag-aware: picks the first container that accepts this drag (validated inside)
-    const combineAvailable: Availability = resolveCombineLocation(document, registry, rowId, drag)
-        ? "available"
-        : "not-available";
-    return { "reorder-before": reorder, "reorder-after": reorder, combine: combineAvailable };
+  const reorder: Availability =
+    location && canDropAt(document, registry, type, location, movingId) ? "available" : "not-available";
+  // Drag-aware: picks the first container that accepts this drag (validated inside)
+  const combineAvailable: Availability = resolveCombineLocation(document, registry, rowId, drag)
+    ? "available"
+    : "not-available";
+  return { "reorder-before": reorder, "reorder-after": reorder, combine: combineAvailable };
 }
 
 export interface LayerRowProps {
-    id: BlockId;
-    depth: number;
-    /** Absent for the root row (not draggable, not reorderable) */
-    location?: BlockLocation;
+  id: BlockId;
+  depth: number;
+  /** Absent for the root row (not draggable, not reorderable) */
+  location?: BlockLocation;
 }
 
 export function LayerRow({ id, depth, location }: LayerRowProps) {
-    const { store, registry, instanceId } = useBuilderContext();
-    const node = useBlockNode(id);
-    const actions = useBuilderState((s) => s.actions);
-    const isSelected = useBuilderState((s) => s.selectedId === id);
-    const isHovered = useBuilderState((s) => s.hoveredId === id);
-    const isExpanded = useBuilderState((s) => s.expanded.has(id));
-    const isDragSource = useBuilderState((s) => s.drag?.kind === "move-block" && s.drag.blockId === id);
+  const { store, registry, instanceId } = useBuilderContext();
+  const node = useBlockNode(id);
+  const actions = useBuilderState((s) => s.actions);
+  const isSelected = useBuilderState((s) => s.selectedId === id);
+  const isHovered = useBuilderState((s) => s.hoveredId === id);
+  const isExpanded = useBuilderState((s) => s.expanded.has(id));
+  const isDragSource = useBuilderState((s) => s.drag?.kind === "move-block" && s.drag.blockId === id);
 
-    const ref = useRef<HTMLDivElement>(null);
-    const [instruction, setInstruction] = useState<Instruction | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const [ instruction, setInstruction ] = useState<Instruction | null>(null);
 
-    const definition = registry.getDefinition(node?.type ?? "");
-    const label = (node && definition?.getDisplayName?.(node.props)) ?? definition?.label ?? node?.type ?? "";
-    const canDrag = Boolean(location) && definition?.canDrag !== false;
+  const definition = registry.getDefinition(node?.type ?? "");
+  const label = (node && definition?.getDisplayName?.(node.props)) ?? definition?.label ?? node?.type ?? "";
+  const canDrag = Boolean(location) && definition?.canDrag !== false;
 
-    useEffect(() => {
-        const element = ref.current;
-        if (!element) return;
+  // Icon tint matches the block's palette tile (shared assignment, ./tints.ts).
+  const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
+  const tint = definition ? tintMap.get(definition.category ?? "Blocks") : undefined;
 
-        const cleanups = [];
-        if (canDrag) {
-            cleanups.push(
-                draggable({
-                    element,
-                    getInitialData: () => makeMoveBlockDrag(instanceId, id),
-                    onGenerateDragPreview: ({ nativeSetDragImage }) => setChipDragPreview(nativeSetDragImage, label),
-                }),
-            );
-        }
-        cleanups.push(
-            dropTargetForElements({
-                element,
-                canDrop: ({ source }) => {
-                    if (!isBuilderDrag(source.data, instanceId)) return false;
-                    const { document } = store.getState();
-                    const operations = computeOperations(document, registry, source.data, id, location);
-                    return Object.values(operations).some((availability) => availability === "available");
-                },
-                getData: ({ input, element: el }) => {
-                    const { document, drag } = store.getState();
-                    const operations = drag
-                        ? computeOperations(document, registry, drag, id, location)
-                        : ({ "reorder-before": "not-available", "reorder-after": "not-available", combine: "not-available" } as const);
-                    return attachInstruction({ targetKind: "layer-row", blockId: id }, { input, element: el, operations });
-                },
-                onDrag: ({ self }) => {
-                    const next = extractInstruction(self.data);
-                    setInstruction((current) => (current?.operation === next?.operation ? current : next));
-                },
-                onDragLeave: () => setInstruction(null),
-                onDrop: ({ self }) => {
-                    setInstruction(null);
-                    // Dropping into a row reveals what just landed there
-                    if (extractInstruction(self.data)?.operation === "combine") actions.setExpanded(id, true);
-                },
-            }),
-        );
-        return combine(...cleanups);
-        // location captured per render; re-binding on its parts is intended
-    }, [store, registry, instanceId, actions, id, canDrag, label, location?.parentId, location?.container, location?.index]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
 
-    if (!node) return null;
-
-    const childEntries = Object.entries(node.children).filter(([, ids]) => ids.length > 0);
-    const hasChildren = childEntries.length > 0;
-    const Icon = definition?.icon;
-
-    const rowBackground: CSSProperties | undefined = isSelected
-        ? { backgroundColor: "color-mix(in srgb, var(--mat-builder-color-selection) 15%, transparent)" }
-        : isHovered
-          ? { backgroundColor: "color-mix(in srgb, var(--mat-builder-color-selection) 7%, transparent)" }
-          : undefined;
-
-    return (
-        <div className={isDragSource ? "opacity-40" : undefined}>
-            <div
-                ref={ref}
-                data-layer-id={id}
-                className="relative flex items-center gap-2 py-0.5 select-none"
-                style={{ paddingLeft: depth * INDENT_PX }}
-            >
-                {/* Ancestor depth guides — one hairline per level, centered on
-                    that level's chevron column; stacked rows read as one line */}
-                {Array.from({ length: depth }, (_, level) => (
-                    <span
-                        key={level}
-                        aria-hidden
-                        className="pointer-events-none absolute inset-y-0 w-px"
-                        style={{
-                            left: level * INDENT_PX + CHEVRON_PX / 2,
-                            backgroundColor: "var(--mat-builder-color-panel-border)",
-                        }}
-                    />
-                ))}
-                {hasChildren ? (
-                    <button
-                        type="button"
-                        aria-label={isExpanded ? "Collapse" : "Expand"}
-                        className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[var(--border-radius-menu-item)] transition-colors hover:bg-[var(--color-dropdown-item-bg-hover)]"
-                        onClick={(event) => {
-                            event.stopPropagation();
-                            actions.toggleExpanded(id);
-                        }}
-                    >
-                        <IconChevronRight
-                            className={`size-4 text-[var(--color-input-icon-button-icon)] transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                        />
-                    </button>
-                ) : (
-                    <span className="size-5 shrink-0" />
-                )}
-                {/* The select button — mat-ui dropdown-item chrome, fills the row */}
-                <button
-                    type="button"
-                    className="dropdown-item flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[var(--border-radius-menu-item)] border border-transparent bg-transparent px-2 font-[number:var(--font-weight-panel-link)] font-[family-name:var(--font-family-base)] transition-all duration-[var(--control-transition-duration)] focus:outline-none"
-                    style={rowBackground}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        actions.select(id);
-                    }}
-                    onPointerOver={(event) => {
-                        event.stopPropagation();
-                        actions.hover(id);
-                    }}
-                    onPointerOut={(event) => {
-                        event.stopPropagation();
-                        actions.hover(null);
-                    }}
-                >
-                    {Icon && <Icon className="size-4 shrink-0 text-[var(--color-input-icon-button-icon)]" />}
-                    <span className="truncate">{label}</span>
-                </button>
-                {instruction && <InstructionIndicator instruction={instruction} depth={depth} />}
-            </div>
-
-            {isExpanded &&
-                childEntries.map(([containerName, childIds]) => (
-                    <Fragment key={containerName}>
-                        {childEntries.length > 1 && (
-                            <p
-                                className="py-0.5 text-[10px] font-medium uppercase tracking-wide"
-                                style={{
-                                    paddingLeft: (depth + 1) * INDENT_PX + CHEVRON_PX + 8,
-                                    color: "var(--mat-builder-color-panel-muted-fg)",
-                                }}
-                            >
-                                {definition?.containers?.find((c) => c.name === containerName)?.label ?? containerName}
-                            </p>
-                        )}
-                        {childIds.map((childId, index) => (
-                            <LayerRow
-                                key={childId}
-                                id={childId}
-                                depth={depth + 1}
-                                location={{ parentId: id, container: containerName, index }}
-                            />
-                        ))}
-                    </Fragment>
-                ))}
-        </div>
+    const cleanups = [];
+    if (canDrag) {
+      cleanups.push(
+        draggable({
+          element,
+          getInitialData: () => makeMoveBlockDrag(instanceId, id),
+          onGenerateDragPreview: ({ nativeSetDragImage }) => setChipDragPreview(nativeSetDragImage, label),
+        }),
+      );
+    }
+    cleanups.push(
+      dropTargetForElements({
+        element,
+        canDrop: ({ source }) => {
+          if (!isBuilderDrag(source.data, instanceId)) return false;
+          const { document } = store.getState();
+          const operations = computeOperations(document, registry, source.data, id, location);
+          return Object.values(operations).some((availability) => availability === "available");
+        },
+        getData: ({ input, element: el }) => {
+          const { document, drag } = store.getState();
+          const operations = drag
+            ? computeOperations(document, registry, drag, id, location)
+            : ({
+              "reorder-before": "not-available",
+              "reorder-after": "not-available",
+              combine: "not-available"
+            } as const);
+          return attachInstruction({ targetKind: "layer-row", blockId: id }, { input, element: el, operations });
+        },
+        onDrag: ({ self }) => {
+          const next = extractInstruction(self.data);
+          setInstruction((current) => (current?.operation === next?.operation ? current : next));
+        },
+        onDragLeave: () => setInstruction(null),
+        onDrop: ({ self }) => {
+          setInstruction(null);
+          // Dropping into a row reveals what just landed there
+          if (extractInstruction(self.data)?.operation === "combine") actions.setExpanded(id, true);
+        },
+      }),
     );
+    return combine(...cleanups);
+    // location captured per render; re-binding on its parts is intended
+  }, [ store, registry, instanceId, actions, id, canDrag, label, location?.parentId, location?.container, location?.index ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!node) return null;
+
+  const childEntries = Object.entries(node.children).filter(([ , ids ]) => ids.length > 0);
+  const hasChildren = childEntries.length > 0;
+  const Icon = definition?.icon;
+  const isRoot = !location;
+
+  // Selection highlight fills the full row width; depth lives inside as padding
+  // so a nested selected row still reads edge-to-edge.
+  const rowStyle: CSSProperties = {
+    paddingLeft: ROW_PAD_LEFT + depth * INDENT_PX,
+    ...(isSelected
+      ? { backgroundColor: "var(--mat-builder-color-layer-row-selected-bg)" }
+      : isHovered
+        ? { backgroundColor: "var(--mat-builder-color-layer-row-hover-bg)" }
+        : undefined),
+  };
+
+  const labelColor = isSelected ? "var(--mat-builder-color-layer-row-selected-fg)" : "var(--mat-builder-color-panel-fg)";
+  // Unselected icons take the same tint as their palette tile; blocks without a
+  // tile (root/hidden) fall back to the neutral panel-icon gray.
+  const iconColor = isSelected
+    ? "var(--mat-builder-color-layer-row-selected-fg)"
+    : tint
+      ? tintCssVar(tint, "fg")
+      : "var(--color-input-icon-button-icon)";
+  const mutedColor = isSelected
+    ? "color-mix(in srgb, var(--mat-builder-color-layer-row-selected-fg) 75%, transparent)"
+    : "var(--mat-builder-color-panel-muted-fg)";
+
+  return (
+    <div className={ isDragSource ? "opacity-40" : undefined }>
+      { /* The row IS the select target: clicking anywhere but the chevron
+           selects; the chevron only toggles expansion. */ }
+      <div
+        ref={ ref }
+        data-layer-id={ id }
+        role="button"
+        aria-selected={ isSelected }
+        className="relative my-px flex h-8 cursor-pointer items-center rounded-(--border-radius-menu-item) pr-2 font-normal font-(family-name:--font-family-base) text-sm transition-colors duration-(--control-transition-duration) select-none"
+        style={ { ...rowStyle, columnGap: GAP_PX } }
+        onClick={ (event) => {
+          event.stopPropagation();
+          actions.select(id);
+        } }
+        onPointerOver={ (event) => {
+          event.stopPropagation();
+          actions.hover(id);
+        } }
+        onPointerOut={ (event) => {
+          event.stopPropagation();
+          actions.hover(null);
+        } }
+      >
+        { hasChildren ? (
+          <button
+            type="button"
+            aria-label={ isExpanded ? "Collapse" : "Expand" }
+            className="flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0"
+            style={ { width: GLYPH_PX, height: GLYPH_PX } }
+            onClick={ (event) => {
+              event.stopPropagation();
+              actions.toggleExpanded(id);
+            } }
+          >
+            <IconChevronRight
+              className={ `size-4 transition-transform ${ isExpanded ? "rotate-90" : "" }` }
+              style={ { color: mutedColor } }
+            />
+          </button>
+        ) : (
+          <span className="shrink-0" style={ { width: GLYPH_PX, height: GLYPH_PX } } aria-hidden/>
+        ) }
+        { Icon && <Icon className="size-4 shrink-0" style={ { color: iconColor } }/> }
+        <span className="min-w-0 flex-1 truncate" style={ { color: labelColor } }>{ label }</span>
+        { isRoot && (
+          <span className="shrink-0 text-xs mr-1" style={ { color: mutedColor } }>Root</span>
+        ) }
+        { instruction && <InstructionIndicator instruction={ instruction } depth={ depth }/> }
+      </div>
+
+      { isExpanded &&
+        childEntries.map(([ containerName, childIds ]) => (
+          <Fragment key={ containerName }>
+            { childEntries.length > 1 && (
+              <p
+                className="py-0.5 text-[10px] font-medium uppercase tracking-wide"
+                style={ {
+                  paddingLeft: ROW_PAD_LEFT + (depth + 1) * INDENT_PX + GLYPH_PX + GAP_PX,
+                  color: "var(--mat-builder-color-panel-muted-fg)",
+                } }
+              >
+                { definition?.containers?.find((c) => c.name === containerName)?.label ?? containerName }
+              </p>
+            ) }
+            { childIds.map((childId, index) => (
+              <LayerRow
+                key={ childId }
+                id={ childId }
+                depth={ depth + 1 }
+                location={ { parentId: id, container: containerName, index } }
+              />
+            )) }
+          </Fragment>
+        )) }
+    </div>
+  );
 }
 
 function InstructionIndicator({ instruction, depth }: { instruction: Instruction; depth: number }) {
-    const color = "var(--mat-builder-color-drop-indicator)";
-    const thickness = "var(--mat-builder-drop-indicator-thickness)";
-    const left = depth * INDENT_PX;
+  const color = "var(--mat-builder-color-drop-indicator)";
+  const thickness = "var(--mat-builder-drop-indicator-thickness)";
+  const left = ROW_PAD_LEFT + depth * INDENT_PX;
 
-    if (instruction.operation === "combine") {
-        return (
-            <div
-                className="pointer-events-none absolute inset-0 rounded"
-                style={{ boxShadow: `inset 0 0 0 ${thickness} ${color}` }}
-            />
-        );
-    }
-    const edge = instruction.operation === "reorder-before" ? { top: `calc(${thickness} / -2)` } : { bottom: `calc(${thickness} / -2)` };
+  if (instruction.operation === "combine") {
     return (
-        <div
-            className="pointer-events-none absolute z-10 rounded-full"
-            style={{ ...edge, left, right: 0, height: thickness, backgroundColor: color }}
-        />
+      <div
+        className="pointer-events-none absolute inset-0 rounded-(--border-radius-menu-item)"
+        style={ { boxShadow: `inset 0 0 0 ${ thickness } ${ color }` } }
+      />
     );
+  }
+  const edge = instruction.operation === "reorder-before" ? { top: `calc(${ thickness } / -2)` } : { bottom: `calc(${ thickness } / -2)` };
+  return (
+    <div
+      className="pointer-events-none absolute z-10 rounded-full"
+      style={ { ...edge, left, right: 0, height: thickness, backgroundColor: color } }
+    />
+  );
 }

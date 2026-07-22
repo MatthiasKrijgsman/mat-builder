@@ -18,8 +18,17 @@ import { BlockView } from "./BlockView.tsx";
  * container is always visible during a drag without shouting over the line.
  */
 
-export function ContainerSlot(props: { parentId: BlockId; container: ContainerDef; childIds: BlockId[]; gap?: number }) {
-    const { parentId, container, childIds, gap = 0 } = props;
+export function ContainerSlot(props: {
+    parentId: BlockId;
+    container: ContainerDef;
+    childIds: BlockId[];
+    gap?: number;
+    /** Resolved layout (ContainerDef.getLayout ?? ContainerDef.layout) — passed by BlockView */
+    layout?: ContainerDef["layout"];
+    /** Extra style for the layout element (ContainerDef.getSlotStyle) */
+    slotStyle?: CSSProperties;
+}) {
+    const { parentId, container, childIds, gap = 0, layout = container.layout, slotStyle } = props;
     const { store, registry, instanceId } = useBuilderContext();
     const ref = useRef<HTMLDivElement>(null);
     const [over, setOver] = useState<"none" | "parent" | "direct">("none");
@@ -89,8 +98,10 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
 
     let className = "";
     let layoutStyle: CSSProperties | undefined;
-    if (container.layout === "horizontal") className = "flex flex-row";
-    else if (container.layout === "grid") {
+    // Horizontal = equal-width cells (*:flex-1), mirroring the email output's
+    // equal-split table columns. The absolute highlight overlay ignores flex.
+    if (layout === "horizontal") className = "flex flex-row *:min-w-0 *:flex-1";
+    else if (layout === "grid") {
         layoutStyle = {
             display: "grid",
             gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))`,
@@ -101,6 +112,7 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
         className = "flex flex-col";
     }
     if (gap > 0) layoutStyle = { ...layoutStyle, gap };
+    if (slotStyle) layoutStyle = { ...layoutStyle, ...slotStyle };
 
     return (
         <div
@@ -115,7 +127,7 @@ export function ContainerSlot(props: { parentId: BlockId; container: ContainerDe
                     key={childId}
                     id={childId}
                     location={{ parentId, container: container.name, index }}
-                    layout={container.layout}
+                    layout={layout}
                 />
             ))}
             {/* The ring paints ABOVE the children (not as the container's own

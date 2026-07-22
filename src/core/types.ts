@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, CSSProperties, ReactNode } from "react";
 
 /* ─────────────────────────────────────────────────────────────
  * Document model — see docs/03-architecture.md §1
@@ -50,6 +50,11 @@ export interface ContainerDef {
     label?: string;
     /** Determines drop hitbox axis & indicator orientation — see docs/05-drag-and-drop.md */
     layout: "vertical" | "horizontal" | "grid";
+    /**
+     * Resolves the layout from the parent block's props (e.g. a direction
+     * toggle); falls back to `layout` when absent or returning undefined.
+     */
+    getLayout?: (props: Record<string, unknown>) => "vertical" | "horizontal" | "grid" | undefined;
     grid?: { columns: number };
     /** Allowed child block types; omit = accept all */
     accepts?: string[] | ((childType: string, ctx: AcceptCtx) => boolean);
@@ -62,6 +67,12 @@ export interface ContainerDef {
      * The output render applies the same gap itself (e.g. src/email/gap.ts).
      */
     getGap?: (props: Record<string, unknown>) => number | undefined;
+    /**
+     * Extra inline style for the slot's layout element on the canvas, derived
+     * from the parent block's props (e.g. flex alignment for a horizontal
+     * container). The output render applies its own equivalent.
+     */
+    getSlotStyle?: (props: Record<string, unknown>) => CSSProperties | undefined;
 }
 
 export interface EditRenderProps<P = Record<string, unknown>> {

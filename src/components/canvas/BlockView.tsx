@@ -120,6 +120,8 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 container={container}
                 childIds={node.children[container.name] ?? []}
                 gap={container.getGap?.(node.props) ?? 0}
+                layout={container.getLayout?.(node.props) ?? container.layout}
+                slotStyle={container.getSlotStyle?.(node.props)}
             />
         );
     }

@@ -1,14 +1,11 @@
 import type { CSSProperties } from "react";
 import {
-    backgroundToCss,
-    defaultBackground,
     defaultTypography,
     paddingToCss,
     symmetricSides,
     SYSTEM_FONT_STACK,
     typographyToCss,
     uniformSides,
-    type BackgroundValue,
     type SpacingValue,
     type TypographyValue,
 } from "../../../style-props/index.ts";
@@ -21,10 +18,8 @@ import {
  */
 
 export interface EmailRootProps {
-    /** Page background behind the email */
+    /** Page background behind the email — content backgrounds belong to containers */
     backgroundColor: string;
-    /** Background of the centered content container */
-    background: BackgroundValue;
     /** Content width in px (~600 survives every client) */
     contentWidth: number;
     /** padding only — space between the page edge and the content container */
@@ -37,7 +32,6 @@ export interface EmailRootProps {
 
 export const emailRootDefaults: EmailRootProps = {
     backgroundColor: "#FFFFFF",
-    background: { ...defaultBackground, type: "solid", color: "#FFFFFF" },
     contentWidth: 600,
     spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
     typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
@@ -56,6 +50,5 @@ export const emailRootBodyStyles = (props: EmailRootProps): CSSProperties => {
 };
 
 export const emailRootContainerStyles = (props: EmailRootProps): CSSProperties => ({
-    ...backgroundToCss(props.background),
     maxWidth: props.contentWidth,
 });

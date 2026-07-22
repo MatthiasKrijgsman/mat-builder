@@ -45,8 +45,8 @@ const mergeTags: MergeTag[] = [
 /*
  * Sample document — a fictional "Northwind" July invoice. Deliberately uses
  * every block type in the preset (image, rich text with merge-tag chips,
- * table, button, spacer, columns, divider) so the demo doubles as a visual
- * smoke test.
+ * table, button, spacer, a horizontal container, divider) so the demo doubles
+ * as a visual smoke test.
  */
 
 const text = (t: string, style = "") => ({ type: "text", version: 1, detail: 0, format: 0, mode: "normal", style, text: t });
@@ -105,8 +105,9 @@ const footerContent = richDoc(
     ], "center"),
 );
 
-/** Neutral section style-group values — spread and override per section. */
-const sectionBase = {
+/** Neutral container style-group values — spread and override per container. */
+const containerBase = {
+    direction: "vertical" as const,
     size: { ...defaultSize, width: "full" as const },
     background: defaultBackground,
     border: defaultBorder,
@@ -126,20 +127,31 @@ const initialDocument: BuilderDocument = {
             type: "email-root",
             props: {
                 backgroundColor: "#f4f4f5",
-                background: { ...defaultBackground, type: "solid", color: "#ffffff" },
                 contentWidth: 600,
                 spacing: { padding: symmetricSides(32, 12), margin: uniformSides(0) },
                 typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
                 previewText: "Your July invoice \u2014 \u20ac97.00, auto-pay on August 1st",
             },
-            children: { main: ["brand", "hero", "invoice", "cta", "details", "footer"] },
+            children: { main: ["page"] },
+        },
+
+        /* Page: the root's default white container \u2014 owns the content background */
+        page: {
+            id: "page",
+            type: "container",
+            props: {
+                ...containerBase,
+                background: { ...defaultBackground, type: "solid", color: "#ffffff" },
+                spacing: { padding: uniformSides(0), margin: uniformSides(0) },
+            },
+            children: { content: ["brand", "hero", "invoice", "cta", "details", "footer"] },
         },
 
         /* Brand row */
         brand: {
             id: "brand",
-            type: "section",
-            props: { ...sectionBase, spacing: { padding: symmetricSides(20, 24), margin: uniformSides(0) } },
+            type: "container",
+            props: { ...containerBase, spacing: { padding: symmetricSides(20, 24), margin: uniformSides(0) } },
             children: { content: ["brand-name"] },
         },
         "brand-name": {
@@ -157,8 +169,8 @@ const initialDocument: BuilderDocument = {
         /* Hero: image + heading + intro copy */
         hero: {
             id: "hero",
-            type: "section",
-            props: { ...sectionBase, layout: { ...defaultLayout, gap: 16 } },
+            type: "container",
+            props: { ...containerBase, layout: { ...defaultLayout, gap: 16 } },
             children: { content: ["hero-image", "hero-copy"] },
         },
         "hero-image": {
@@ -186,9 +198,9 @@ const initialDocument: BuilderDocument = {
         /* Invoice: label + table + note */
         invoice: {
             id: "invoice",
-            type: "section",
+            type: "container",
             props: {
-                ...sectionBase,
+                ...containerBase,
                 spacing: { padding: { top: 8, right: 24, bottom: 8, left: 24 }, margin: uniformSides(0) },
                 layout: { ...defaultLayout, gap: 12 },
             },
@@ -230,9 +242,9 @@ const initialDocument: BuilderDocument = {
         /* CTA: dark card with button */
         cta: {
             id: "cta",
-            type: "section",
+            type: "container",
             props: {
-                ...sectionBase,
+                ...containerBase,
                 background: { ...defaultBackground, type: "solid", color: "#1c1917" },
                 border: { ...defaultBorder, radius: 12 },
                 spacing: { padding: symmetricSides(28, 28), margin: { top: 16, right: 24, bottom: 16, left: 24 } },
@@ -263,19 +275,17 @@ const initialDocument: BuilderDocument = {
             children: {},
         },
 
-        /* Details: two columns */
+        /* Details: a horizontal container — two equal-width columns */
         details: {
             id: "details",
-            type: "columns",
+            type: "container",
             props: {
-                ratio: "50/50",
+                ...containerBase,
+                direction: "horizontal" as const,
                 layout: { ...defaultLayout, gap: 24 },
-                background: defaultBackground,
-                border: defaultBorder,
                 spacing: { padding: symmetricSides(8, 24), margin: uniformSides(0) },
-                effects: defaultEffects,
             },
-            children: { "col-1": ["details-questions"], "col-2": ["details-billing"] },
+            children: { content: ["details-questions", "details-billing"] },
         },
         "details-questions": {
             id: "details-questions",
@@ -293,9 +303,9 @@ const initialDocument: BuilderDocument = {
         /* Footer: divider + small print */
         footer: {
             id: "footer",
-            type: "section",
+            type: "container",
             props: {
-                ...sectionBase,
+                ...containerBase,
                 spacing: { padding: { top: 8, right: 24, bottom: 24, left: 24 }, margin: uniformSides(0) },
             },
             children: { content: ["footer-divider", "footer-spacer", "footer-copy"] },
