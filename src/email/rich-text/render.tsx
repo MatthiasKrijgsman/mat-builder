@@ -104,7 +104,14 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions, isLast 
         case "merge-tag": {
             const element = node as RichMergeTagNode;
             if (options.renderMergeTag) {
-                return <span key={key}>{options.renderMergeTag(element)}</span>;
+                // The typography snapshot goes on the wrapper (same filter as
+                // the editing surface's decorator slot) so the chip's 0.85em
+                // resolves against the surrounding text size.
+                return (
+                    <span key={key} style={parseTextStyle(element.style)}>
+                        {options.renderMergeTag(element)}
+                    </span>
+                );
             }
             // Output path: the literal token as escaped text — substitution
             // happens downstream (the ESP), never here.

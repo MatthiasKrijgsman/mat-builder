@@ -1,5 +1,6 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, $getSelection, $insertNodes } from "lexical";
+import { $getSelectionStyleValueForProperty } from "@lexical/selection";
+import { $getRoot, $getSelection, $insertNodes, $isRangeSelection } from "lexical";
 import { IconBraces } from "@tabler/icons-react";
 import { DropdownMenu, LexicalToolbarButton, LexicalToolbarDivider, useLexicalToolbar } from "@matthiaskrijgsman/mat-ui";
 import type { MergeTag } from "../../react/merge-tags.ts";
@@ -46,7 +47,16 @@ function MergeTagLexicalItem() {
                         // The editor state keeps the last selection while DOM focus
                         // is in the dropdown; null only before any interaction.
                         if ($getSelection() === null) $getRoot().selectEnd();
-                        $insertNodes([$createMergeTagNode(tag.token, tag.label)]);
+                        // Snapshot the insertion point's inline font-size so the
+                        // chip matches the text it lands in ($patchStyleText never
+                        // styles decorators — the node carries it explicitly).
+                        const selection = $getSelection();
+                        const fontSize = $isRangeSelection(selection)
+                            ? $getSelectionStyleValueForProperty(selection, "font-size", "")
+                            : "";
+                        $insertNodes([
+                            $createMergeTagNode(tag.token, tag.label, fontSize ? `font-size: ${fontSize}` : ""),
+                        ]);
                     },
                     { onUpdate: () => editor.focus() },
                 );

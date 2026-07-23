@@ -183,6 +183,20 @@ describe("RichText", () => {
         expect(html).toContain("<em>First name</em>");
         expect(html).not.toContain("{{first_name}}");
     });
+
+    it("applies the merge-tag style snapshot to the chip wrapper, not the output", () => {
+        const content = doc([
+            p([{ type: "merge-tag", token: "{{first_name}}", label: "First name", style: "font-size: 24px" }]),
+        ]);
+        const chip = renderToStaticMarkup(
+            <RichText content={content} renderMergeTag={(node) => <em>{node.label}</em>} />,
+        );
+        expect(chip).toMatch(/<span style="font-size:24px"><em>First name<\/em><\/span>/);
+        // output path: literal token, style ignored
+        const output = renderToStaticMarkup(<RichText content={content} />);
+        expect(output).toContain("{{first_name}}");
+        expect(output).not.toContain("font-size:24px");
+    });
 });
 
 describe("richTextToPlain", () => {

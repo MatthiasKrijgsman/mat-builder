@@ -76,6 +76,9 @@ export interface RichMergeTagNode extends RichNodeBase {
     type: "merge-tag";
     token: string;
     label?: string;
+    /** Inline CSS string (text-node syntax) — typography snapshot so canvas
+     * chips scale with the surrounding text; ignored by the output path. */
+    style?: string;
 }
 
 export type RichNode =

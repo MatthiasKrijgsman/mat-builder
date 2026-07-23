@@ -11,6 +11,7 @@ import {
 } from "@matthiaskrijgsman/mat-ui";
 import { defaultTypography, EMAIL_FONT_STACKS, hexToRgba, parseColorToHexOpacity } from "../../style-props/index.ts";
 import { $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightPlugin.tsx";
+import { $patchSelectedMergeTags } from "./MergeTagNode.tsx";
 
 /*
  * Selection-level typography controls for the inline rich text toolbar
@@ -145,6 +146,7 @@ function FontWeightItem() {
 }
 
 function FontSizeItem() {
+    const [editor] = useLexicalComposerContext();
     const { values, patch } = useLexicalSelectionStyle(["font-size"]);
     const inherited = useInheritedTextStyle();
     const parsed = Number.parseFloat(values["font-size"]);
@@ -153,7 +155,15 @@ function FontSizeItem() {
             title="Font size (px)"
             prefix="Aa"
             value={Number.isNaN(parsed) ? inherited.fontSize : parsed}
-            onChange={(size) => patch({ "font-size": `${size}px` })}
+            onChange={(size) => {
+                patch({ "font-size": `${size}px` });
+                // $patchStyleText (inside patch) only styles TextNodes — merge-tag
+                // chips in the selection scale via their own style snapshot.
+                editor.update(
+                    () => $patchSelectedMergeTags({ "font-size": `${size}px` }),
+                    focusPreservingTag(editor),
+                );
+            }}
             min={8}
             max={96}
         />
