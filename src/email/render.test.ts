@@ -223,7 +223,7 @@ describe("renderEmail", () => {
         expect(html).toContain("font-size:24px");
         expect(html).toContain("font-family:Georgia");
         expect(html).toMatch(/>loud<\/span/);
-        expect(html).toContain("margin:0 0 12px;margin-bottom:0;text-align:center;line-height:180%");
+        expect(html).toContain("margin:0 0 12px;margin-bottom:0;text-align:center;line-height:1.8");
     });
 
     it("renders rich text lists with explicit inline list styles", async () => {

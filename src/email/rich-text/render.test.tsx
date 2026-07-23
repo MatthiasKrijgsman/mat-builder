@@ -85,16 +85,16 @@ describe("RichText", () => {
         expect(html.match(/text-align/g)).toHaveLength(3);
     });
 
-    it("emits NodeState lineHeight as a percentage", () => {
+    it("emits NodeState lineHeight as a unitless multiplier (per-run scaling)", () => {
         const html = render(doc([p([t("spaced")], { $: { lineHeight: 1.5 } })]));
-        expect(html).toContain("line-height:150%");
+        expect(html).toContain("line-height:1.5");
     });
 
-    it("renders headings with px sizes and matching px line-heights", () => {
+    it("renders headings with px sizes and a unitless line-height", () => {
         const html = render(richTextHeading("Big", "h1"));
-        expect(html).toMatch(/<h1 style="font-size:40px;line-height:48px;font-weight:500;margin:0 0 12px;margin-bottom:0">/);
+        expect(html).toMatch(/<h1 style="font-size:40px;line-height:1.2;font-weight:500;margin:0 0 12px;margin-bottom:0">/);
         const h6 = render(richTextHeading("Small", "h6"));
-        expect(h6).toContain("font-size:16px;line-height:19px");
+        expect(h6).toContain("font-size:16px;line-height:1.2");
     });
 
     it("renders ordered lists with a start offset and nested lists without doubled markers", () => {

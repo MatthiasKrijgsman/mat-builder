@@ -33,9 +33,11 @@ const lineHeightState = createState(LINE_HEIGHT_STATE_KEY, {
         typeof jsonValue === "number" && jsonValue > 0 ? jsonValue : undefined,
 });
 
-/** The same %-form the serializer emits — keep in sync with rich-text/render.tsx. */
+/** The same unitless form the serializer emits (keep in sync with
+ * rich-text/render.tsx) — unitless inherits as a raw multiplier, so text runs
+ * with their own font-size get proportionally taller lines. */
 const lineHeightCss = (multiplier: number | undefined): string =>
-    multiplier === undefined ? "" : `${Math.round(multiplier * 100)}%`;
+    multiplier === undefined ? "" : String(multiplier);
 
 /** Block elements (paragraph/heading) covered by the current selection. */
 const $selectedLineHeightTargets = (): ElementNode[] => {

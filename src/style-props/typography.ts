@@ -2,8 +2,11 @@ import type { CSSProperties } from "react";
 import { hexToRgba } from "./color.ts";
 
 /*
- * Typography — the full text set. lineHeight is a multiplier but is emitted
- * as px (fontSize × lineHeight) — the safest form across email clients.
+ * Typography — the full text set. lineHeight is a multiplier and is emitted
+ * unitless: it inherits as a raw multiplier, so nested text runs with their
+ * own font-size (per-selection sizing in rich text) resolve it against that
+ * size instead of a value computed once at the block. Unitless is also safe
+ * for email — caniemail flags px/em as the buggy forms in Outlook Windows.
  * Text opacity folds into the color as rgba (no separate opacity property,
  * which would also fade backgrounds).
  */
@@ -58,7 +61,7 @@ export const typographyToCss = (v?: TypographyValue): CSSProperties => {
     if (!v) return {};
     const css: CSSProperties = {
         fontSize: v.fontSize,
-        lineHeight: `${Math.round(v.fontSize * v.lineHeight)}px`,
+        lineHeight: v.lineHeight,
         color: hexToRgba(v.color, v.opacity),
         textAlign: v.align,
     };

@@ -201,9 +201,9 @@ describe("size", () => {
 });
 
 describe("typography", () => {
-    it("emits line-height as px from the multiplier", () => {
+    it("emits line-height as a unitless multiplier (per-run scaling)", () => {
         const css = typographyToCss({ ...defaultTypography, fontSize: 16, lineHeight: 1.5 });
-        expect(css.lineHeight).toBe("24px");
+        expect(css.lineHeight).toBe(1.5);
         expect(css.fontSize).toBe(16);
     });
 

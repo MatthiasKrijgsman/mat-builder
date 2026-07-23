@@ -24,13 +24,15 @@ export const TEXT_FORMAT = {
 export const LINE_HEIGHT_STATE_KEY = "lineHeight";
 
 /**
- * Headings get a px size with a matching px line-height (an inherited
- * body line-height would let 40px glyphs overflow), explicit weight and
- * margin — same values the markdown pipeline used before.
+ * Headings get a px size with their own tighter line-height (inheriting the
+ * body's 1.5 would make 40px headings too airy), explicit weight and margin.
+ * Unitless so resized runs inside a heading still scale their line.
  */
+export const HEADING_LINE_HEIGHT = 1.2;
+
 export const heading = (fontSize: number): CSSProperties => ({
     fontSize,
-    lineHeight: `${Math.round(fontSize * 1.2)}px`,
+    lineHeight: HEADING_LINE_HEIGHT,
     fontWeight: 500,
     margin: "0 0 12px",
 });

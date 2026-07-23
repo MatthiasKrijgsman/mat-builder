@@ -50,9 +50,11 @@ const blockOverrides = (node: RichElementNode): CSSProperties => {
     if (textAlign) css.textAlign = textAlign;
     const lineHeight = node.$?.lineHeight;
     if (typeof lineHeight === "number" && lineHeight > 0) {
-        // Percentage so it resolves against each element's own font size —
-        // stays correct under per-selection font sizes and heading scales.
-        css.lineHeight = `${Math.round(lineHeight * 100)}%`;
+        // Unitless: inherits as a raw multiplier, so every text run resolves
+        // it against its OWN font size (per-selection sizes get taller lines).
+        // A percentage would compute once against the block's font size and
+        // inherit as that fixed value. Keep in sync with LineHeightPlugin.
+        css.lineHeight = lineHeight;
     }
     return css;
 };
