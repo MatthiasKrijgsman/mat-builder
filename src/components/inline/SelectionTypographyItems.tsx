@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { $getSelection, $isRangeSelection, SKIP_DOM_SELECTION_TAG, type LexicalEditor } from "lexical";
 import {
@@ -52,37 +53,75 @@ const inheritedWeightLabel = (computedWeight: string): string => {
     return FONT_WEIGHT_OPTIONS.find((o) => o.value === normalized)?.label ?? normalized;
 };
 
-/** Effective INHERITED text style, read from the editor root's computed
- * style — when the selection carries no inline style the controls show the
- * values the text actually renders with (the email-root base typography
- * cascading in), not an empty field. */
-function useInheritedTextStyle() {
+interface InheritedTextStyle {
+    fontFamily: string;
+    fontWeight: string;
+    fontSize: number;
+    lineHeight: number;
+    letterSpacing: number;
+    color: { hex: string; opacity: number };
+}
+
+const DEFAULT_INHERITED: InheritedTextStyle = {
+    fontFamily: "",
+    fontWeight: "400",
+    fontSize: defaultTypography.fontSize,
+    lineHeight: defaultTypography.lineHeight,
+    letterSpacing: defaultTypography.letterSpacing,
+    color: { hex: defaultTypography.color, opacity: defaultTypography.opacity },
+};
+
+const sameInherited = (a: InheritedTextStyle, b: InheritedTextStyle): boolean =>
+    a.fontFamily === b.fontFamily &&
+    a.fontWeight === b.fontWeight &&
+    a.fontSize === b.fontSize &&
+    a.lineHeight === b.lineHeight &&
+    a.letterSpacing === b.letterSpacing &&
+    a.color.hex === b.color.hex &&
+    a.color.opacity === b.color.opacity;
+
+/** Effective INHERITED text style at the caret — when the selection carries
+ * no inline style the controls show the values the text actually renders
+ * with. Computed at the selection anchor's DOM element (not the editor root)
+ * so block-level styles between root and caret — heading font-size/weight
+ * and their tighter line-height — are reflected too; the root is only the
+ * fallback before any selection exists. Re-read per update: selection moves
+ * create new editor states, so the listener fires on caret travel. */
+function useInheritedTextStyle(): InheritedTextStyle {
     const [editor] = useLexicalComposerContext();
-    const root = editor.getRootElement();
-    if (!root) {
-        return {
-            fontFamily: "",
-            fontWeight: "400",
-            fontSize: defaultTypography.fontSize,
-            lineHeight: defaultTypography.lineHeight,
-            letterSpacing: defaultTypography.letterSpacing,
-            color: { hex: defaultTypography.color, opacity: defaultTypography.opacity },
+    const [value, setValue] = useState(DEFAULT_INHERITED);
+
+    useEffect(() => {
+        const read = () => {
+            editor.getEditorState().read(() => {
+                const selection = $getSelection();
+                const anchorElement = $isRangeSelection(selection)
+                    ? editor.getElementByKey(selection.anchor.getNode().getKey())
+                    : null;
+                const target = anchorElement ?? editor.getRootElement();
+                if (!target) return; // keep defaults until the surface mounts
+                const computed = window.getComputedStyle(target);
+                const fontSize = Number.parseFloat(computed.fontSize) || defaultTypography.fontSize;
+                const lineHeightPx = Number.parseFloat(computed.lineHeight); // NaN for "normal"
+                const letterSpacing = Number.parseFloat(computed.letterSpacing) || 0; // "normal" → 0
+                const next: InheritedTextStyle = {
+                    fontFamily: computed.fontFamily,
+                    fontWeight: computed.fontWeight,
+                    fontSize,
+                    lineHeight: Number.isNaN(lineHeightPx)
+                        ? defaultTypography.lineHeight
+                        : Math.round((lineHeightPx / fontSize) * 10) / 10,
+                    letterSpacing,
+                    color: parseColorToHexOpacity(computed.color) ?? DEFAULT_INHERITED.color,
+                };
+                setValue((prev) => (sameInherited(prev, next) ? prev : next));
+            });
         };
-    }
-    const computed = window.getComputedStyle(root);
-    const fontSize = Number.parseFloat(computed.fontSize) || defaultTypography.fontSize;
-    const lineHeightPx = Number.parseFloat(computed.lineHeight); // NaN for "normal"
-    const letterSpacing = Number.parseFloat(computed.letterSpacing) || 0; // "normal" → 0
-    return {
-        fontFamily: computed.fontFamily,
-        fontWeight: computed.fontWeight,
-        fontSize,
-        lineHeight: Number.isNaN(lineHeightPx)
-            ? defaultTypography.lineHeight
-            : Math.round((lineHeightPx / fontSize) * 10) / 10,
-        letterSpacing,
-        color: parseColorToHexOpacity(computed.color) ?? { hex: defaultTypography.color, opacity: 100 },
-    };
+        read();
+        return editor.registerUpdateListener(() => read());
+    }, [editor]);
+
+    return value;
 }
 
 function FontFamilyItem() {
