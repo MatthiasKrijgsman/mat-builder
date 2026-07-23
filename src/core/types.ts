@@ -113,7 +113,9 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     /* identity & palette */
     type: string;
     label: string;
-    icon?: ComponentType<{ className?: string }>;
+    /** Palette/layers/inspector glyph. `style` must be forwarded to the SVG —
+     * the layers tree tints icons via `style.color` (Tabler icons qualify). */
+    icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
     category?: string;
     /** Palette search terms */
     keywords?: string[];
