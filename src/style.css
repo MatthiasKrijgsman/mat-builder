@@ -27,6 +27,42 @@
 }
 
 /*
+ * Inspector field sizing — match the redesigned layer rows (LayerRow.tsx:
+ * 32px rows, 14px text, menu-item radius, 8px gutter). Every field wrapper
+ * renders a mat-ui control at size="sm", and those are sized entirely by the
+ * --control-size-sm-* tokens, so overriding the sm scale on the inspector
+ * root rethemes all fields at once. Text hierarchy after this: block title
+ * 18px semibold > group header 16px > field value 14px > label/description
+ * 12px muted.
+ */
+.mat-builder-inspector {
+    --control-size-sm-height: 2rem;
+    --control-size-sm-font-size: 0.875rem;
+    --control-size-sm-px: 0.625rem;
+    --control-size-sm-icon-offset: 0.625rem;
+    /* Inputs, icon buttons, and segmented tabs share the layer-row radius */
+    --border-radius-input: var(--border-radius-menu-item);
+    --border-radius-button: var(--border-radius-menu-item);
+    --border-radius-tab: var(--border-radius-menu-item);
+    --font-size-description: 0.75rem;
+}
+.mat-builder-inspector .input-label {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+/*
+ * mat-ui's stylesheet ships the tailwindcss-forms base reset, which gives
+ * selects and inputs `padding: .5rem .75rem`. mat-ui controls never override
+ * the vertical part — at their stock 40px height there is slack, but at the
+ * compact 32px height above, a select's line box no longer fits and the text
+ * clips. Zero it here (unlayered, so it beats the @layer base rule) and let
+ * the control height center the text; textareas keep their padding.
+ */
+.mat-builder-inspector :where(select, input:not([type="range"])) {
+    padding-block: 0;
+}
+
+/*
  * The artboard renders output truth: hosts often antialias their app chrome
  * (Tailwind's `antialiased`), but the email preview iframe and real clients
  * use the platform default — subpixel text reads slightly darker/heavier, a
