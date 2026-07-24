@@ -94,6 +94,7 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
                                     registry.getDefinition(rootNode.type)?.label ??
                                     rootNode.type
                                 }
+                                Icon={registry.getDefinition(rootNode.type)?.icon}
                             />
                         )}
                     </AnimatePresence>

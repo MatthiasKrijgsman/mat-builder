@@ -21,7 +21,10 @@ export const imageBlock = defineBlock<EmailImageProps>({
     getDisplayName: (props) => props.alt || undefined,
     editRender: ({ props }) =>
         props.src ? (
-            <img src={props.src} alt={props.alt} style={emailImageStyles(props)} />
+            // draggable=false: browsers natively drag <img> elements, which
+            // hijacks the block's Pragmatic draggable — the block must lift, not
+            // a ghost of the picture
+            <img src={props.src} alt={props.alt} draggable={false} style={emailImageStyles(props)} />
         ) : (
             <div
                 className="flex min-h-24 items-center justify-center rounded border border-dashed text-xs"

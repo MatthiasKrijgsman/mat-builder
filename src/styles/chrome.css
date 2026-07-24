@@ -32,15 +32,59 @@
     box-shadow: var(--mat-builder-chrome-shadow-drag);
 }
 
-/* Label pill above a selected block (name only — actions live in the
+/* Corner handles — Figma-style white squares centered on the ring's corners.
+   Always mounted so they can fade with the state morph (hover ⇄ selected ⇄
+   dragging reuses one frame element); visible only while selected. They are
+   decorative (the whole frame is the drag surface) and inherit the frame's
+   pointer-events: none. */
+.mat-builder-chrome-handle {
+    position: absolute;
+    width: var(--mat-builder-chrome-handle-size);
+    height: var(--mat-builder-chrome-handle-size);
+    border-radius: var(--mat-builder-chrome-handle-radius);
+    background: var(--mat-builder-color-chrome-handle-bg);
+    border: var(--mat-builder-chrome-handle-border) solid var(--mat-builder-color-selection);
+    opacity: 0;
+    transition: opacity var(--mat-builder-duration-ring) ease;
+    /* Center each handle on the ring corner (ring sits ring-offset outside the box) */
+    --mat-builder-chrome-handle-overhang: calc(
+        var(--mat-builder-chrome-handle-size) / -2 - var(--mat-builder-chrome-ring-offset)
+    );
+}
+.mat-builder-chrome-frame[data-state="selected"] .mat-builder-chrome-handle {
+    opacity: 1;
+}
+.mat-builder-chrome-handle[data-corner="tl"] {
+    top: var(--mat-builder-chrome-handle-overhang);
+    left: var(--mat-builder-chrome-handle-overhang);
+}
+.mat-builder-chrome-handle[data-corner="tr"] {
+    top: var(--mat-builder-chrome-handle-overhang);
+    right: var(--mat-builder-chrome-handle-overhang);
+}
+.mat-builder-chrome-handle[data-corner="bl"] {
+    bottom: var(--mat-builder-chrome-handle-overhang);
+    left: var(--mat-builder-chrome-handle-overhang);
+}
+.mat-builder-chrome-handle[data-corner="br"] {
+    bottom: var(--mat-builder-chrome-handle-overhang);
+    right: var(--mat-builder-chrome-handle-overhang);
+}
+
+/* Label pill above a selected block (block icon + name — actions live in the
    inspector/keyboard); flips into the block's corner when the block top is
-   too close to the visible frame top. ~24px tall: with top -30px that
-   leaves a 6px gap above the ring. */
+   too close to the visible frame top. Type and radius match a palette item
+   (14px/medium, menu-item radius). ~26px tall (16px icon + 2×5px padding):
+   with top -32px that leaves a 6px gap above the ring. Keep the geometry in
+   sync with PILL_CLEARANCE (chrome-geometry.ts). */
 .mat-builder-chrome-pill {
-    top: -30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    top: -32px;
     left: -3px;
-    padding: 5px 12px;
-    border-radius: 6px;
+    padding: 5px 10px;
+    border-radius: var(--border-radius-menu-item, 8px);
     background: var(--mat-builder-color-selection);
     color: var(--mat-builder-color-chrome-tag-fg);
     font-size: 14px;
@@ -48,9 +92,18 @@
     line-height: 1;
     white-space: nowrap;
 }
+/* The frames render in a fixed order (dragging, selected, hover), so a
+   hovered parent's frame is a LATER SIBLING of the selected child's and would
+   paint its ring across the child's pill and handles. Frames keep z-index
+   auto (a hover ring may still cross a selected ancestor's ring — wanted);
+   only the pill and handles lift above sibling frames. */
+.mat-builder-chrome-pill,
+.mat-builder-chrome-handle {
+    z-index: 1;
+}
 .mat-builder-chrome-pill[data-inside] {
-    top: 4px;
-    left: 4px;
+    top: 6px;
+    left: 6px;
 }
 
 /* The block element itself (BlockView wrapper) — lift-in-place drag treatment.
@@ -73,6 +126,13 @@
     opacity: var(--mat-builder-drag-source-opacity);
     /* Best-effort: the browser owns the cursor during a native HTML5 drag */
     cursor: grabbing;
+}
+/* Images and links are natively draggable and would hijack the block's
+   Pragmatic drag (a ghost of the picture lifts instead of the block). The
+   email preset also sets draggable=false on its <img> (Firefox ignores this
+   CSS); this guard covers consumer-authored editRenders in WebKit/Blink. */
+.mat-builder-block :is(img, a) {
+    -webkit-user-drag: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -39,14 +39,16 @@ export interface ChromeGeometry {
 }
 
 /**
- * Paint slack beyond the ring offset: the strong ring width (2px) + 1px
- * slop. The caller adds the live outline-offset so retheming the offset
- * token keeps edge-flush rings unclipped.
+ * Paint slack beyond the ring offset: the corner handles overhang the ring
+ * line by half their size (8px handle → 4px), which exceeds the strong ring
+ * width (2px); plus 2px slop. The caller adds the live outline-offset so
+ * retheming the offset token keeps edge-flush rings and handles unclipped.
+ * (Keep --mat-builder-chrome-handle-size ≤ 2 × (RING_SLACK − 2px).)
  */
-export const RING_SLACK = 3;
+export const RING_SLACK = 6;
 
-/** Room the pill needs above the block: it spans from top -30px down to -6px (24px tall), plus a small margin. */
-export const PILL_CLEARANCE = 34;
+/** Room the pill needs above the block: it spans from top -32px down to -6px (26px tall), plus a small margin. */
+export const PILL_CLEARANCE = 36;
 
 export function computeChromeGeometry(
     block: RectLike,

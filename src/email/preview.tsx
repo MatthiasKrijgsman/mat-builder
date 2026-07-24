@@ -47,6 +47,14 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
     // Mount-time read — a size the user dragged on the Canvas carries over
     const [persistedSize] = useState(() => store.getState().artboardSize);
 
+    // Preview shows output truth — entering it ends the editing session.
+    // Without this, a selection made in edit mode lingers in the store while
+    // no canvas exists to draw its frame: switching back showed the inspector
+    // bound to a block with no visible selection chrome.
+    useEffect(() => {
+        store.getState().actions.select(null);
+    }, [store]);
+
     useEffect(() => {
         let cancelled = false;
         const timer = setTimeout(() => {

@@ -149,7 +149,14 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
         >
-            <AnimatePresence>{showPill && <ChromePill label={label} inside={pillInside} />}</AnimatePresence>
+            {/* Corner handles fade in via CSS only while selected — always
+                mounted so the hover ⇄ selected morph transitions them */}
+            {(["tl", "tr", "bl", "br"] as const).map((corner) => (
+                <span key={corner} className="mat-builder-chrome-handle" data-corner={corner} aria-hidden />
+            ))}
+            <AnimatePresence>
+                {showPill && <ChromePill label={label} Icon={definition?.icon} inside={pillInside} />}
+            </AnimatePresence>
         </motion.div>
     );
 }

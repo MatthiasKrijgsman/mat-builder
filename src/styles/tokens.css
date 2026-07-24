@@ -24,11 +24,20 @@
     --mat-builder-chrome-ring-width: 1.5px;
     --mat-builder-chrome-ring-width-strong: 2px;
     --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.07);
-    --mat-builder-chrome-shadow-selected: 0 12px 30px
-        color-mix(in srgb, var(--mat-builder-color-selection) 20%, transparent);
+    /* Selection is flat (Figma-style border + handles) — a zero shadow, not
+       `none`, so it stays valid inside comma-separated shadow lists (the
+       Canvas root ring composes it) and box-shadow transitions keep working */
+    --mat-builder-chrome-shadow-selected: 0 0 rgb(0 0 0 / 0);
     --mat-builder-chrome-shadow-drag:
         0 30px 60px color-mix(in srgb, var(--mat-builder-color-selection) 32%, transparent),
         0 0 0 1.5px color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+    /* Selection corner handles (white squares riding the ring's corners).
+       Keep the size ≤ 2 × (RING_SLACK − 2px) (chrome-geometry.ts) or edge-flush
+       handles get clipped at the artboard boundary. */
+    --mat-builder-chrome-handle-size: 8px;
+    --mat-builder-chrome-handle-border: 1.5px;
+    --mat-builder-chrome-handle-radius: 2px;
+    --mat-builder-color-chrome-handle-bg: #ffffff;
     --mat-builder-chrome-lift-scale: 1.03;
     /* Kept at 1 by default — the lift treatment replaces dimming; hosts can restore it */
     --mat-builder-drag-source-opacity: 1;
