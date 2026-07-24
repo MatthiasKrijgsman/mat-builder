@@ -10,6 +10,16 @@
       ],
       "port": 6007,
       "autoPort": true
+    },
+    {
+      "name": "mat-ui-site",
+      "runtimeExecutable": "zsh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/v20.15.1/bin:$PATH\" && cd /Users/matthiaskrijgsman/WebStormProjects/mat-ui && pnpm --filter @matthiaskrijgsman/mat-ui-site exec next dev"
+      ],
+      "port": 6006,
+      "autoPort": true
     }
   ]
 }

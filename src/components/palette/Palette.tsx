@@ -1,19 +1,21 @@
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { Divider, Input } from "@matthiaskrijgsman/mat-ui";
+import { Input } from "@matthiaskrijgsman/mat-ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { findInsertLocation } from "../../core/commands.ts";
 import type { AnyBlockDefinition } from "../../core/registry.ts";
 import { makeNewBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { IconSearch } from "@tabler/icons-react";
+import { IconGripVertical, IconSearch } from "@tabler/icons-react";
 import { tintByCategory, tintCssVar } from "./tints.ts";
 
 /*
  * Palette — see docs/04 §Palette. Grouped by category, searched over
- * label + keywords + type. Each item is a Pragmatic draggable carrying a
- * "new-block" payload; clicking is the complement: it inserts into the
- * selection's nearest accepting container (accessibility & speed).
+ * label + keywords + type. Items are list rows styled like the layer tree
+ * (32px, menu-item radius, tinted icon) with a grip affordance. Each item is
+ * a Pragmatic draggable carrying a "new-block" payload; clicking is the
+ * complement: it inserts into the selection's nearest accepting container
+ * (accessibility & speed).
  */
 
 export interface PaletteProps {
@@ -48,7 +50,7 @@ export function Palette({ className }: PaletteProps) {
 
   return (
     <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
-      <div className="shrink-0 p-3">
+      <div className="shrink-0 p-1">
         <Input
           size="sm"
           variant={'flat'}
@@ -59,12 +61,15 @@ export function Palette({ className }: PaletteProps) {
           onChange={ (event) => setQuery(event.target.value) }
         />
       </div>
-      <Divider />
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
       { groups.map(([ category, definitions ]) => (
-        <div key={ category } className="flex flex-col gap-1.5">
-          <p className="input-label">{ category }</p>
-          <div className={'grid grid-cols-4 gap-x-2 gap-y-2.5'}>
+        <div key={ category } className="flex flex-col">
+          <p
+            className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider"
+            style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+          >
+            { category }
+          </p>
           { definitions.map((definition) => (
             <PaletteItem
               key={ definition.type }
@@ -72,11 +77,10 @@ export function Palette({ className }: PaletteProps) {
               tint={ tintMap.get(category) ?? 1 }
             />
           )) }
-          </div>
         </div>
       )) }
       { groups.length === 0 && (
-        <p className="text-sm font-medium" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+        <p className="px-2 text-sm font-medium" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
           No blocks match &ldquo;{ query }&rdquo;.
         </p>
       ) }
@@ -113,20 +117,18 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       ref={ ref }
       type="button"
       onClick={ onClick }
-      className="group flex min-w-0 flex-col items-center gap-1.5 cursor-grab"
+      className="group my-px flex h-8 w-full cursor-grab items-center gap-2.5 rounded-(--border-radius-menu-item) px-2 text-sm font-normal font-(family-name:--font-family-base) transition-colors duration-(--control-transition-duration) select-none hover:bg-(--mat-builder-color-layer-row-hover-bg)"
     >
-      <div
-        className="grid aspect-square w-full place-items-center rounded-xl border shadow-xs shadow-current/15 transition-shadow duration-150 group-hover:shadow-xl group-hover:shadow-current/25"
-        style={ {
-          backgroundColor: tintCssVar(tint, "bg"),
-          borderColor: tintCssVar(tint, "border"),
-          // icons draw with currentColor, so the tile sets the icon color
-          color: tintCssVar(tint, "fg"),
-        } }
+      { Icon && <Icon className="size-4 shrink-0" style={ { color: tintCssVar(tint, "fg") } }/> }
+      <span
+        className="min-w-0 flex-1 truncate text-left font-medium text-stone-900"
       >
-        { Icon && <Icon className="size-5 shrink-0 stroke-2"/> }
-      </div>
-      <span className="w-full truncate text-center text-sm font-medium">{ definition.label }</span>
+        { definition.label }
+      </span>
+      <IconGripVertical
+        className="size-4 shrink-0 opacity-40 transition-opacity group-hover:opacity-70"
+        style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+      />
     </button>
   );
 }

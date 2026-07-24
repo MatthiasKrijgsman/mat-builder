@@ -154,7 +154,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         : undefined),
   };
 
-  const labelColor = isSelected ? "var(--mat-builder-color-layer-row-selected-fg)" : "var(--mat-builder-color-panel-fg)";
+  const labelColor = isSelected ? "var(--mat-builder-color-layer-row-selected-fg)" : "var(--color-stone-900)";
   // Unselected icons take the same tint as their palette tile; blocks without a
   // tile (root/hidden) fall back to the neutral panel-icon gray.
   const iconColor = isSelected
@@ -210,7 +210,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
           <span className="shrink-0" style={ { width: GLYPH_PX, height: GLYPH_PX } } aria-hidden/>
         ) }
         { Icon && <Icon className="size-4 shrink-0" style={ { color: iconColor } }/> }
-        <span className="min-w-0 flex-1 truncate" style={ { color: labelColor } }>{ label }</span>
+        <span className="min-w-0 flex-1 truncate font-medium" style={ { color: labelColor } }>{ label }</span>
         { isRoot && (
           <span className="shrink-0 text-xs mr-1" style={ { color: mutedColor } }>Root</span>
         ) }

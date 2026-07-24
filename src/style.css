@@ -27,15 +27,17 @@
 }
 
 /*
- * Inspector field sizing — match the redesigned layer rows (LayerRow.tsx:
+ * Compact field sizing — match the redesigned layer rows (LayerRow.tsx:
  * 32px rows, 14px text, menu-item radius, 8px gutter). Every field wrapper
  * renders a mat-ui control at size="sm", and those are sized entirely by the
- * --control-size-sm-* tokens, so overriding the sm scale on the inspector
- * root rethemes all fields at once. Text hierarchy after this: block title
- * 18px semibold > group header 16px > field value 14px > label/description
- * 12px muted.
+ * --control-size-sm-* tokens, so overriding the sm scale on the panel roots
+ * rethemes all fields at once. Applies to the inspector fields and the
+ * palette's search input so both read at the same scale. Text hierarchy
+ * after this: block title 18px semibold > group header 16px > field value
+ * 14px > label/description 12px muted.
  */
-.mat-builder-inspector {
+.mat-builder-inspector,
+.mat-builder-palette {
     --control-size-sm-height: 2rem;
     --control-size-sm-font-size: 0.875rem;
     --control-size-sm-px: 0.625rem;
@@ -44,7 +46,33 @@
     --border-radius-input: var(--border-radius-menu-item);
     --border-radius-button: var(--border-radius-menu-item);
     --border-radius-tab: var(--border-radius-menu-item);
+    /* Segmented controls match the text fields: same 32px total height and
+     * outer radius, with a hairline inset around the active segment. mat-ui
+     * derives the tab vars from the control-size vars at :root, where the
+     * stock (larger) sizes still hold — re-declare them here so they
+     * recompute from the compact values above. */
+    --control-size-sm-tab-height: var(--control-size-sm-height);
+    --control-size-sm-tab-px: var(--control-size-sm-px);
+    --control-size-sm-tab-font-size: var(--control-size-sm-font-size);
+    --tab-container-padding: 1px;
+    /* Concentric pills: inner radius = container radius minus its inset */
+    --border-radius-tab-inner: calc(var(--border-radius-tab) - var(--tab-container-padding));
     --font-size-description: 0.75rem;
+}
+/*
+ * Segmented-tab tooltips should trigger from the whole tab, but mat-ui's
+ * TabButtons has no per-tab tooltip hook — the Tooltip wraps only the icon
+ * label. A pseudo-element on the tooltip wrapper stretched over the tab
+ * button extends the hover/hit area to the full segment; clicks on it still
+ * bubble through to the button.
+ */
+.mat-builder-inspector .tab-button {
+    position: relative;
+}
+.mat-builder-tab-tooltip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
 }
 .mat-builder-inspector .input-label {
     font-size: 0.75rem;
@@ -58,8 +86,20 @@
  * clips. Zero it here (unlayered, so it beats the @layer base rule) and let
  * the control height center the text; textareas keep their padding.
  */
-.mat-builder-inspector :where(select, input:not([type="range"])) {
+:where(.mat-builder-inspector, .mat-builder-palette) :where(select, input:not([type="range"])) {
     padding-block: 0;
+}
+/*
+ * Tooltips launched from builder chrome. The panel portals to <body>, so the
+ * inspector scope can't reach it — the fields pass this class via the
+ * Tooltip's contentClassName instead. Compact: 12px text, tight padding,
+ * the same menu-item radius as the fields.
+ */
+.mat-builder-tooltip {
+    --font-size-tooltip: 0.75rem;
+    --tooltip-padding-x: 0.5rem;
+    --tooltip-padding-y: 0.375rem;
+    --border-radius-tooltip: var(--border-radius-menu-item);
 }
 
 /*

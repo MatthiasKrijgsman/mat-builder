@@ -1,6 +1,9 @@
 import { ButtonIconSquare, Divider, TableEmpty } from "@matthiaskrijgsman/mat-ui";
-import { IconClick, IconTrash } from "@tabler/icons-react";
+import { IconClick, IconCopy, IconTrash } from "@tabler/icons-react";
+import { useMemo } from "react";
+import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
+import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 
 /*
  * Inspector — see docs/04 §Inspector. Binds to the selection: pinned header
@@ -14,13 +17,17 @@ export interface InspectorPanelProps {
 }
 
 export function Inspector({ className }: InspectorPanelProps) {
+  const { registry } = useBuilderContext();
   const selected = useSelectedBlock();
   const actions = useBuilderState((s) => s.actions);
   const document = useBuilderState((s) => s.document);
 
+  // Icon tint matches the block's palette row and layers icon (shared assignment).
+  const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
+
   if (!selected) {
     return (
-      <div className={ `mat-builder-inspector grid place-items-center p-4 ${ className ?? "" }` }>
+      <div className={ `mat-builder-inspector grid place-items-center p-2 ${ className ?? "" }` }>
           <TableEmpty
             Icon={ IconClick }
             title={ 'No block selected' }
@@ -30,23 +37,36 @@ export function Inspector({ className }: InspectorPanelProps) {
   }
 
   const { id, node, definition } = selected;
-  const canDelete = id !== document.rootId && definition?.canDelete !== false;
+  const isRoot = id === document.rootId;
+  const canDelete = !isRoot && definition?.canDelete !== false;
+  const canDuplicate = !isRoot;
   const label = definition?.getDisplayName?.(node.props) ?? definition?.label ?? node.type;
   const Icon = definition?.icon;
+  const tint = definition ? tintMap.get(definition.category ?? "Blocks") : undefined;
   const InspectorForm = definition?.inspector;
 
   return (
-    <div className={ `mat-builder-inspector flex flex-col gap-1 p-2 ${ className ?? "" }` }>
+    <div className={ `mat-builder-inspector flex flex-col gap-1 px-1 ${ className ?? "" }` }>
       <header className="flex shrink-0 flex-col">
-        <div className="flex flex-row items-center gap-3 py-1.5 pl-3 pr-1">
+        <div className="flex flex-row items-center gap-2.5 py-1.5 pl-3 pr-1">
           { Icon && (
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-gray-100">
-              <Icon className="size-4 shrink-0 stroke-2 text-gray-800" />
-            </div>
+            <Icon
+              className="size-5 shrink-0 stroke-2"
+              style={ { color: tint ? tintCssVar(tint, "fg") : "var(--mat-builder-color-panel-fg)" } }
+            />
           ) }
           <div className="line-clamp-1 flex-1 break-all py-2 text-[1.125rem] font-semibold">{ label }</div>
-          { canDelete && (
-            <div className="flex shrink-0 flex-row items-center gap-2">
+          <div className="flex shrink-0 flex-row items-center gap-1">
+            { canDuplicate && (
+              <ButtonIconSquare
+                Icon={ IconCopy }
+                variant="transparent"
+                size="sm"
+                aria-label="Duplicate block"
+                onClick={ () => actions.duplicateBlock(id) }
+              />
+            ) }
+            { canDelete && (
               <ButtonIconSquare
                 Icon={ IconTrash }
                 variant="transparent"
@@ -54,8 +74,8 @@ export function Inspector({ className }: InspectorPanelProps) {
                 aria-label="Delete block"
                 onClick={ () => actions.removeBlock(id) }
               />
-            </div>
-          ) }
+            ) }
+          </div>
         </div>
         <Divider />
       </header>

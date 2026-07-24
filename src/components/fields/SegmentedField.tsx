@@ -29,9 +29,17 @@ export function SegmentedField<T extends string>({ label, value, onChange, optio
                 tabs={options.map((option) => ({
                     // Icon tabs render the icon inside a Tooltip naming the
                     // option (passed as the label node — TabButtons has no
-                    // per-tab tooltip hook).
+                    // per-tab tooltip hook). mat-builder-tab-tooltip draws a
+                    // pseudo-element over the whole tab button so the tooltip
+                    // triggers anywhere on it, not just over the icon.
                     label: option.Icon ? (
-                        <Tooltip content={option.label} className="inline-flex">
+                        <Tooltip
+                            content={option.label}
+                            className="mat-builder-tab-tooltip inline-flex"
+                            contentClassName="mat-builder-tooltip"
+                            minWidth={0}
+                            delay={300}
+                        >
                             <option.Icon className={iconClasses} />
                         </Tooltip>
                     ) : (

@@ -5,21 +5,23 @@ import {
     IconBorderOuter,
     IconBorderRight,
     IconBorderTop,
-    IconBoxAlignBottom,
-    IconBoxAlignLeft,
-    IconBoxAlignRight,
-    IconBoxAlignTop,
-    IconBoxModel2,
     IconBorderRadius,
     IconRadiusBottomLeft,
     IconRadiusBottomRight,
     IconRadiusTopLeft,
     IconRadiusTopRight,
-    IconSpacingHorizontal,
-    IconSpacingVertical,
     type TablerIcon,
 } from "@tabler/icons-react";
 import { useState, type ReactNode } from "react";
+import {
+    IconSideBottom,
+    IconSideLeft,
+    IconSideRight,
+    IconSideTop,
+    IconSidesIndividual,
+    IconSidesX,
+    IconSidesY,
+} from "./spacing-icons.tsx";
 import { uniformCorners, type CornerValues } from "../../style-props/border.ts";
 import { uniformSides, type SideValues } from "../../style-props/spacing.ts";
 import { NumberField } from "./NumberField.tsx";
@@ -54,9 +56,15 @@ function LinkedFields({ label, expanded, onToggle, toggleTitle, children }: Link
             {label && <span className="input-label">{label}</span>}
             <div className="flex items-start gap-1.5">
                 <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5">{children}</div>
-                <Tooltip content={toggleTitle} className="inline-flex shrink-0">
+                <Tooltip
+                    content={toggleTitle}
+                    className="inline-flex shrink-0"
+                    contentClassName="mat-builder-tooltip"
+                    minWidth={0}
+                    delay={300}
+                >
                     <ButtonIconSquare
-                        Icon={IconBoxModel2}
+                        Icon={IconSidesIndividual}
                         size="sm"
                         variant={expanded ? "primary" : "transparent"}
                         aria-label={toggleTitle}
@@ -115,15 +123,15 @@ export function SidesField({ label, value, onChange, min, max }: SidesFieldProps
         >
             {expanded ? (
                 <>
-                    <SideInput Icon={IconBoxAlignLeft} title={`${name} left`} value={value.left} onChange={(left) => set({ left })} min={min} max={max} />
-                    <SideInput Icon={IconBoxAlignTop} title={`${name} top`} value={value.top} onChange={(top) => set({ top })} min={min} max={max} />
-                    <SideInput Icon={IconBoxAlignRight} title={`${name} right`} value={value.right} onChange={(right) => set({ right })} min={min} max={max} />
-                    <SideInput Icon={IconBoxAlignBottom} title={`${name} bottom`} value={value.bottom} onChange={(bottom) => set({ bottom })} min={min} max={max} />
+                    <SideInput Icon={IconSideLeft} title={`${name} left`} value={value.left} onChange={(left) => set({ left })} min={min} max={max} />
+                    <SideInput Icon={IconSideTop} title={`${name} top`} value={value.top} onChange={(top) => set({ top })} min={min} max={max} />
+                    <SideInput Icon={IconSideRight} title={`${name} right`} value={value.right} onChange={(right) => set({ right })} min={min} max={max} />
+                    <SideInput Icon={IconSideBottom} title={`${name} bottom`} value={value.bottom} onChange={(bottom) => set({ bottom })} min={min} max={max} />
                 </>
             ) : (
                 <>
-                    <SideInput Icon={IconSpacingHorizontal} title={`${name} left & right`} value={pair(value.left, value.right)} onChange={(n) => set({ left: n, right: n })} min={min} max={max} />
-                    <SideInput Icon={IconSpacingVertical} title={`${name} top & bottom`} value={pair(value.top, value.bottom)} onChange={(n) => set({ top: n, bottom: n })} min={min} max={max} />
+                    <SideInput Icon={IconSidesX} title={`${name} left & right`} value={pair(value.left, value.right)} onChange={(n) => set({ left: n, right: n })} min={min} max={max} />
+                    <SideInput Icon={IconSidesY} title={`${name} top & bottom`} value={pair(value.top, value.bottom)} onChange={(n) => set({ top: n, bottom: n })} min={min} max={max} />
                 </>
             )}
         </LinkedFields>

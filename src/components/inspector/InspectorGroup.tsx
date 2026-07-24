@@ -18,16 +18,14 @@ export interface InspectorGroupProps {
 }
 
 /*
- * Header button — an in-repo copy of mat-ui's PanelLink (same classes and
- * tokens) so the chevron can rotate with the open state instead of PanelLink's
- * static IconChevronRight.
+ * Header button — same typography as the palette's category labels
+ * (11px medium uppercase, muted), with a chevron that rotates open/closed.
  */
 const headerClasses =
-  "inline-flex flex-row gap-3 items-center justify-between h-10 px-3 " +
-  "font-[number:var(--font-weight-panel-link)] font-[family-name:var(--font-family-base)] " +
-  "ring-0 dropdown-item rounded-[var(--border-radius-menu-item)] cursor-pointer " +
-  "transition-all duration-[var(--control-transition-duration)] select-none " +
-  "focus:outline-none focus:ring-0 border border-transparent bg-transparent";
+  "flex h-9 flex-row items-center justify-between gap-3 rounded-(--border-radius-menu-item) " +
+  "px-3 font-(family-name:--font-family-base) cursor-pointer select-none border-none bg-transparent " +
+  "transition-colors duration-(--control-transition-duration) " +
+  "hover:bg-(--mat-builder-color-layer-row-hover-bg) focus:outline-none focus:ring-0";
 
 export function InspectorGroup({ label, defaultOpen = true, children }: InspectorGroupProps) {
   const [ open, setOpen ] = useState(defaultOpen);
@@ -45,11 +43,15 @@ export function InspectorGroup({ label, defaultOpen = true, children }: Inspecto
           setOpen((current) => !current);
         } }
       >
-        <span className="inline-flex min-w-0 flex-row items-center gap-3">
-          <span className="truncate">{ label }</span>
+        <span
+          className="truncate text-[11px] font-medium uppercase tracking-wider"
+          style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+        >
+          { label }
         </span>
         <IconChevronRight
-          className={ `h-5 w-5 shrink-0 text-[var(--color-input-icon-button-icon)] transition-transform duration-200 ${ open ? "rotate-90" : "" }` }
+          className={ `size-4 shrink-0 transition-transform duration-200 ${ open ? "rotate-90" : "" }` }
+          style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
         />
       </button>
       { open && (

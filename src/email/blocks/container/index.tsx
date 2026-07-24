@@ -1,4 +1,4 @@
-import { IconGrid3x3 } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowRight, IconGrid3x3 } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
@@ -21,9 +21,10 @@ import {
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
 export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer", "table" ];
 
-const DIRECTION_OPTIONS: { label: string; value: ContainerDirection }[] = [
-  { label: "Vertical", value: "vertical" },
-  { label: "Horizontal", value: "horizontal" },
+// Figma-style: flow direction as arrows (icon-only segments with tooltips)
+const DIRECTION_OPTIONS: Fields.SegmentedFieldOption<ContainerDirection>[] = [
+  { label: "Vertical", value: "vertical", Icon: IconArrowDown },
+  { label: "Horizontal", value: "horizontal", Icon: IconArrowRight },
 ];
 
 export const containerBlock = defineBlock<EmailContainerProps>({
