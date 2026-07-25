@@ -374,7 +374,7 @@ function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode)
             // mat-ui controls like the inspector's, and opt into the same
             // compact sm scale so they match the panels rather than sitting a
             // size larger with a rounder corner
-            className={`mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-2 pl-4 pr-3 ${dockedPanel}`}
+            className={`mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-3 pl-4 pr-3 ${dockedPanel}`}
         >
             {/* min-w-0 all the way down so a long document name truncates
                 instead of shoving the mode tabs off the bar */}
