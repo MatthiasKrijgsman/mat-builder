@@ -35,9 +35,16 @@
  * palette's search input so both read at the same scale. Text hierarchy
  * after this: block title 18px semibold > group header 16px > field value
  * 14px > label/description 12px muted.
+ *
+ * `.mat-builder-compact-controls` is the same scope as an opt-in class, for
+ * host chrome that has to sit flush with the panels — an app bar hosting
+ * <UndoRedoButtons> next to its own mat-ui controls, say. Without it those
+ * controls fall back to mat-ui's stock sm scale (35px tall, 10.5px radius)
+ * and read a size larger than everything in the panels beside them.
  */
 .mat-builder-inspector,
-.mat-builder-palette {
+.mat-builder-palette,
+.mat-builder-compact-controls {
     --control-size-sm-height: 2rem;
     --control-size-sm-font-size: 0.875rem;
     --control-size-sm-px: 0.625rem;

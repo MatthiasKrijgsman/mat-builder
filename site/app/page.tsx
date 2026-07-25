@@ -23,6 +23,7 @@ import {
 } from "@matthiaskrijgsman/mat-builder";
 import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
 import { TabButtons } from "@matthiaskrijgsman/mat-ui";
+import { IconMail } from "@tabler/icons-react";
 import { useState } from "react";
 import { dockedPanel, dottedSurface, transparentSurface } from "./floating-chrome";
 
@@ -337,6 +338,12 @@ const initialDocument: BuilderDocument = {
 
 type Mode = "edit" | "preview";
 
+/** Name of the open document, shown as the top bar's trailing breadcrumb.
+ * A constant for now: the playground opens one fixed sample, and the
+ * document model has no name field (docs/03 §BuilderDocument) — a host app
+ * would pass whatever its own storage calls this record. */
+const DOCUMENT_NAME = "July invoice";
+
 export default function EmailBuilderPage() {
     const [mode, setMode] = useState<Mode>("edit");
 
@@ -352,14 +359,46 @@ export default function EmailBuilderPage() {
 
 /** App bar docked full-width at the top of the screen, above the side
  * panels and canvas. Sits in flow above the work area so the artboard fits
- * (and resize-clamps) below it rather than expanding underneath. The title
- * mirrors the inspector's block header look (1.125rem semibold) so the bar
- * reads as the same chrome. */
+ * (and resize-clamps) below it rather than expanding underneath.
+ *
+ * Left side is the doc-aware identity: an app chip (accent tile + app icon),
+ * the app name, then the open document's name behind a slash — a breadcrumb,
+ * so the app name stays fixed and only the trailing segment changes per
+ * document. Geometry mirrors the inspector's block header (`pl-4` to line the
+ * chip up with the panel icons below it, semibold label at the inherited
+ * size) so the bar reads as the same chrome. */
 function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
     return (
-        <header className={`z-30 flex shrink-0 items-center gap-3 border-b py-2 pl-5 pr-3 ${dockedPanel}`}>
-            <h1 className="text-[1.125rem] font-semibold">Email builder</h1>
-            <div className="ml-auto flex items-center gap-3">
+        <header
+            // mat-builder-compact-controls: the mode tabs and undo/redo are
+            // mat-ui controls like the inspector's, and opt into the same
+            // compact sm scale so they match the panels rather than sitting a
+            // size larger with a rounder corner
+            className={`mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-2 pl-4 pr-3 ${dockedPanel}`}
+        >
+            {/* min-w-0 all the way down so a long document name truncates
+                instead of shoving the mode tabs off the bar */}
+            <div className="flex min-w-0 items-center gap-3">
+                <span
+                    aria-hidden
+                    className="flex size-7 shrink-0 items-center justify-center rounded-(--border-radius-menu-item)"
+                    style={{ backgroundColor: "var(--mat-builder-color-selection)" }}
+                >
+                    <IconMail className="size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
+                </span>
+                {/* Tighter gap than the chip's: the two segments read as one
+                    path, the chip as a separate object */}
+                <div className="flex min-w-0 items-center gap-2">
+                    <h1 className="shrink-0 font-semibold">Email builder</h1>
+                    <span aria-hidden className="shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
+                        /
+                    </span>
+                    <p className="truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                        {DOCUMENT_NAME}
+                    </p>
+                </div>
+            </div>
+            <div className="ml-auto flex shrink-0 items-center gap-3">
                 <TabButtons
                     size="sm"
                     tabs={(["edit", "preview"] as const).map((value) => ({
