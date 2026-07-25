@@ -55,7 +55,7 @@ export function Inspector({ className }: InspectorPanelProps) {
               style={ { color: tint ? tintCssVar(tint, "fg") : "var(--mat-builder-color-panel-fg)" } }
             />
           ) }
-          <div className="line-clamp-1 flex-1 break-all py-2 text-[1.125rem] font-semibold">{ label }</div>
+          <div className="line-clamp-1 flex-1 break-all py-2 font-semibold">{ label }</div>
           <div className="flex shrink-0 flex-row items-center gap-1">
             { canDuplicate && (
               <ButtonIconSquare

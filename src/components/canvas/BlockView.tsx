@@ -97,8 +97,13 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 getIsSticky: () => true, // hold selection across the gaps between blocks
                 getData: ({ input, element: el }) =>
                     attachClosestEdge({ targetKind: "sibling", blockId: id }, { input, element: el, allowedEdges }),
-                onDrag: ({ self }) => {
-                    const edge = extractClosestEdge(self.data);
+                onDrag: ({ self, location }) => {
+                    // Only the INNERMOST target receives the drop (the monitor
+                    // takes dropTargets[0]). Every ancestor block is a sibling
+                    // target too and would otherwise draw a second line at its
+                    // own edge — a line the drop would never honour.
+                    const isInnermost = location.current.dropTargets[0]?.element === self.element;
+                    const edge = isInnermost ? extractClosestEdge(self.data) : null;
                     setClosestEdge((current) => (current === edge ? current : edge));
                 },
                 onDragLeave: () => setClosestEdge(null),

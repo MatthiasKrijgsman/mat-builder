@@ -32,6 +32,21 @@
     box-shadow: var(--mat-builder-chrome-shadow-drag);
 }
 
+/* Painting order BETWEEN frames: hover at the bottom, then selected, then
+   dragging. Every frame is its own stacking context (its rect is written as a
+   `transform`), so a pill or handle can never lift above a SIBLING frame on
+   its own — the order has to live on the frame. Without it, hovering the
+   parent of a selected block draws that parent's ring straight across the
+   child's name tag and corner handles, since the hover frame is rendered
+   last. Rings still cross each other where they overlap; only which one wins
+   changes, and the selected block is the one the user is acting on. */
+.mat-builder-chrome-frame[data-state="selected"] {
+    z-index: 1;
+}
+.mat-builder-chrome-frame[data-state="dragging"] {
+    z-index: 2;
+}
+
 /* Corner handles — Figma-style white squares centered on the ring's corners.
    Always mounted so they can fade with the state morph (hover ⇄ selected ⇄
    dragging reuses one frame element); visible only while selected. They are
@@ -73,10 +88,12 @@
 
 /* Label pill above a selected block (block icon + name — actions live in the
    inspector/keyboard); flips into the block's corner when the block top is
-   too close to the visible frame top. Type and radius match a palette item
-   (14px/medium, menu-item radius). ~26px tall (16px icon + 2×5px padding):
-   with top -32px that leaves a 6px gap above the ring. Keep the geometry in
-   sync with PILL_CLEARANCE (chrome-geometry.ts). */
+   too close to the visible frame top. Type, icon and radius match a palette
+   item / layer row (text-sm + medium, size-4 icon, menu-item radius) — hence
+   rem, not px: the pill must track the panel rows through a root font-size
+   change. Height is icon-driven (1rem + 2×5px padding), so it holds at ~26px
+   and stays in sync with PILL_CLEARANCE (chrome-geometry.ts): top -32px
+   leaves a 6px gap above the ring. */
 .mat-builder-chrome-pill {
     display: inline-flex;
     align-items: center;
@@ -87,19 +104,10 @@
     border-radius: var(--border-radius-menu-item, 8px);
     background: var(--mat-builder-color-selection);
     color: var(--mat-builder-color-chrome-tag-fg);
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
-}
-/* The frames render in a fixed order (dragging, selected, hover), so a
-   hovered parent's frame is a LATER SIBLING of the selected child's and would
-   paint its ring across the child's pill and handles. Frames keep z-index
-   auto (a hover ring may still cross a selected ancestor's ring — wanted);
-   only the pill and handles lift above sibling frames. */
-.mat-builder-chrome-pill,
-.mat-builder-chrome-handle {
-    z-index: 1;
 }
 .mat-builder-chrome-pill[data-inside] {
     top: 6px;
@@ -124,6 +132,11 @@
 .mat-builder-block[data-drag-source] {
     transform: scale(var(--mat-builder-chrome-lift-scale));
     opacity: var(--mat-builder-drag-source-opacity);
+    /* The lifted block reads as being ABOVE the surface, so the parent
+       container's drop ring (painted over the children at z-10 in
+       ContainerSlot) must not cut across it. Stays below the sibling edge
+       indicators (z-20), which mark where it would land. */
+    z-index: 15;
     /* Best-effort: the browser owns the cursor during a native HTML5 drag */
     cursor: grabbing;
 }
