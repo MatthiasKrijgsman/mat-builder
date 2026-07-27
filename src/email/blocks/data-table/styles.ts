@@ -11,6 +11,7 @@ import {
     effectsToCss,
     normalizeBorderRadius,
     normalizeBorderWidth,
+    sideShorthand,
     spacingToCss,
     uniformSides,
     type BackgroundValue,
@@ -223,10 +224,9 @@ export const tableCellStyles = (cell: EmailTableCellProps, context: CellContext)
 
     return {
         ...cellBorderStyles(table, rowIndex, columnIndex, rowCount, columnCount),
-        paddingTop: padding.top,
-        paddingRight: padding.right,
-        paddingBottom: padding.bottom,
-        paddingLeft: padding.left,
+        // Collapsing shorthand, like every other spacing prop — a table emits
+        // this once per cell, so the saving is worth the most in email HTML.
+        padding: sideShorthand(padding),
         textAlign: cell.align,
         verticalAlign: cell.verticalAlign,
         ...(fill ? { backgroundColor: fill } : {}),

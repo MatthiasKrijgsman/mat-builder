@@ -98,6 +98,44 @@ describe("data table (spike)", () => {
         expect(html).not.toContain("border-bottom:1px solid");
     });
 
+    it("gives every cell the table's cell padding by default", async () => {
+        const { document, tableId } = buildTableEmail();
+        const next = updateProps(document, {
+            id: tableId,
+            patch: { cellPadding: { top: 4, right: 20, bottom: 4, left: 20 } },
+        });
+        const { html } = await renderEmail(next);
+        const cells = tableRowsOf(html).flatMap((row) => row.split("<td").slice(1));
+        expect(cells).toHaveLength(9);
+        for (const cell of cells) expect(cell).toContain("padding:4px 20px");
+    });
+
+    it("lets one cell override the table's padding without touching its siblings", async () => {
+        const { document, tableId } = buildTableEmail();
+        const [firstCell, ...siblings] = cellIds(document, rowIds(document, tableId)[1]);
+        const next = updateProps(document, {
+            id: firstCell,
+            patch: { padding: { top: 1, right: 2, bottom: 3, left: 4 } },
+        });
+        const { html } = await renderEmail(next);
+        const cells = tableRowsOf(html)[1].split("<td").slice(1);
+        expect(cells[0]).toContain("padding:1px 2px 3px 4px");
+        // The other two keep the table default (8px on every side)
+        expect(siblings).toHaveLength(2);
+        for (const cell of cells.slice(1)) expect(cell).toContain("padding:8px");
+    });
+
+    it("falls back to the table again when a cell's override is cleared", async () => {
+        const { document, tableId } = buildTableEmail();
+        const cellId = cellIds(document, rowIds(document, tableId)[1])[0];
+        const overridden = updateProps(document, { id: cellId, patch: { padding: { top: 30, right: 30, bottom: 30, left: 30 } } });
+        expect((await renderEmail(overridden)).html).toContain("padding:30px");
+        const cleared = updateProps(overridden, { id: cellId, patch: { padding: null } });
+        const cells = tableRowsOf((await renderEmail(cleared)).html)[1].split("<td").slice(1);
+        expect(cells[0]).toContain("padding:8px");
+        expect(cells[0]).not.toContain("30px");
+    });
+
     it("stripes only body rows, counting body rows rather than all rows", async () => {
         const { document, tableId } = buildTableEmail();
         const next = updateProps(document, {

@@ -1,14 +1,4 @@
-import {
-    IconAlignCenter,
-    IconAlignLeft,
-    IconAlignRight,
-    IconLayoutAlignBottom,
-    IconLayoutAlignMiddle,
-    IconLayoutAlignTop,
-    IconLayoutRows,
-    IconSquare,
-    IconTablePlus,
-} from "@tabler/icons-react";
+import { IconLayoutRows, IconSquare, IconTablePlus } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import type { NewBlockSpec } from "../../../core/types.ts";
@@ -20,7 +10,8 @@ import {
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
 import { richTextParagraph } from "../../rich-text/index.ts";
-import { InheritableColorField } from "./InheritableColorField.tsx";
+import { CellInspector } from "./CellInspector.tsx";
+import { InheritableField } from "./InheritableField.tsx";
 import { EMAIL_LEAF_TYPES } from "../container/index.tsx";
 import {
     dataTableStyles,
@@ -28,6 +19,7 @@ import {
     emailTableCellDefaults,
     emailTableRowDefaults,
     resolveCellContext,
+    ROW_VARIANT_FILL,
     tableCellStyles,
     tableRowStyles,
     type EmailDataTableProps,
@@ -203,12 +195,17 @@ export const tableRowBlock = defineBlock<EmailTableRowProps>({
                 options={ROW_VARIANT_OPTIONS}
                 onChange={(variant) => update({ variant })}
             />
-            <InheritableColorField
+            <InheritableField
                 label="Background"
-                value={props.background}
                 inheritLabel="Inherit from table"
-                onChange={(background) => update({ background })}
-            />
+                overridden={Boolean(props.background)}
+                onOverriddenChange={(on) => update({ background: on ? ROW_VARIANT_FILL.header : "" })}
+            >
+                <Fields.ColorField
+                    value={props.background}
+                    onChange={(background) => update({ background })}
+                />
+            </InheritableField>
             <Fields.NumberField
                 label="Min height"
                 value={props.minHeight}
@@ -221,18 +218,6 @@ export const tableRowBlock = defineBlock<EmailTableRowProps>({
 });
 
 /* ── table-cell ────────────────────────────────────────────────────── */
-
-const ALIGN_OPTIONS: Fields.SegmentedFieldOption<EmailTableCellProps["align"]>[] = [
-    { label: "Left", value: "left", Icon: IconAlignLeft },
-    { label: "Center", value: "center", Icon: IconAlignCenter },
-    { label: "Right", value: "right", Icon: IconAlignRight },
-];
-
-const VALIGN_OPTIONS: Fields.SegmentedFieldOption<EmailTableCellProps["verticalAlign"]>[] = [
-    { label: "Top", value: "top", Icon: IconLayoutAlignTop },
-    { label: "Middle", value: "middle", Icon: IconLayoutAlignMiddle },
-    { label: "Bottom", value: "bottom", Icon: IconLayoutAlignBottom },
-];
 
 export const tableCellBlock = defineBlock<EmailTableCellProps>({
     type: "table-cell",
@@ -259,48 +244,5 @@ export const tableCellBlock = defineBlock<EmailTableCellProps>({
     ],
     onCreate: () => ({ children: { content: [{ type: "text" }] } }),
     editRender: ({ containers }) => <>{containers.content}</>,
-    inspector: ({ props, update }) => (
-        <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
-            <InheritableColorField
-                label="Background"
-                value={props.background}
-                inheritLabel="Inherit from row"
-                onChange={(background) => update({ background })}
-            />
-            <Fields.SegmentedField
-                label="Align"
-                value={props.align}
-                options={ALIGN_OPTIONS}
-                onChange={(align) => update({ align })}
-            />
-            <Fields.SegmentedField
-                label="Vertical align"
-                value={props.verticalAlign}
-                options={VALIGN_OPTIONS}
-                onChange={(verticalAlign) => update({ verticalAlign })}
-            />
-            <Fields.TextField
-                label="Width"
-                value={props.width}
-                placeholder="auto, 30% or 120px"
-                onChange={(width) => update({ width })}
-            />
-            <div className="grid grid-cols-2 gap-1.5">
-                <Fields.NumberField
-                    label="Column span"
-                    value={props.colSpan}
-                    min={1}
-                    max={12}
-                    onChange={(colSpan) => update({ colSpan })}
-                />
-                <Fields.NumberField
-                    label="Row span"
-                    value={props.rowSpan}
-                    min={1}
-                    max={12}
-                    onChange={(rowSpan) => update({ rowSpan })}
-                />
-            </div>
-        </div>
-    ),
+    inspector: CellInspector,
 });
