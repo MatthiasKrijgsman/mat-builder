@@ -20,20 +20,46 @@ const HEIGHT_MODE_OPTIONS: { label: string; value: SizeMode }[] = [
 export interface SizeGroupProps extends StyleGroupProps<SizeValue> {
     /** Which axes to show — defaults to both */
     fields?: ("width" | "height")[];
+    /** Which width modes this block offers — defaults to all four */
+    widthModes?: SizeMode[];
+    /** Which height modes this block offers — defaults to full/fixed/hug */
+    heightModes?: SizeMode[];
 }
 
-export function SizeGroup({ value, onChange, label = "Size", defaultOpen, fields }: SizeGroupProps) {
+const restrict = (options: { label: string; value: SizeMode }[], modes?: SizeMode[]) =>
+    modes ? options.filter((option) => modes.includes(option.value)) : options;
+
+/**
+ * A mode the block no longer offers (an older document, or a block that
+ * narrowed its modes) would leave the segmented control with nothing selected.
+ * Show the first offered mode instead — display only, so the stored value
+ * survives until the user actually picks one.
+ */
+const displayMode = (mode: SizeMode, options: { value: SizeMode }[]) =>
+    options.some((option) => option.value === mode) ? mode : options[0]?.value;
+
+export function SizeGroup({
+    value,
+    onChange,
+    label = "Size",
+    defaultOpen,
+    fields,
+    widthModes,
+    heightModes,
+}: SizeGroupProps) {
     const v = value ?? defaultSize;
     const set = (patch: Partial<SizeValue>) => onChange({ ...v, ...patch });
     const show = (field: "width" | "height") => !fields || fields.includes(field);
+    const widthOptions = restrict(WIDTH_MODE_OPTIONS, widthModes);
+    const heightOptions = restrict(HEIGHT_MODE_OPTIONS, heightModes);
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
             {show("width") && (
                 <>
                     <Fields.SegmentedField
                         label="Width"
-                        value={v.width}
-                        options={WIDTH_MODE_OPTIONS}
+                        value={displayMode(v.width, widthOptions)}
+                        options={widthOptions}
                         onChange={(width) => set({ width })}
                     />
                     {v.width === "fixed" && (
@@ -59,8 +85,8 @@ export function SizeGroup({ value, onChange, label = "Size", defaultOpen, fields
                 <>
                     <Fields.SegmentedField
                         label="Height"
-                        value={v.height}
-                        options={HEIGHT_MODE_OPTIONS}
+                        value={displayMode(v.height, heightOptions)}
+                        options={heightOptions}
                         onChange={(height) => set({ height })}
                     />
                     {v.height === "fixed" && (

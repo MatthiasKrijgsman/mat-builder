@@ -8,8 +8,9 @@ export const imageEmail: EmailRenderer<EmailImageProps> = (props) => {
         <Img
             src={props.src}
             alt={props.alt}
-            // The width ATTRIBUTE is what Outlook respects; fixed px only
+            // The width/height ATTRIBUTES are what Outlook respects; fixed px only
             width={props.size?.width === "fixed" ? props.size.widthPx : undefined}
+            height={props.size?.height === "fixed" ? props.size.heightPx : undefined}
             style={emailImageStyles(props)}
         />
     );

@@ -44,7 +44,13 @@ export const imageBlock = defineBlock<EmailImageProps>({
                 <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />
             </div>
             <Divider />
-            <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
+            {/* No "full" height — for an <img> it degrades to auto, i.e. the same as hug */}
+            <SizeGroup
+                fields={["width", "height"]}
+                heightModes={["fixed", "hug"]}
+                value={props.size}
+                onChange={(size) => update({ size })}
+            />
             <Divider />
             <LayoutGroup
                 label="Alignment"

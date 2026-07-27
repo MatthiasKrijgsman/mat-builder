@@ -108,6 +108,36 @@ describe("renderEmail", () => {
         expect(html).toContain("height:24px"); // spacer
     });
 
+    it("emits a fixed image height as both the attribute and the style", async () => {
+        let document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const image = insertBlock(
+            document,
+            { type: "image", at: { parentId: containerId, container: "content", index: 0 } },
+            registry,
+        );
+        document = updateProps(image.document, {
+            id: image.blockId,
+            patch: {
+                src: "https://example.com/pic.png",
+                size: { width: "fixed", widthPx: 320, height: "fixed", heightPx: 180 },
+            },
+        });
+
+        const { html } = await renderEmail(document);
+        expect(html).toContain('height="180"'); // Outlook reads the attribute
+        expect(html).toContain("height:180px");
+
+        // "hug" height stays out of the attribute and renders as auto
+        document = updateProps(document, {
+            id: image.blockId,
+            patch: { size: { width: "fixed", widthPx: 320, height: "hug", heightPx: 180 } },
+        });
+        const hug = await renderEmail(document);
+        expect(hug.html).not.toContain('height="180"');
+        expect(hug.html).toContain("height:auto");
+    });
+
     it("renders a fixed height and vertical alignment into the email output", async () => {
         let document = buildDemoEmail();
         const containerId = document.blocks[document.rootId].children.main[0];
