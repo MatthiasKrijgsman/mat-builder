@@ -1,6 +1,6 @@
 import { Input } from "@matthiaskrijgsman/mat-ui";
 import type { TablerIcon } from "@tabler/icons-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 export interface NumberFieldProps {
     label?: string;
@@ -16,6 +16,9 @@ export interface NumberFieldProps {
     placeholder?: string;
     /** Native tooltip naming the field when there is no visible label. */
     title?: string;
+    /** Controls overlaid at the input's right edge (mat-ui Input's tray slot) —
+     * e.g. the dimension field's mode menu. */
+    buttonTray?: ReactNode;
 }
 
 export function NumberField({ value, onChange, min, max, step, ...rest }: NumberFieldProps) {

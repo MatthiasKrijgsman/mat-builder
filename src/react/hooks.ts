@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { AnyBlockDefinition, BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockNode } from "../core/types.ts";
@@ -48,6 +49,71 @@ export interface SelectedBlock {
     node: BlockNode;
     /** undefined for unknown types (removed from the registry) */
     definition: AnyBlockDefinition | undefined;
+}
+
+/**
+ * Marks the element inside a block's canvas render that carries the block's OWN
+ * size — the `<img>` of an image, the `<a>` of a button. `useRenderedBlockSize`
+ * measures it, so inspector fields can show what an auto-sized block resolved
+ * to. Without the marker the measurement falls back to the block wrapper, which
+ * is the space available to the block rather than the block itself.
+ */
+export const SIZE_BOX_CLASS = "mat-builder-size-box";
+
+export interface RenderedSize {
+    width: number;
+    height: number;
+}
+
+/**
+ * Live rendered size (layout px) of a block on this instance's canvas, or null
+ * while it isn't mounted — no <Canvas>, or the block sits in an unrendered
+ * branch. Feeds the dimension fields: an auto-sized block has no number in the
+ * document, so the box reads its resolved size back off the canvas (docs/04).
+ */
+export function useRenderedBlockSize(id: BlockId | null | undefined): RenderedSize | null {
+    const { canvasRef } = useBuilderContext();
+    const [size, setSize] = useState<RenderedSize | null>(null);
+    // Last measurement, so the frame loop can compare without re-rendering
+    const last = useRef<RenderedSize | null>(null);
+
+    useEffect(() => {
+        last.current = null;
+        if (!id) {
+            setSize(null);
+            return;
+        }
+        // Polled per frame, like the chrome overlay's placement (ChromeOverlay):
+        // the measured element is not stable across renders (a block can even
+        // swap tags — the image renders an <img> or a placeholder <div>), and a
+        // commit anywhere can resize it. Only a CHANGED size reaches state, so a
+        // steady canvas costs one layout read per frame and no React work.
+        let raf = 0;
+        const tick = () => {
+            const box = sizeBox(canvasRef.current, id);
+            const next = box ? { width: Math.round(box.offsetWidth), height: Math.round(box.offsetHeight) } : null;
+            if (next?.width !== last.current?.width || next?.height !== last.current?.height) {
+                last.current = next;
+                setSize(next);
+            }
+            raf = requestAnimationFrame(tick);
+        };
+        tick();
+        return () => cancelAnimationFrame(raf);
+    }, [id, canvasRef]);
+
+    return size;
+}
+
+/** The block's size box if it marked one, else its wrapper (see SIZE_BOX_CLASS). */
+function sizeBox(canvas: HTMLElement | null, id: BlockId): HTMLElement | null {
+    const block = canvas?.querySelector(`[data-block-id="${CSS.escape(id)}"]`);
+    if (!(block instanceof HTMLElement)) return null;
+    for (const marked of block.querySelectorAll(`.${SIZE_BOX_CLASS}`)) {
+        // A marker found under a DESCENDANT block belongs to that block, not this one
+        if (marked instanceof HTMLElement && marked.closest("[data-block-id]") === block) return marked;
+    }
+    return block;
 }
 
 export function useSelectedBlock(): SelectedBlock | null {

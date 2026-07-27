@@ -42,7 +42,14 @@ export function BuilderProvider(props: BuilderProviderProps) {
         }
         const callbacks: EditorCallbacks = {};
         const store = createEditorStore({ registry, document: setDocument(initial, registry), mergeTags, callbacks });
-        return { store, registry, callbacks, instanceId: Symbol("mat-builder-instance") };
+        return {
+            store,
+            registry,
+            callbacks,
+            instanceId: Symbol("mat-builder-instance"),
+            // Filled in by <Canvas> on mount (see context.ts)
+            canvasRef: { current: null },
+        };
     });
 
     // Reassigned every render so store actions always call the latest handlers

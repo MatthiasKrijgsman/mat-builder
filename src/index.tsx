@@ -36,8 +36,16 @@ export type {
 // React — provider & hooks
 export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
 export type { MergeTag } from "./react/merge-tags.ts";
-export { useEditor, useSelectedBlock, useBlockNode, useBuilderState, useMergeTags } from "./react/hooks.ts";
-export type { UseEditorResult, SelectedBlock } from "./react/hooks.ts";
+export {
+    useEditor,
+    useSelectedBlock,
+    useBlockNode,
+    useBuilderState,
+    useMergeTags,
+    useRenderedBlockSize,
+    SIZE_BOX_CLASS,
+} from "./react/hooks.ts";
+export type { UseEditorResult, SelectedBlock, RenderedSize } from "./react/hooks.ts";
 export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts";
 
 // UI components (each independent & restylable — docs/04)

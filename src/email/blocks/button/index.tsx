@@ -11,6 +11,7 @@ import {
     SizeGroup,
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
+import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
 import { defaultLayout } from "../../../style-props/index.ts";
 import { emailButtonDefaults, emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } from "./styles.ts";
 
@@ -29,6 +30,9 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
             <InlineText
                 id={id}
                 field="label"
+                // SIZE_BOX_CLASS: the button box is what the inspector's width
+                // field measures — the wrapper only carries alignment/margin
+                className={SIZE_BOX_CLASS}
                 value={props.label}
                 onChange={(label) => update({ label })}
                 style={emailButtonStyles(props)}

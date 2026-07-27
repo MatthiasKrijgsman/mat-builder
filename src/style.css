@@ -97,6 +97,35 @@
     padding-block: 0;
 }
 /*
+ * Dimension fields (Fields.DimensionField) — Figma's width/height control.
+ *
+ * The mode menu's chevron owns the input's right edge, so the native number
+ * spinners have to go (they would render under it on hover). In the auto modes
+ * the number is measured off the canvas rather than stored in the document —
+ * muted text says "this is what it resolved to", not "this is what you set".
+ */
+.mat-builder-dimension input::-webkit-outer-spin-button,
+.mat-builder-dimension input::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+}
+.mat-builder-dimension input {
+    appearance: textfield;
+}
+.mat-builder-dimension[data-authored="false"] input {
+    color: var(--mat-builder-color-panel-muted-fg);
+}
+.mat-builder-dimension-unit {
+    font-size: 0.75rem;
+    color: var(--mat-builder-color-panel-muted-fg);
+}
+/* The unit sits in the tray, which mat-ui sizes for the chevron alone — widen
+ * the text inset so a three-digit percentage can't run under it. */
+.mat-builder-dimension:has(.mat-builder-dimension-unit) input {
+    padding-right: 3.25rem;
+}
+
+/*
  * Tooltips launched from builder chrome. The panel portals to <body>, so the
  * inspector scope can't reach it — the fields pass this class via the
  * Tooltip's contentClassName instead. Compact: 12px text, tight padding,

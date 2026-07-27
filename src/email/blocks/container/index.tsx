@@ -10,6 +10,7 @@ import {
   SizeGroup,
   SpacingGroup,
 } from "../../../components/style-groups/index.ts";
+import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
 import {
   type ContainerDirection,
   emailContainerDefaults,
@@ -50,8 +51,10 @@ export const containerBlock = defineBlock<EmailContainerProps>({
       getSlotStyle: (props) => emailContainerSlotStyles(props as unknown as EmailContainerProps),
     },
   ],
+  // SIZE_BOX_CLASS: the section carries the container's size, so it is what the
+  // inspector's dimension fields measure (the wrapper is the space around it)
   editRender: ({ props, containers }) => (
-    <section style={ emailContainerEditStyles(props) }>{ containers.content }</section>
+    <section className={ SIZE_BOX_CLASS } style={ emailContainerEditStyles(props) }>{ containers.content }</section>
   ),
   inspector: ({ props, update }) => (
     <>

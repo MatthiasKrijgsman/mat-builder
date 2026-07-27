@@ -17,6 +17,7 @@ export {
     type CornersFieldProps,
 } from "./SidesField.tsx";
 export { SliderField, type SliderFieldProps } from "./SliderField.tsx";
+export { DimensionField, type DimensionFieldProps, type DimensionAxis } from "./DimensionField.tsx";
 export { SegmentedField, type SegmentedFieldProps, type SegmentedFieldOption } from "./SegmentedField.tsx";
 export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./SelectField.tsx";
 export { ColorField, type ColorFieldProps } from "./ColorField.tsx";

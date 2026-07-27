@@ -1,6 +1,6 @@
 import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element";
 import { AnimatePresence } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState } from "../../react/hooks.ts";
@@ -30,7 +30,7 @@ export interface CanvasProps {
 }
 
 export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }: CanvasProps) {
-    const { store, registry, instanceId } = useBuilderContext();
+    const { store, registry, instanceId, canvasRef } = useBuilderContext();
     const rootId = useBuilderState((s) => s.document.rootId);
     const rootNode = useBuilderState((s) => s.document.blocks[s.document.rootId]);
     const isRootSelected = useBuilderState((s) => s.selectedId === s.document.rootId);
@@ -40,6 +40,15 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
     // Mount-time read (no subscription — the Artboard owns its size while
     // mounted): a size the user dragged on another surface carries over.
     const [persistedSize] = useState(() => store.getState().artboardSize);
+
+    // Publish the scroller for panels that read rendered block DOM (context.ts):
+    // a layout effect, so a field measuring on its own first paint finds it.
+    useLayoutEffect(() => {
+        canvasRef.current = scrollRef.current;
+        return () => {
+            canvasRef.current = null;
+        };
+    }, [canvasRef]);
 
     useEffect(() => {
         const element = scrollRef.current;

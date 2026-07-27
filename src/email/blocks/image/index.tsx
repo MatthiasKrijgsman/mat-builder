@@ -2,6 +2,7 @@ import { IconPhoto } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
 import {
     BorderGroup,
     EffectsGroup,
@@ -24,10 +25,18 @@ export const imageBlock = defineBlock<EmailImageProps>({
             // draggable=false: browsers natively drag <img> elements, which
             // hijacks the block's Pragmatic draggable — the block must lift, not
             // a ghost of the picture
-            <img src={props.src} alt={props.alt} draggable={false} style={emailImageStyles(props)} />
+            // SIZE_BOX_CLASS: the inspector's dimension fields measure the picture
+            // itself, not the full-width block wrapper around it
+            <img
+                src={props.src}
+                alt={props.alt}
+                draggable={false}
+                className={SIZE_BOX_CLASS}
+                style={emailImageStyles(props)}
+            />
         ) : (
             <div
-                className="flex min-h-24 items-center justify-center rounded border border-dashed text-xs"
+                className={`${SIZE_BOX_CLASS} flex min-h-24 items-center justify-center rounded border border-dashed text-xs`}
                 style={{
                     borderColor: "var(--mat-builder-color-placeholder-border)",
                     color: "var(--mat-builder-color-placeholder-fg)",
