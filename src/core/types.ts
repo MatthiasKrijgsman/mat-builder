@@ -43,6 +43,42 @@ export interface AcceptCtx {
     container: string;
 }
 
+/**
+ * Canvas element a block wrapper / container slot may render as.
+ *
+ * The canvas normally wraps every block in a `<div>` and every slot in another
+ * `<div>`, which is invalid inside HTML table structure — a `<div>` between
+ * `<table>` and `<tr>` makes the browser hoist the content clean out of the
+ * table. Blocks that ARE table structure (a row, a cell) opt into a valid tag.
+ * Deliberately a closed union: these are the only elements the chrome overlay
+ * and the DnD hitboxes have been checked against.
+ */
+export type CanvasTag = "div" | "section" | "span" | "tbody" | "thead" | "tfoot" | "tr" | "td" | "th";
+
+/** DOM props a block may push onto its own canvas wrapper (see `getWrapperProps`). */
+export interface WrapperProps {
+    style?: CSSProperties;
+    colSpan?: number;
+    rowSpan?: number;
+}
+
+/**
+ * Where a block sits, for renders whose styling depends on their surroundings.
+ *
+ * Most blocks are self-contained — their props fully determine their look. A
+ * block that is one PART of a composite (a table cell needing the table's
+ * border mode, its own row/column index and the row count for corner radii)
+ * cannot be: that state lives in its ancestors and siblings. Both renders take
+ * this so the canvas and the output resolve it identically.
+ */
+export interface BlockContext {
+    document: BuilderDocument;
+    /** Null for the document root. */
+    location: BlockLocation | null;
+    /** How many blocks share this container, including this one. */
+    siblingCount: number;
+}
+
 export interface ContainerDef {
     /** Unique within the block */
     name: string;
@@ -61,6 +97,19 @@ export interface ContainerDef {
     maxChildren?: number;
     /** Empty-container hint text */
     placeholder?: string;
+    /**
+     * Element this slot renders on the canvas (default `"div"`).
+     *
+     * `"none"` renders NO element of its own: the parent block's wrapper
+     * element doubles as the slot's box (drop target and highlight). Needed
+     * where HTML allows nothing between parent and children — a `<tr>` may
+     * only contain `<td>`/`<th>`, so a row's cell slot must be `"none"`.
+     * At most one `"none"` container per block (they'd share one box).
+     */
+    slotAs?: CanvasTag | "none";
+    /** Element the empty-state placeholder renders as (default `"div"`) — a
+     * placeholder inside a `<tr>` has to be a `<td>` to be legal. */
+    emptyAs?: CanvasTag;
     /**
      * Vertical gap (px) between this container's children on the canvas,
      * derived from the parent block's props (email preset: props.layout.gap).
@@ -125,6 +174,19 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     /* data */
     defaultProps: P;
     containers?: ContainerDef[];
+    /**
+     * Element the canvas wrapper renders as (default `"div"`) — see CanvasTag.
+     * The output render is unaffected; this only keeps the EDITOR's DOM legal.
+     */
+    wrapperAs?: CanvasTag;
+    /**
+     * DOM props merged onto the canvas wrapper. Blocks normally style their own
+     * element inside the neutral wrapper, but a block whose wrapper IS the
+     * styled element (a `<td>`: background, width, colspan) has nowhere else to
+     * put them — an inner div would not be the table cell. `style` merges over
+     * the wrapper's own; `className` is not overridable.
+     */
+    getWrapperProps?: (props: P, ctx: BlockContext) => WrapperProps;
 
     /* rendering & inspecting */
     editRender: ComponentType<EditRenderProps<P>>;

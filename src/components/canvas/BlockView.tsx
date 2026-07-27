@@ -30,6 +30,10 @@ import { ContainerSlot } from "./ContainerSlot.tsx";
  * insert-before/after-me via the closest-edge hitbox; the parent container's
  * layout picks the allowed edges. Drop targets only render indicators — the
  * provider's monitor performs the actual mutation.
+ *
+ * The wrapper is a `<div>` unless the definition sets `wrapperAs` (blocks that
+ * ARE table structure need `<tr>`/`<td>` — see CanvasTag), and `getWrapperProps`
+ * lets such a block style that element, since it has no inner box to style.
  */
 
 export interface BlockViewProps {
@@ -51,7 +55,7 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
 
     const update = useCallback((patch: Record<string, unknown>) => actions.updateProps(id, patch), [actions, id]);
 
-    const ref = useRef<HTMLDivElement>(null);
+    const ref = useRef<HTMLElement>(null);
     const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
     const definition = registry.getDefinition(node?.type ?? "");
@@ -131,9 +135,33 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
         );
     }
 
+    const Wrapper = definition?.wrapperAs ?? "div";
+    // Read straight from the store rather than subscribing: a context-styled
+    // block re-renders anyway, because any change to an ancestor re-renders
+    // this subtree top-down. Subscribing to the whole document here would
+    // re-render every block on the canvas on every keystroke.
+    const { style: wrapperStyle, ...wrapperAttrs } =
+        definition?.getWrapperProps?.(node.props, {
+            document: store.getState().document,
+            location: location ?? null,
+            siblingCount: location
+                ? (store.getState().document.blocks[location.parentId]?.children[location.container]?.length ?? 1)
+                : 1,
+        }) ?? {};
+    // Row-group tags take no flow content, so the absolutely-positioned edge
+    // indicator (a div) would be hoisted out of the table — they draw the drop
+    // edge as an inset shadow on themselves instead.
+    const canHostOverlay = !ROW_GROUP_TAGS.has(Wrapper);
+
     return (
-        <div
-            ref={ref}
+        <Wrapper
+            ref={ref as never}
+            {...wrapperAttrs}
+            style={
+                closestEdge && !canHostOverlay
+                    ? { ...wrapperStyle, boxShadow: edgeInsetShadow(closestEdge) }
+                    : wrapperStyle
+            }
             // The root is the page: it stretches to fill the artboard so its background
             // paints the whole frame (taller content still grows and scrolls).
             className={`mat-builder-block relative ${isRoot ? "flex min-h-full flex-col *:grow" : ""}`}
@@ -168,9 +196,24 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
             ) : (
                 <MissingBlock type={node.type} />
             )}
-            {closestEdge && <EdgeIndicator edge={closestEdge} />}
-        </div>
+            {closestEdge && canHostOverlay && <EdgeIndicator edge={closestEdge} />}
+        </Wrapper>
     );
+}
+
+/** Tags that may only contain `<tr>` (or, for `tr`, only cells) — no overlay div. */
+const ROW_GROUP_TAGS = new Set(["tr", "tbody", "thead", "tfoot"]);
+
+/** The drop edge as an inset shadow, for wrappers that can't host the indicator. */
+function edgeInsetShadow(edge: Edge): string {
+    const thickness = "var(--mat-builder-drop-indicator-thickness)";
+    const color = "var(--mat-builder-color-drop-indicator)";
+    const offset =
+        edge === "top" ? `0 ${thickness}`
+        : edge === "bottom" ? `0 calc(-1 * ${thickness})`
+        : edge === "left" ? `${thickness} 0`
+        : `calc(-1 * ${thickness}) 0`;
+    return `inset ${offset} 0 0 ${color}`;
 }
 
 /** 2px accent line on the extracted edge — mounted only while an edge is present. */

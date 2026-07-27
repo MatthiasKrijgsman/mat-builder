@@ -21,6 +21,10 @@ import {
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
 export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer", "table" ];
 
+/** Everything a container accepts: leaves, nested containers, and the data table
+ * (which owns children of its own but is dropped like any other content block). */
+const CONTAINER_ACCEPTS = [ ...EMAIL_LEAF_TYPES, "container", "data-table" ];
+
 // Figma-style: flow direction as arrows (icon-only segments with tooltips)
 const DIRECTION_OPTIONS: Fields.SegmentedFieldOption<ContainerDirection>[] = [
   { label: "Vertical", value: "vertical", Icon: IconArrowDown },
@@ -40,7 +44,7 @@ export const containerBlock = defineBlock<EmailContainerProps>({
       layout: "vertical",
       // Direction is a prop (Figma-style), so the slot's canvas layout follows it
       getLayout: (props) => (props as unknown as EmailContainerProps).direction,
-      accepts: [ ...EMAIL_LEAF_TYPES, "container" ],
+      accepts: CONTAINER_ACCEPTS,
       placeholder: "Drop content here",
       getGap: (props) => (props as unknown as EmailContainerProps).layout?.gap,
       getSlotStyle: (props) => emailContainerSlotStyles(props as unknown as EmailContainerProps),

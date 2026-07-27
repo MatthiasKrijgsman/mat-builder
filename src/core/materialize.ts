@@ -46,7 +46,10 @@ export function materializeBlock(
     if (created && created.props) Object.assign(node.props, created.props);
 
     const nodes: BlockNode[] = [node];
-    const childSpecs = { ...spec.children, ...created?.children };
+    // An explicit spec beats the definition's own defaults: a parent that
+    // seeds its subtree (a table describing its rows and their cells) must not
+    // have those children replaced by each child type's `onCreate` fallback.
+    const childSpecs = { ...created?.children, ...spec.children };
     for (const [containerName, specs] of Object.entries(childSpecs)) {
         const list = node.children[containerName];
         if (!list) {

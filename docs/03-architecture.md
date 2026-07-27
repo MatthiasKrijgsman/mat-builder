@@ -124,12 +124,24 @@ interface ContainerDef {
   maxChildren?: number;
   placeholder?: string;                    // empty-container hint text
   getGap?: (props) => number | undefined;  // canvas gap between children, derived from the block's props
+  slotAs?: CanvasTag | "none";             // canvas element for the slot (default div); see below
+  emptyAs?: CanvasTag;                     // element for the empty-state placeholder (default div)
 }
 ```
 
 `getGap` lets a container's child spacing follow a block prop (the email preset wires it to `props.layout.gap`). The canvas applies it as flex-column gap **only when > 0** (so the default block flow and its margin collapsing survive); the output render is responsible for the same gap in its own idiom (email: table-safe `withVerticalGap` wrappers).
 
 `layout` matters to the *editor*, not just styling: it decides whether DnD uses top/bottom edges (vertical), left/right edges (horizontal), or 2D closest-edge (grid) for drop position detection — see [05-drag-and-drop.md](05-drag-and-drop.md).
+
+### Canvas element overrides (`wrapperAs` / `slotAs`)
+
+The canvas normally wraps every block in a `<div>` (BlockView) and every slot in another `<div>` (ContainerSlot). That is invalid inside HTML table structure — a `<div>` between `<table>` and `<tr>` makes the parser hoist the content clean out of the table — so blocks that **are** table structure name a legal tag instead. `CanvasTag` is a closed union (`div | section | span | tbody | thead | tfoot | tr | td | th`): only these are checked against the chrome overlay and the DnD hitboxes. Introduced by the data-table spike ([06 §Data table spike](06-email-builder.md#data-table-spike)); nothing else in the preset uses them.
+
+Three consequences worth knowing before reaching for them:
+
+- **`slotAs: "none"`** renders no slot element at all (nothing may sit between `<tr>` and `<td>`), and therefore registers **no "into me" drop target**: reordering runs entirely off the children's sibling edges, and only the empty-state placeholder is droppable. Borrowing the parent block's wrapper instead is not an option — Pragmatic's drop-target registry is a `WeakMap` keyed by element, so a second registration silently clobbers the block's own sibling target.
+- **Row-group tags (`tr`/`tbody`/`thead`/`tfoot`) take no flow content**, so they can host neither the absolutely-positioned drop-edge indicator nor the container highlight ring. Both degrade to an inset `box-shadow` on the element itself, which requires `border-collapse: separate`.
+- **Layout classes are skipped** for any non-`div` slot: flex/grid/gap on a `<tbody>` would destroy the table box tree. The browser's table layout arranges those children instead.
 
 ### Other definition fields
 
@@ -141,6 +153,8 @@ interface BlockDefinition<P> {
   // data
   defaultProps: P; schema?: ZodType<P>;
   containers?: ContainerDef[];
+  wrapperAs?: CanvasTag;                   // canvas wrapper element (default div) — see above
+  getWrapperProps?: (props: P, ctx: BlockContext) => WrapperProps; // style/colSpan/rowSpan on that wrapper
   // rendering & inspecting
   editRender: ComponentType<EditRenderProps<P>>;
   inspector?: ComponentType<InspectorProps<P>>;
@@ -166,6 +180,10 @@ interface InspectorProps<P> {
 ```
 
 `update` merges **shallowly** (top-level keys replace). Object-valued props — the style-group values below — must therefore always be patched with the *complete* next object, never a nested partial; the shipped style-group components guarantee this.
+
+`getWrapperProps` exists for blocks whose wrapper **is** the styled element (a `<td>`: its fill, padding, width and spans have nowhere else to go — an inner div would not be the table cell). It receives a `BlockContext` (`{ document, location, siblingCount }`) because such a block is usually one part of a composite and needs state from its ancestors and siblings — a cell resolving its table's border mode, its own row/column index, the row count for corner radii. `EmailRenderer` takes the same context as a third argument, threaded down by `buildEmailTree`, so both renders resolve identically. Two caveats: BlockView reads the document from the store **unsubscribed** (correct only because an ancestor change re-renders the subtree top-down — memoizing BlockView would break it), and walking up costs a `findLocation` scan per block.
+
+`onCreate` children are **defaults**: an explicit `NewBlockSpec` from the parent wins, so a block that seeds a whole subtree (a table describing its rows and their cells) does not have those children replaced by each child type's own `onCreate`.
 
 ### Style props & style groups
 

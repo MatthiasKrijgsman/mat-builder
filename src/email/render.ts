@@ -1,6 +1,6 @@
 import { pretty, render } from "@react-email/render";
 import { createElement, Fragment, type ReactElement } from "react";
-import type { BlockId, BuilderDocument } from "../core/types.ts";
+import type { BlockId, BlockLocation, BuilderDocument } from "../core/types.ts";
 import { emailRootEmail } from "./blocks/email-root/email.tsx";
 import { containerEmail } from "./blocks/container/email.tsx";
 import { textEmail } from "./blocks/text/email.tsx";
@@ -9,6 +9,7 @@ import { imageEmail } from "./blocks/image/email.tsx";
 import { dividerEmail } from "./blocks/divider/email.tsx";
 import { spacerEmail } from "./blocks/spacer/email.tsx";
 import { tableEmail } from "./blocks/table/email.tsx";
+import { dataTableEmail, tableCellEmail, tableRowEmail } from "./blocks/data-table/email.tsx";
 import type { AnyEmailRenderer } from "./types.ts";
 
 /*
@@ -40,13 +41,22 @@ export const emailRenderers: Record<string, AnyEmailRenderer> = {
     divider: dividerEmail,
     spacer: spacerEmail,
     table: tableEmail,
+    "data-table": dataTableEmail,
+    "table-row": tableRowEmail,
+    "table-cell": tableCellEmail,
 };
 
 /**
  * Walks the flat document map and builds the react-email element tree.
  * Unknown block types are skipped (same tolerance as the editor canvas).
  */
-export function buildEmailTree(document: BuilderDocument, id: BlockId = document.rootId): ReactElement | null {
+export function buildEmailTree(
+    document: BuilderDocument,
+    id: BlockId = document.rootId,
+    /** Where `id` sits — threaded down the walk so context-styled blocks (a
+     * table cell) can resolve their row/table without re-searching the map. */
+    location: BlockLocation | null = null,
+): ReactElement | null {
     const node = document.blocks[id];
     if (!node) return null;
     const renderer = emailRenderers[node.type];
@@ -55,10 +65,19 @@ export function buildEmailTree(document: BuilderDocument, id: BlockId = document
     const children = Object.fromEntries(
         Object.entries(node.children).map(([container, childIds]) => [
             container,
-            childIds.map((childId) => createElement(Fragment, { key: childId }, buildEmailTree(document, childId))),
+            childIds.map((childId, index) =>
+                createElement(
+                    Fragment,
+                    { key: childId },
+                    buildEmailTree(document, childId, { parentId: id, container, index }),
+                ),
+            ),
         ]),
     );
-    return renderer(node.props, children);
+    const siblingCount = location
+        ? (document.blocks[location.parentId]?.children[location.container]?.length ?? 1)
+        : 1;
+    return renderer(node.props, children, { document, location, siblingCount });
 }
 
 export interface RenderedEmail {

@@ -16,6 +16,15 @@ import { BlockView } from "./BlockView.tsx";
  * full-strength when the slot itself is the drop ("into me"), softer when a
  * child block's edge line is the precise target — so the drop's parent
  * container is always visible during a drag without shouting over the line.
+ *
+ * The slot element is a `<div>` unless `ContainerDef.slotAs` names another tag
+ * (`"tbody"` inside a table). `slotAs: "none"` means the slot renders NO
+ * element at all — HTML allows nothing between `<tr>` and `<td>` — so it also
+ * registers no "into me" target: reordering runs entirely off the children's
+ * sibling edges, and only the empty-state placeholder (a real `emptyAs`
+ * element) is droppable. Two drop targets cannot share one element anyway;
+ * Pragmatic's registry is a WeakMap keyed by element, so borrowing the parent
+ * block's wrapper would silently clobber its sibling target.
  */
 
 export function ContainerSlot(props: {
@@ -30,7 +39,8 @@ export function ContainerSlot(props: {
 }) {
     const { parentId, container, childIds, gap = 0, layout = container.layout, slotStyle } = props;
     const { store, registry, instanceId } = useBuilderContext();
-    const ref = useRef<HTMLDivElement>(null);
+    const ref = useRef<HTMLElement>(null);
+    const elementless = container.slotAs === "none";
     const [over, setOver] = useState<"none" | "parent" | "direct">("none");
 
     useEffect(() => {
@@ -75,9 +85,10 @@ export function ContainerSlot(props: {
         );
 
     if (childIds.length === 0) {
+        const Empty = container.emptyAs ?? "div";
         return (
-            <div
-                ref={ref}
+            <Empty
+                ref={ref as never}
                 data-container={container.name}
                 data-parent-id={parentId}
                 className="flex min-h-12 items-center justify-center rounded border border-dashed p-2 text-xs"
@@ -92,50 +103,66 @@ export function ContainerSlot(props: {
                 }}
             >
                 {container.placeholder ?? "Drop content here"}
-            </div>
+            </Empty>
         );
     }
 
+    const children = childIds.map((childId, index) => (
+        <BlockView
+            key={childId}
+            id={childId}
+            location={{ parentId, container: container.name, index }}
+            layout={layout}
+        />
+    ));
+
+    // No element of our own: the children go straight into the parent block's
+    // wrapper (a <tr>). Table layout does the arranging, so no flex/gap/ring.
+    if (elementless) return <>{children}</>;
+
     let className = "";
     let layoutStyle: CSSProperties | undefined;
-    // Horizontal = equal-width cells (*:flex-1), mirroring the email output's
-    // equal-split table columns. The absolute highlight overlay ignores flex.
-    if (layout === "horizontal") className = "flex flex-row *:min-w-0 *:flex-1";
-    else if (layout === "grid") {
-        layoutStyle = {
-            display: "grid",
-            gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))`,
-        };
-    } else if (gap > 0) {
-        // Only when a gap is set — at 0 the default block flow (and its margin
-        // collapsing) is preserved, keeping canvas/email parity.
-        className = "flex flex-col";
+    // A custom tag is table structure (a <tbody>): the browser's table layout
+    // arranges it, and flex/grid/gap would destroy that box tree. It also can't
+    // hold the absolute overlay div, so its ring goes on the element itself.
+    const Slot = container.slotAs && container.slotAs !== "none" ? container.slotAs : "div";
+    if (Slot === "div") {
+        // Horizontal = equal-width cells (*:flex-1), mirroring the email output's
+        // equal-split table columns. The absolute highlight overlay ignores flex.
+        if (layout === "horizontal") className = "flex flex-row *:min-w-0 *:flex-1";
+        else if (layout === "grid") {
+            layoutStyle = {
+                display: "grid",
+                gridTemplateColumns: `repeat(${container.grid?.columns ?? 2}, minmax(0, 1fr))`,
+            };
+        } else if (gap > 0) {
+            // Only when a gap is set — at 0 the default block flow (and its margin
+            // collapsing) is preserved, keeping canvas/email parity.
+            className = "flex flex-col";
+        }
+        if (gap > 0) layoutStyle = { ...layoutStyle, gap };
+        if (slotStyle) layoutStyle = { ...layoutStyle, ...slotStyle };
+    } else if (highlight) {
+        layoutStyle = highlight;
     }
-    if (gap > 0) layoutStyle = { ...layoutStyle, gap };
-    if (slotStyle) layoutStyle = { ...layoutStyle, ...slotStyle };
 
     return (
-        <div
-            ref={ref}
+        <Slot
+            ref={ref as never}
             data-container={container.name}
             data-parent-id={parentId}
             className={`relative ${className}`}
             style={layoutStyle}
         >
-            {childIds.map((childId, index) => (
-                <BlockView
-                    key={childId}
-                    id={childId}
-                    location={{ parentId, container: container.name, index }}
-                    layout={layout}
-                />
-            ))}
+            {children}
             {/* The ring paints ABOVE the children (not as the container's own
                 box-shadow, which sits in the background layer and shows through
                 transparent blocks — during a drag the lines read as the ring
                 "clipping" the lifted drag source). Below the sibling edge
                 indicator (z-20). */}
-            {highlight && <div className="pointer-events-none absolute inset-0 z-10" style={highlight} />}
-        </div>
+            {highlight && Slot === "div" && (
+                <div className="pointer-events-none absolute inset-0 z-10" style={highlight} />
+            )}
+        </Slot>
     );
 }
