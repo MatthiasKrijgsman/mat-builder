@@ -1,6 +1,7 @@
 import { dropTargetForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { canDropAt } from "../../core/commands.ts";
+import type { GroupContext } from "../../core/selection.ts";
 import type { BlockId, ContainerDef } from "../../core/types.ts";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { dragBlockType } from "../../dnd/resolve.ts";
@@ -36,8 +37,10 @@ export function ContainerSlot(props: {
     layout?: ContainerDef["layout"];
     /** Extra style for the layout element (ContainerDef.getSlotStyle) */
     slotStyle?: CSSProperties;
+    /** Enclosing `selectsAsGroup` block — passed straight through to the children */
+    group?: GroupContext;
 }) {
-    const { parentId, container, childIds, gap = 0, layout = container.layout, slotStyle } = props;
+    const { parentId, container, childIds, gap = 0, layout = container.layout, slotStyle, group } = props;
     const { store, registry, instanceId } = useBuilderContext();
     const ref = useRef<HTMLElement>(null);
     const elementless = container.slotAs === "none";
@@ -113,6 +116,7 @@ export function ContainerSlot(props: {
             id={childId}
             location={{ parentId, container: container.name, index }}
             layout={layout}
+            group={group}
         />
     ));
 

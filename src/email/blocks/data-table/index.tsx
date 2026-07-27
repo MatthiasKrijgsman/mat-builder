@@ -85,6 +85,10 @@ export const dataTableBlock = defineBlock<EmailDataTableProps>({
     category: "Content",
     keywords: ["grid", "rows", "cells", "data", "pricing", "invoice"],
     defaultProps: emailDataTableDefaults,
+    // Rows and cells cover the table's whole area, so without this the table
+    // itself could never be clicked or dragged on the canvas — only picked in
+    // the layers tree. One click selects the table; a second reaches inside.
+    selectsAsGroup: true,
     containers: [
         {
             name: "rows",

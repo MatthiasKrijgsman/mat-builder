@@ -109,6 +109,18 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
 - `Escape` walks up: child → parent → … → root → none. The layers panel covers the same need with the mouse.
 - Selection survives prop edits and is restored by undo (history entries store `selectedId`).
 
+**Group selection** (`BlockDefinition.selectsAsGroup`, logic in `src/core/selection.ts`). A composite block whose parts are themselves blocks — the data table, whose rows and cells are blocks — breaks the rule above: its parts cover its entire area, so the innermost-wins click means the composite can only be selected in the layers tree, and can never be dragged at all, since the cell's own draggable captures the gesture. A block marked `selectsAsGroup` therefore behaves as ONE unit until entered (Figma's group model):
+
+| | Group not entered | Group entered (selection is the group or inside it) |
+|---|---|---|
+| Click / hover a descendant | targets the group | targets the actual block under the pointer |
+| Drag from a descendant | moves the group | moves that row / cell |
+| Drop into a descendant | allowed | allowed |
+
+So anything inside is two clicks away, `Escape` walks back out, and the invariant is "**you can drag exactly what a click would select**" — `groupSelectionTarget` drives the click handler, the hover handler and the draggable registration alike.
+
+Two implementation notes. Drag locking works by **not registering** the descendant draggable, so the browser's own dragstart lookup walks up to the group's wrapper; refusing through Pragmatic's `canDrag` would instead `preventDefault()` the dragstart and cancel the gesture outright. And the group is threaded **down** the render tree (`BlockView` → `ContainerSlot` → `BlockView`) rather than derived by walking up per block, because an ancestor walk is O(document) and would run for every block on every store change — only a group root does that walk, and only to derive the `entered` boolean.
+
 ### Keyboard (active when focus is inside the builder)
 
 Implemented as a shared `onKeyDown` handler (`useBuilderKeyboard`, internal) that focusable builder surfaces attach — the Canvas today, the LayersPanel when it lands. The Canvas is `tabIndex={-1}` so clicking it (or any block) focuses it natively. Editable targets (inspector inputs) are skipped entirely: `Cmd/Ctrl+Z` inside a field stays the field's own text undo.

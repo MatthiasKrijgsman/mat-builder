@@ -198,6 +198,17 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     /** @default true (root blocks: set false) */
     canDrag?: boolean;
     /**
+     * Treat this block and its subtree as ONE unit on the canvas: clicking or
+     * dragging anywhere inside targets this block, until the selection is
+     * inside it — then clicks reach the actual block under the pointer
+     * (Figma's group model, see src/core/selection.ts).
+     *
+     * For composite blocks whose parts are blocks (the data table's rows and
+     * cells): without it the innermost part always wins and the composite is
+     * reachable only from the layers tree, and never draggable.
+     */
+    selectsAsGroup?: boolean;
+    /**
      * Runs when a block of this type is created (insert / createDocument).
      * Patch the default props from drop context and/or self-populate children,
      * e.g. a "columns" block that starts with two empty column children.

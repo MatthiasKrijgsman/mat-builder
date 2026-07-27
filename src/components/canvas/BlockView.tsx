@@ -7,6 +7,8 @@ import {
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { canDropAt } from "../../core/commands.ts";
+import { descendGroup, groupSelectionTarget, isDragReachable, type GroupContext } from "../../core/selection.ts";
+import { isDescendant } from "../../core/traversal.ts";
 import type { BlockId, BlockLocation, ContainerDef } from "../../core/types.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
@@ -42,9 +44,11 @@ export interface BlockViewProps {
     location?: BlockLocation;
     /** Parent container's layout — decides the drop-edge axis */
     layout?: ContainerDef["layout"];
+    /** The enclosing `selectsAsGroup` block, threaded down the tree (core/selection.ts) */
+    group?: GroupContext;
 }
 
-export function BlockView({ id, location, layout = "vertical" }: BlockViewProps) {
+export function BlockView({ id, location, layout = "vertical", group }: BlockViewProps) {
     const { store, registry, instanceId } = useBuilderContext();
     const node = useBlockNode(id);
     const actions = useBuilderState((s) => s.actions);
@@ -60,7 +64,21 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
 
     const definition = registry.getDefinition(node?.type ?? "");
     const label = (node && definition?.getDisplayName?.(node.props)) ?? definition?.label ?? node?.type ?? "";
-    const canDrag = Boolean(location) && definition?.canDrag !== false;
+
+    // Group selection (core/selection.ts). A group root asks whether the
+    // selection is inside it — derived to a BOOLEAN so the ancestor walk only
+    // re-renders this subtree when the group is entered or left, not on every
+    // selection change. Non-group blocks short-circuit to false.
+    const isGroupRoot = definition?.selectsAsGroup === true;
+    const groupEntered = useBuilderState((s) => {
+        if (!isGroupRoot) return false;
+        const selected = s.selectedId;
+        return selected === id || (selected !== null && isDescendant(s.document, id, selected));
+    });
+    const childGroup = descendGroup(group, id, isGroupRoot, groupEntered);
+    // Clicking, hovering and dragging all resolve through the same rule.
+    const selectionTarget = groupSelectionTarget(id, group);
+    const canDrag = Boolean(location) && definition?.canDrag !== false && isDragReachable(id, group);
 
     useEffect(() => {
         const element = ref.current;
@@ -131,6 +149,7 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 gap={container.getGap?.(node.props) ?? 0}
                 layout={container.getLayout?.(node.props) ?? container.layout}
                 slotStyle={container.getSlotStyle?.(node.props)}
+                group={childGroup}
             />
         );
     }
@@ -173,11 +192,13 @@ export function BlockView({ id, location, layout = "vertical" }: BlockViewProps)
                 event.stopPropagation();
                 // A text drag released over this block clicks the common
                 // ancestor — selecting here would end the editing session
-                if (!pressStartedInInlineEditor()) actions.select(id);
+                if (!pressStartedInInlineEditor()) actions.select(selectionTarget);
             }}
             onPointerOver={(event) => {
                 event.stopPropagation();
-                actions.hover(id);
+                // Hover the same block a click would select, so the highlight
+                // always previews what you are about to get
+                actions.hover(selectionTarget);
             }}
             onPointerOut={(event) => {
                 event.stopPropagation();

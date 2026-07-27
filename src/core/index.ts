@@ -10,6 +10,8 @@ export type { BlockRegistry, AnyBlockDefinition } from "./registry.ts";
 export { createDocument, migrateDocument, validateDocument, DOCUMENT_VERSION } from "./document.ts";
 export { walkDocument, findLocation, findAncestors, isDescendant } from "./traversal.ts";
 export type { WalkContext, WalkVisitor } from "./traversal.ts";
+export { descendGroup, groupSelectionTarget, isDragReachable } from "./selection.ts";
+export type { GroupContext } from "./selection.ts";
 export {
     canDropAt,
     getDropError,
