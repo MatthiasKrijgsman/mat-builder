@@ -47,7 +47,31 @@ const WIDTH_RANGE = { min: 320, max: 1400 };
 const HEIGHT_RANGE = { min: 240, max: 2400 };
 /** "fill" sizes the frame to this fraction of the surface, not edge-to-edge */
 const FILL_FRACTION = 0.8;
-/** Space kept between the frame and the surface edge — must match the p-6 wrapper padding, and is what keeps the resize bars (14px outside the frame) inside the surface. */
+/** The visible drag bar on each frame edge */
+const HANDLE_BAR = { length: 40, thickness: 5 };
+/** Gap between the frame edge and the bar's near edge */
+const HANDLE_GAP = 14;
+/** Invisible pointer target centred on the bar. A 5px bar is a miserable thing
+ * to aim at, so the target that takes the cursor and the drag is much larger —
+ * the bar is only the affordance. Keep `length/2 + gap` under ARTBOARD_MARGIN or
+ * the target spills outside the surface. */
+const HANDLE_HIT = { length: 64, thickness: 22 };
+/* The bar answers the pointer: it swells and darkens under the cursor, then
+ * again — into the active colour — for as long as the drag runs. Both grow the
+ * *rest* bar symmetrically about its centre, so the gap to the frame closes
+ * evenly and the bar stays inside HANDLE_HIT. Sizes animate (not transforms),
+ * so the pill keeps its stadium ends at every step. */
+const HANDLE_STATES = {
+    rest: { length: 0, thickness: 0, color: "var(--mat-builder-color-resize-handle)" },
+    hover: { length: 8, thickness: 2, color: "var(--mat-builder-color-resize-handle-hover)" },
+    drag: { length: 16, thickness: 3, color: "var(--mat-builder-color-resize-handle-active)" },
+} as const;
+/** Snappy with a hint of overshoot — the same tactile register as ChromePill */
+const HANDLE_TRANSITION = {
+    default: { type: "spring", stiffness: 520, damping: 30, mass: 0.6 },
+    backgroundColor: { duration: 0.15, ease: "easeOut" },
+} as const;
+/** Space kept between the frame and the surface edge — must match the p-6 wrapper padding, and is what keeps the resize handles' pointer targets inside the surface. */
 const ARTBOARD_MARGIN = 24;
 /* Reveal, once the mount-time fit has settled the frame's real size. Opacity
  * lands early on a plain decelerate while the scale keeps easing out to rest
@@ -239,22 +263,68 @@ function ResizeHandle(props: {
 }) {
     const { position, onPointerDown } = props;
     const horizontal = position === "top" || position === "bottom"; // a horizontal bar resizing the y axis
-    const style: CSSProperties = {
-        [position]: -14,
+    // Offset the target so the bar inside it lands exactly HANDLE_GAP off the frame
+    const offset = -(HANDLE_GAP + (HANDLE_HIT.thickness - HANDLE_BAR.thickness) / 2);
+    const hitStyle: CSSProperties = {
+        [position]: offset,
         ...(horizontal
-            ? { left: "50%", transform: "translateX(-50%)", width: 40, height: 5, cursor: "ns-resize" }
-            : { top: "50%", transform: "translateY(-50%)", width: 5, height: 40, cursor: "ew-resize" }),
-        backgroundColor: "var(--mat-builder-color-resize-handle)",
+            ? {
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  width: HANDLE_HIT.length,
+                  height: HANDLE_HIT.thickness,
+                  cursor: "ns-resize",
+              }
+            : {
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: HANDLE_HIT.thickness,
+                  height: HANDLE_HIT.length,
+                  cursor: "ew-resize",
+              }),
         touchAction: "none",
     };
+    // Drag outlives the pointer leaving the handle, so the state is ours to keep
+    // — a `whileTap`/`:active` would drop the moment the cursor moved away.
+    const [hovered, setHovered] = useState(false);
+    const [dragging, setDragging] = useState(false);
+    const state = dragging ? HANDLE_STATES.drag : hovered ? HANDLE_STATES.hover : HANDLE_STATES.rest;
+    const length = HANDLE_BAR.length + state.length;
+    const thickness = HANDLE_BAR.thickness + state.thickness;
+
+    const startDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
+        setDragging(true);
+        const end = () => {
+            setDragging(false);
+            window.removeEventListener("pointerup", end);
+            window.removeEventListener("pointercancel", end);
+        };
+        window.addEventListener("pointerup", end);
+        window.addEventListener("pointercancel", end);
+        onPointerDown(event);
+    };
+
     return (
         <div
             role="separator"
             aria-label={horizontal ? "Resize height" : "Resize width"}
-            className="absolute rounded-full"
-            style={style}
-            onPointerDown={onPointerDown}
+            className="absolute grid place-items-center"
+            style={hitStyle}
+            onPointerDown={startDrag}
+            onPointerEnter={() => setHovered(true)}
+            onPointerLeave={() => setHovered(false)}
             onClick={(event) => event.stopPropagation()}
-        />
+        >
+            <motion.div
+                className="rounded-full"
+                initial={false}
+                animate={{
+                    width: horizontal ? length : thickness,
+                    height: horizontal ? thickness : length,
+                    backgroundColor: state.color,
+                }}
+                transition={HANDLE_TRANSITION}
+            />
+        </div>
     );
 }

@@ -55,6 +55,10 @@
     --mat-builder-color-canvas-dot: #ccccd1;
     --mat-builder-color-artboard-bg: #ffffff;
     --mat-builder-color-resize-handle: #d4d4d8;
+    /* Resize bar under the cursor / mid-drag — reads as "this is the thing you
+       are about to move", so it borrows the selection colour by default */
+    --mat-builder-color-resize-handle-hover: #a1a1aa;
+    --mat-builder-color-resize-handle-active: var(--mat-builder-color-selection);
 
     /* Block chrome (name tag) */
     --mat-builder-color-chrome-tag-fg: #ffffff;
