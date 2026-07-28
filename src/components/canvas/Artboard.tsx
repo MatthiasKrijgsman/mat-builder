@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "motion/react";
 import {
     useEffect,
     useRef,
@@ -15,6 +16,9 @@ import {
  * on each edge (symmetric per axis, since the frame is centered). Resizing
  * clamps to the visible surface, a ResizeObserver re-fits on window resize
  * and restores toward the last user-dragged size when space returns.
+ *
+ * The frame stays hidden until that first fit lands and fades in from there,
+ * so mount never flashes the pre-clamp size.
  */
 
 export interface ArtboardProps extends HTMLAttributes<HTMLDivElement> {
@@ -45,6 +49,16 @@ const HEIGHT_RANGE = { min: 240, max: 2400 };
 const FILL_FRACTION = 0.8;
 /** Space kept between the frame and the surface edge — must match the p-6 wrapper padding, and is what keeps the resize bars (14px outside the frame) inside the surface. */
 const ARTBOARD_MARGIN = 24;
+/* Reveal, once the mount-time fit has settled the frame's real size. Opacity
+ * lands early on a plain decelerate while the scale keeps easing out to rest
+ * on the iOS sheet curve — a long tail with no overshoot, so a surface this
+ * large arrives settled instead of springing. */
+const REVEAL_SCALE_FROM = 0.97;
+const REVEAL_EASE_OUT = [0.32, 0.72, 0, 1] as const;
+const REVEAL_TRANSITION = {
+    opacity: { duration: 0.28, ease: "easeOut" },
+    scale: { duration: 0.55, ease: REVEAL_EASE_OUT },
+} as const;
 const clamp = (value: number, range: { min: number; max: number }) =>
     Math.min(Math.max(value, range.min), range.max);
 
@@ -85,12 +99,20 @@ export function Artboard(props: ArtboardProps) {
     // Kept in a ref so the pointer handlers never close over a stale callback
     const onSizeChangeRef = useRef(onSizeChange);
     onSizeChangeRef.current = onSizeChange;
+    /** False until the mount-time fit below has run — the frame is invisible
+     * until then, so the pre-clamp size never paints. */
+    const [fitted, setFitted] = useState(false);
+    // Reduce Motion drops the zoom; the frame still fades rather than popping
+    const reduceMotion = useReducedMotion();
 
     // Keep the frame within the surface as the window resizes: shrink to fit,
     // and grow back toward the user's preferred size when space returns.
     useEffect(() => {
         const surface = surfaceRef.current;
-        if (!surface) return;
+        if (!surface) {
+            setFitted(true); // nothing to measure against — don't stay hidden
+            return;
+        }
         const observer = new ResizeObserver(() => {
             const maxWidth = Math.max(WIDTH_RANGE.min, surface.clientWidth - ARTBOARD_MARGIN * 2);
             const maxHeight = Math.max(HEIGHT_RANGE.min, surface.clientHeight - ARTBOARD_MARGIN * 2);
@@ -109,6 +131,8 @@ export function Artboard(props: ArtboardProps) {
                         : Math.min(preferredRef.current.height, maxHeight);
                 return width === current.width && height === current.height ? current : { width, height };
             });
+            // Same commit as the size above, so the fade starts from the fitted size
+            setFitted(true);
         });
         observer.observe(surface); // also fires once on mount → initial fit
         return () => observer.disconnect();
@@ -169,11 +193,24 @@ export function Artboard(props: ArtboardProps) {
                     "radial-gradient(circle, var(--mat-builder-color-canvas-dot) 1px, transparent 1px)",
                 backgroundSize: "16px 16px",
                 ...style,
+                // The provisional frame can overflow the surface, so scrollbars
+                // would flash alongside it — and they'd shrink clientWidth/Height,
+                // fitting the frame to a surface it's about to stop scrolling.
+                ...(fitted ? null : { overflow: "hidden" }),
             }}
             {...rest}
         >
             <div className="grid min-h-full place-items-center p-6">
-                <div className="relative">
+                <motion.div
+                    className="relative"
+                    initial={false}
+                    animate={
+                        fitted
+                            ? { opacity: 1, scale: 1 }
+                            : { opacity: 0, scale: reduceMotion ? 1 : REVEAL_SCALE_FROM }
+                    }
+                    transition={REVEAL_TRANSITION}
+                >
                     <div
                         className="mat-builder-artboard-frame overflow-hidden rounded-lg shadow-lg shadow-gray-200/50 border border-stone-200"
                         style={{
@@ -190,7 +227,7 @@ export function Artboard(props: ArtboardProps) {
                     <ResizeHandle position="bottom" onPointerDown={startResize("y", 1)} />
                     <ResizeHandle position="left" onPointerDown={startResize("x", -1)} />
                     <ResizeHandle position="right" onPointerDown={startResize("x", 1)} />
-                </div>
+                </motion.div>
             </div>
         </div>
     );
