@@ -135,7 +135,7 @@ interface ContainerDef {
 
 ### Canvas element overrides (`wrapperAs` / `slotAs`)
 
-The canvas normally wraps every block in a `<div>` (BlockView) and every slot in another `<div>` (ContainerSlot). That is invalid inside HTML table structure — a `<div>` between `<table>` and `<tr>` makes the parser hoist the content clean out of the table — so blocks that **are** table structure name a legal tag instead. `CanvasTag` is a closed union (`div | section | span | tbody | thead | tfoot | tr | td | th`): only these are checked against the chrome overlay and the DnD hitboxes. Introduced by the data-table spike ([06 §Data table spike](06-email-builder.md#data-table-spike)); nothing else in the preset uses them.
+The canvas normally wraps every block in a `<div>` (BlockView) and every slot in another `<div>` (ContainerSlot). That is invalid inside HTML table structure — a `<div>` between `<table>` and `<tr>` makes the parser hoist the content clean out of the table — so blocks that **are** table structure name a legal tag instead. `CanvasTag` is a closed union (`div | section | span | tbody | thead | tfoot | tr | td | th`): only these are checked against the chrome overlay and the DnD hitboxes. Introduced by the table's decomposition ([06 §Table](06-email-builder.md#table)); nothing else in the preset uses them.
 
 Three consequences worth knowing before reaching for them:
 

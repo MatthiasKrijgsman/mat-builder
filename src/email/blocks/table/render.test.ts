@@ -1,28 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { insertBlock, updateProps } from "../../../core/commands.ts";
+import { duplicateBlock, insertBlock, updateProps } from "../../../core/commands.ts";
 import { createDocument, validateDocument } from "../../../core/document.ts";
 import { createRegistry } from "../../../core/registry.ts";
 import type { BlockId, BuilderDocument } from "../../../core/types.ts";
 import { emailBlocks } from "../../index.tsx";
 import { renderEmail } from "../../render.ts";
 import { richTextParagraph } from "../../rich-text/index.ts";
+import { uniformSides } from "../../../style-props/index.ts";
 
 /*
- * Data table SPIKE — the decomposed table's output. These cover the parts the
- * decomposition put at risk: the seeded subtree, and whether a cell can still
- * resolve table-level styling (borders, stripes) now that it lives two blocks
- * away from it.
+ * The table's output. These cover the parts the table/row/cell decomposition
+ * puts at risk: the seeded subtree, and whether a cell can still resolve
+ * table-level styling (borders, radius, padding, stripes) now that it lives two
+ * blocks away from it.
  */
 
 const registry = createRegistry(emailBlocks);
 
-/** email-root > container > data-table, built through the real preset. */
+/** email-root > container > table, built through the real preset. */
 function buildTableEmail(): { document: BuilderDocument; tableId: BlockId } {
     const document = createDocument(registry, "email-root");
     const containerId = document.blocks[document.rootId].children.main[0];
     const inserted = insertBlock(
         document,
-        { type: "data-table", at: { parentId: containerId, container: "content", index: 0 } },
+        { type: "table", at: { parentId: containerId, container: "content", index: 0 } },
         registry,
     );
     return { document: inserted.document, tableId: inserted.blockId };
@@ -31,17 +32,17 @@ function buildTableEmail(): { document: BuilderDocument; tableId: BlockId } {
 const rowIds = (document: BuilderDocument, tableId: BlockId) => document.blocks[tableId].children.rows;
 const cellIds = (document: BuilderDocument, rowId: BlockId) => document.blocks[rowId].children.cells;
 
-/** The data table's own `<tr>` chunks — react-email wraps everything else in
- * layout tables, so matching `<tr` document-wide would count those too. */
+/** The table's own `<tr>` chunks — react-email wraps everything else in layout
+ * tables, so matching `<tr` document-wide would count those too. */
 function tableRowsOf(html: string): string[] {
-    // `table-layout` is emitted only by the data table, so it pins down which
-    // of react-email's many nested tables is ours.
+    // `table-layout` is emitted only by our table, so it pins down which of
+    // react-email's many nested tables is ours.
     const start = html.indexOf("table-layout:");
     const body = html.slice(start, html.indexOf("</table>", start));
     return body.split("<tr").slice(1);
 }
 
-describe("data table (spike)", () => {
+describe("table", () => {
     it("seeds a header row plus body rows, each with cells holding a text block", () => {
         const { document, tableId } = buildTableEmail();
         const rows = rowIds(document, tableId);
@@ -71,6 +72,21 @@ describe("data table (spike)", () => {
         ]);
     });
 
+    it("seeds a new row with as many cells as the table already has columns", () => {
+        const { document, tableId } = buildTableEmail();
+        // Widen the table by duplicating a cell in every row (4 columns)
+        let wide = document;
+        for (const rowId of rowIds(wide, tableId)) {
+            wide = duplicateBlock(wide, { id: cellIds(wide, rowId)[0] }, registry).document;
+        }
+        const added = insertBlock(
+            wide,
+            { type: "table-row", at: { parentId: tableId, container: "rows", index: 3 } },
+            registry,
+        );
+        expect(cellIds(added.document, added.blockId)).toHaveLength(4);
+    });
+
     it("produces a document that passes validation", () => {
         const { document } = buildTableEmail();
         expect(validateDocument(document, registry)).toEqual([]);
@@ -89,6 +105,21 @@ describe("data table (spike)", () => {
         const { html } = await renderEmail(document);
         // Default borderMode "all", 1px — every cell paints right+bottom
         expect(html).toMatch(/<td[^>]*border-bottom:1px solid #e4e4e7/);
+        // Separate borders — collapse would disable border-radius below
+        expect(html).toContain("border-collapse:separate");
+    });
+
+    it("rounds the frame and its corner cells", async () => {
+        const { document, tableId } = buildTableEmail();
+        const next = updateProps(document, {
+            id: tableId,
+            patch: { border: { width: uniformSides(1), style: "solid", color: "#e4e4e7", radius: 8 } },
+        });
+        const { html } = await renderEmail(next);
+        // The radius has to reach the corner CELLS too: the cells paint the
+        // edges, so a radius on the frame alone leaves square corners inside it.
+        expect(html).toMatch(/<table[^>]*border-radius:8px/);
+        expect(html).toMatch(/<td[^>]*border-top-left-radius:8px/);
     });
 
     it("honours the table's borderMode from the cells", async () => {

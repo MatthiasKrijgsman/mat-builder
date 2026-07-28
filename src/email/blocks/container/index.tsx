@@ -20,11 +20,11 @@ import {
 } from "./styles.ts";
 
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
-export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer", "table" ];
+export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer" ];
 
-/** Everything a container accepts: leaves, nested containers, and the data table
+/** Everything a container accepts: leaves, nested containers, and the table
  * (which owns children of its own but is dropped like any other content block). */
-const CONTAINER_ACCEPTS = [ ...EMAIL_LEAF_TYPES, "container", "data-table" ];
+const CONTAINER_ACCEPTS = [ ...EMAIL_LEAF_TYPES, "container", "table" ];
 
 // Figma-style: flow direction as arrows (icon-only segments with tooltips)
 const DIRECTION_OPTIONS: Fields.SegmentedFieldOption<ContainerDirection>[] = [

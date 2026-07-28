@@ -1,115 +1,276 @@
 import type { CSSProperties } from "react";
+import type { BlockContext } from "../../../core/types.ts";
+import { findLocation } from "../../../core/traversal.ts";
 import {
+    backgroundToCss,
     cornerShorthand,
+    defaultBackground,
     defaultBorder,
     defaultEffects,
     defaultSpacing,
     effectsToCss,
     normalizeBorderRadius,
     normalizeBorderWidth,
+    sideShorthand,
     spacingToCss,
     uniformSides,
+    type BackgroundValue,
     type BorderValue,
     type EffectsValue,
+    type SideValues,
     type SpacingValue,
 } from "../../../style-props/index.ts";
 
 /*
- * Table — a data table (rows × columns of rich-text cells). Real <table>
- * markup is the one layout primitive every email client renders natively,
- * so both renders emit the same structure. Cell content is edited in place
- * on the canvas (InlineRichText per cell — the same surface as the Text
- * block); row/column counts change in the inspector, preserving existing
- * cell content. Cells stored as plain strings by older versions are wrapped
- * via ensureRichText wherever they're read.
+ * Table (see docs/06 §Table).
+ *
+ * Three blocks: `table` (the frame), `table-row` and `table-cell`. Styling is
+ * addressable per row and per cell, and a cell holds real blocks (text, image,
+ * button) rather than one rich-text string.
+ *
+ * The canvas emits the SAME element structure as the output — table/tbody/tr/td
+ * — which is why the blocks carry `wrapperAs`/`slotAs`: the default div wrappers
+ * would be hoisted out of the table by the browser's parser.
+ *
+ * Border model: `border-collapse: collapse` kills border-radius, so borders are
+ * SEPARATE with zero spacing and every cell draws its own edges from the
+ * table-level border + borderMode.
  */
 
+/* ── table ─────────────────────────────────────────────────────────── */
+
+/** Which cell edges the table-level border paints. */
+export type TableBorderMode = "all" | "outer" | "horizontal" | "vertical" | "none";
+
 export interface EmailTableProps {
-    /** Row-major cells — cells[row][column]; serialized rich text (legacy
-     * documents may still hold plain strings — normalize with ensureRichText). */
-    cells: string[][];
-    /** Style the first row as a header (bold + headerBackground). */
-    headerRow: boolean;
-    headerBackground: string;
-    /** Inner padding of every cell, px. */
-    cellPadding: number;
-    /** Cell borders; radius rounds the outer frame (best-effort — Outlook
-     * desktop ignores border-radius, same caveat as everywhere else). */
+    /** "auto" sizes columns to content; "fixed" honours per-cell widths. */
+    tableLayout: "auto" | "fixed";
+    background: BackgroundValue;
     border: BorderValue;
+    borderMode: TableBorderMode;
+    /** Applied to every cell that doesn't override it. */
+    cellPadding: SideValues;
+    /** Zebra striping over BODY rows (header/footer rows keep their own fill). */
+    stripe: { enabled: boolean; color: string };
     spacing: SpacingValue;
     effects: EffectsValue;
 }
 
 export const emailTableDefaults: EmailTableProps = {
-    cells: [
-        ["Item", "Description", "Amount"],
-        ["", "", ""],
-        ["", "", ""],
-    ],
-    headerRow: true,
-    headerBackground: "#f4f4f5",
-    cellPadding: 8,
+    tableLayout: "auto",
+    background: defaultBackground,
     border: { ...defaultBorder, width: uniformSides(1) },
+    borderMode: "all",
+    cellPadding: uniformSides(8),
+    stripe: { enabled: false, color: "#fafafa" },
     spacing: defaultSpacing,
     effects: defaultEffects,
 };
 
-/** Grow/shrink the cell matrix, preserving existing content. */
-export const resizeTableCells = (cells: string[][], rows: number, columns: number): string[][] =>
-    Array.from({ length: rows }, (_, r) => Array.from({ length: columns }, (_, c) => cells[r]?.[c] ?? ""));
+/* ── row ───────────────────────────────────────────────────────────── */
 
-export const tableRowCount = (props: EmailTableProps): number => props.cells.length;
-export const tableColumnCount = (props: EmailTableProps): number =>
-    props.cells.reduce((max, row) => Math.max(max, row.length), 0);
+/** Header rows render bold on a fill; footer rows just get their own fill. */
+export type TableRowVariant = "body" | "header" | "footer";
 
-/*
- * Border model: `border-collapse: collapse` disables border-radius entirely,
- * so the table uses SEPARATE borders with zero spacing — every cell draws its
- * right+bottom edge, the first row/column adds top/left, and the corner cells
- * carry the corner radii so backgrounds (header row) clip inside the frame.
- */
+export interface EmailTableRowProps {
+    variant: TableRowVariant;
+    /** Row fill — "" inherits the table (or the stripe, for body rows). */
+    background: string;
+    /** 0 = auto. */
+    minHeight: number;
+}
 
-const hasRadius = (props: EmailTableProps): boolean => {
-    const radius = normalizeBorderRadius(props.border.radius);
+export const emailTableRowDefaults: EmailTableRowProps = {
+    variant: "body",
+    background: "",
+    minHeight: 0,
+};
+
+/** The fill a header/footer row falls back to when `background` is unset. */
+export const ROW_VARIANT_FILL: Record<TableRowVariant, string> = {
+    body: "",
+    header: "#f4f4f5",
+    footer: "#fafafa",
+};
+
+/* ── cell ──────────────────────────────────────────────────────────── */
+
+export interface EmailTableCellProps {
+    /** Cell fill — "" inherits the row. */
+    background: string;
+    /** "" inherits the table's cellPadding. */
+    padding: SideValues | null;
+    align: "left" | "center" | "right";
+    verticalAlign: "top" | "middle" | "bottom";
+    /** "" = auto; otherwise a CSS width ("30%", "120px"). Honoured with tableLayout "fixed". */
+    width: string;
+    colSpan: number;
+    rowSpan: number;
+}
+
+export const emailTableCellDefaults: EmailTableCellProps = {
+    background: "",
+    padding: null,
+    align: "left",
+    verticalAlign: "top",
+    width: "",
+    colSpan: 1,
+    rowSpan: 1,
+};
+
+/* ── shared style resolution ───────────────────────────────────────── */
+
+const hasRadius = (border: BorderValue): boolean => {
+    const radius = normalizeBorderRadius(border.radius);
     return radius.topLeft > 0 || radius.topRight > 0 || radius.bottomRight > 0 || radius.bottomLeft > 0;
 };
 
 /** Outer table styles — shared by both renders. */
-export const emailTableStyles = (props: EmailTableProps): CSSProperties => ({
+export const tableStyles = (props: EmailTableProps): CSSProperties => ({
     width: "100%",
     borderCollapse: "separate",
     borderSpacing: 0,
-    ...(hasRadius(props) ? { borderRadius: cornerShorthand(normalizeBorderRadius(props.border.radius)) } : {}),
+    tableLayout: props.tableLayout,
+    ...(hasRadius(props.border)
+        ? { borderRadius: cornerShorthand(normalizeBorderRadius(props.border.radius)) }
+        : {}),
+    ...backgroundToCss(props.background),
     ...spacingToCss(props.spacing),
     ...effectsToCss(props.effects),
 });
 
-/** Cell styles for cell (row, column) — shared by both renders. */
-export const emailTableCellStyles = (
-    props: EmailTableProps,
+/** Row styles — shared by both renders. `minHeight` emits as `height`, the
+ * only row sizing email clients respect (they treat it as a minimum). */
+export const tableRowStyles = (props: EmailTableRowProps): CSSProperties => {
+    const fill = rowFill(props);
+    return {
+        ...(fill ? { backgroundColor: fill } : {}),
+        ...(props.minHeight > 0 ? { height: props.minHeight } : {}),
+    };
+};
+
+/** The row's own fill, or its variant default — "" when it inherits. */
+export const rowFill = (props: EmailTableRowProps): string =>
+    props.background || ROW_VARIANT_FILL[props.variant] || "";
+
+/** What a cell needs from its surroundings — see `resolveCellContext`. */
+export interface CellContext {
+    table?: EmailTableProps;
+    row?: EmailTableRowProps;
+    /** Index among BODY rows only — decides striping. */
+    bodyIndex: number;
+    /** Cell position, for the border/radius frame. */
+    rowIndex: number;
+    columnIndex: number;
+    rowCount: number;
+    columnCount: number;
+}
+
+const ORPHAN_CELL: CellContext = { bodyIndex: 0, rowIndex: 0, columnIndex: 0, rowCount: 1, columnCount: 1 };
+
+/**
+ * Walks up from a cell to its row and table. Both renders call this with the
+ * same `BlockContext`, so the canvas and the output resolve identically.
+ *
+ * This walk is the price of decomposition: the monolithic `table` block had
+ * every one of these numbers in one props object.
+ */
+export const resolveCellContext = (ctx: BlockContext): CellContext => {
+    const { document, location } = ctx;
+    if (!location) return ORPHAN_CELL;
+    const rowNode = document.blocks[location.parentId];
+    if (!rowNode) return ORPHAN_CELL;
+    const row = rowNode.props as unknown as EmailTableRowProps;
+
+    const cells = rowNode.children.cells ?? [];
+    const columnIndex = location.index;
+    const columnCount = cells.length;
+
+    // The row's own position, for the table-level frame and striping. Note the
+    // cost: findLocation scans every block in the document, once per CELL.
+    const rowLocation = findLocation(document, rowNode.id);
+    const tableEntry = rowLocation && document.blocks[rowLocation.parentId];
+    if (!rowLocation || !tableEntry) return { ...ORPHAN_CELL, row, columnIndex, columnCount };
+    const rows = tableEntry.children.rows ?? [];
+    const rowIndex = rowLocation.index;
+    const bodyIndex = rows
+        .slice(0, rowIndex)
+        .filter((id) => (document.blocks[id]?.props as unknown as EmailTableRowProps)?.variant === "body").length;
+
+    return {
+        table: tableEntry.props as unknown as EmailTableProps,
+        row,
+        bodyIndex,
+        rowIndex,
+        columnIndex,
+        rowCount: rows.length,
+        columnCount,
+    };
+};
+
+/**
+ * Cell styles, resolved down the chain **cell → row → stripe → table**.
+ * Both renders call this so the canvas and the email agree.
+ */
+export const tableCellStyles = (cell: EmailTableCellProps, context: CellContext): CSSProperties => {
+    const { table, row, bodyIndex, rowIndex, columnIndex, rowCount, columnCount } = context;
+    const padding = cell.padding ?? table?.cellPadding ?? uniformSides(8);
+
+    // Fill precedence: cell → row (incl. header/footer variant) → stripe → none
+    const stripe =
+        table?.stripe.enabled && row?.variant === "body" && bodyIndex % 2 === 1 ? table.stripe.color : "";
+    const fill = cell.background || (row ? rowFill(row) : "") || stripe;
+
+    return {
+        ...cellBorderStyles(table, rowIndex, columnIndex, rowCount, columnCount),
+        // Collapsing shorthand, like every other spacing prop — a table emits
+        // this once per cell, so the saving is worth the most in email HTML.
+        padding: sideShorthand(padding),
+        textAlign: cell.align,
+        verticalAlign: cell.verticalAlign,
+        ...(fill ? { backgroundColor: fill } : {}),
+        ...(cell.width ? { width: cell.width } : {}),
+        ...(row?.variant === "header" ? { fontWeight: 600 } : {}),
+    };
+};
+
+/**
+ * Which edges this cell paints, per borderMode. Every cell draws right+bottom
+ * and the first row/column adds top/left, so adjacent strokes never double up;
+ * the corner cells carry the radii so fills clip inside the frame.
+ */
+const cellBorderStyles = (
+    table: EmailTableProps | undefined,
     row: number,
     column: number,
     rowCount: number,
     columnCount: number,
 ): CSSProperties => {
-    const width = normalizeBorderWidth(props.border.width);
-    const radius = normalizeBorderRadius(props.border.radius);
-    const stroke = (px: number) => `${px}px ${props.border.style} ${props.border.color}`;
-    const isHeader = props.headerRow && row === 0;
+    if (!table || table.borderMode === "none") return {};
+    const width = normalizeBorderWidth(table.border.width);
+    const radius = normalizeBorderRadius(table.border.radius);
+    const stroke = (px: number) => `${px}px ${table.border.style} ${table.border.color}`;
+    const firstRow = row === 0;
+    const firstColumn = column === 0;
     const lastRow = row === rowCount - 1;
     const lastColumn = column === columnCount - 1;
+
+    const mode = table.borderMode;
+    // "outer" only paints the table's perimeter; "horizontal"/"vertical" keep
+    // the rules on one axis (plus that axis's outer edges).
+    const top = firstRow && width.top > 0 && mode !== "vertical";
+    const left = firstColumn && width.left > 0 && mode !== "horizontal";
+    const bottom = width.bottom > 0 && mode !== "vertical" && (mode !== "outer" || lastRow);
+    const right = width.right > 0 && mode !== "horizontal" && (mode !== "outer" || lastColumn);
+
     return {
-        ...(width.right > 0 ? { borderRight: stroke(width.right) } : {}),
-        ...(width.bottom > 0 ? { borderBottom: stroke(width.bottom) } : {}),
-        ...(row === 0 && width.top > 0 ? { borderTop: stroke(width.top) } : {}),
-        ...(column === 0 && width.left > 0 ? { borderLeft: stroke(width.left) } : {}),
-        ...(row === 0 && column === 0 && radius.topLeft > 0 ? { borderTopLeftRadius: radius.topLeft } : {}),
-        ...(row === 0 && lastColumn && radius.topRight > 0 ? { borderTopRightRadius: radius.topRight } : {}),
-        ...(lastRow && column === 0 && radius.bottomLeft > 0 ? { borderBottomLeftRadius: radius.bottomLeft } : {}),
+        ...(top ? { borderTop: stroke(width.top) } : {}),
+        ...(left ? { borderLeft: stroke(width.left) } : {}),
+        ...(bottom ? { borderBottom: stroke(width.bottom) } : {}),
+        ...(right ? { borderRight: stroke(width.right) } : {}),
+        ...(firstRow && firstColumn && radius.topLeft > 0 ? { borderTopLeftRadius: radius.topLeft } : {}),
+        ...(firstRow && lastColumn && radius.topRight > 0 ? { borderTopRightRadius: radius.topRight } : {}),
+        ...(lastRow && firstColumn && radius.bottomLeft > 0 ? { borderBottomLeftRadius: radius.bottomLeft } : {}),
         ...(lastRow && lastColumn && radius.bottomRight > 0 ? { borderBottomRightRadius: radius.bottomRight } : {}),
-        padding: props.cellPadding,
-        textAlign: "left",
-        verticalAlign: "top",
-        ...(isHeader ? { fontWeight: 600, backgroundColor: props.headerBackground } : {}),
     };
 };

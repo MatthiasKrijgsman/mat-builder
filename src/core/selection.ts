@@ -3,7 +3,7 @@ import type { BlockId } from "./types.ts";
 /*
  * Group selection — see docs/04 §Selection.
  *
- * A composite block whose parts are themselves blocks (the data table: rows
+ * A composite block whose parts are themselves blocks (the table: rows
  * and cells) is otherwise unreachable on the canvas. Every click lands on the
  * innermost block, so a cell always wins and the table can only be picked in
  * the layers tree — and never dragged, because the cell's own draggable

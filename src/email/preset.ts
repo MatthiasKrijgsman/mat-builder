@@ -5,8 +5,7 @@ import { buttonBlock } from "./blocks/button/index.tsx";
 import { imageBlock } from "./blocks/image/index.tsx";
 import { dividerBlock } from "./blocks/divider/index.tsx";
 import { spacerBlock } from "./blocks/spacer/index.tsx";
-import { tableBlock } from "./blocks/table/index.tsx";
-import { dataTableBlock, tableCellBlock, tableRowBlock } from "./blocks/data-table/index.tsx";
+import { tableBlock, tableCellBlock, tableRowBlock } from "./blocks/table/index.tsx";
 
 /*
  * The email preset array. Its own module (rather than ./index.tsx) so
@@ -24,7 +23,6 @@ export const emailBlocks = [
     dividerBlock,
     spacerBlock,
     tableBlock,
-    dataTableBlock,
     tableRowBlock,
     tableCellBlock,
 ];

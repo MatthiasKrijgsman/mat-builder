@@ -144,7 +144,7 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
 - `Escape` walks up: child → parent → … → root → none. The layers panel covers the same need with the mouse.
 - Selection survives prop edits and is restored by undo (history entries store `selectedId`).
 
-**Group selection** (`BlockDefinition.selectsAsGroup`, logic in `src/core/selection.ts`). A composite block whose parts are themselves blocks — the data table, whose rows and cells are blocks — breaks the rule above: its parts cover its entire area, so the innermost-wins click means the composite can only be selected in the layers tree, and can never be dragged at all, since the cell's own draggable captures the gesture. A block marked `selectsAsGroup` therefore behaves as ONE unit until entered (Figma's group model):
+**Group selection** (`BlockDefinition.selectsAsGroup`, logic in `src/core/selection.ts`). A composite block whose parts are themselves blocks — the table, whose rows and cells are blocks — breaks the rule above: its parts cover its entire area, so the innermost-wins click means the composite can only be selected in the layers tree, and can never be dragged at all, since the cell's own draggable captures the gesture. A block marked `selectsAsGroup` therefore behaves as ONE unit until entered (Figma's group model):
 
 | | Group not entered | Group entered (selection is the group or inside it) |
 |---|---|---|

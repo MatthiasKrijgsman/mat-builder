@@ -5,7 +5,6 @@ import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
 import { emailBlocks } from "./index.tsx";
 import { buildEmailTree, renderEmail } from "./render.ts";
-import { uniformSides } from "../style-props/index.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
 const registry = createRegistry(emailBlocks);
@@ -322,39 +321,6 @@ describe("renderEmail", () => {
         expect(html).toMatch(/<p[^>]*>\s*(&nbsp;|\u00A0)\s*<\/p>/);
         expect(html).toContain("first");
         expect(html).toContain("second");
-    });
-
-    it("renders the table block as a native <table> with header styling", async () => {
-        let document = buildDemoEmail();
-        const section = document.blocks[document.rootId].children.main[0];
-        const table = insertBlock(
-            document,
-            { type: "table", at: { parentId: section, container: "content", index: 2 } },
-            registry,
-        );
-        document = updateProps(table.document, {
-            id: table.blockId,
-            patch: {
-                cells: [
-                    ["Plan", "Price"],
-                    ["Pro", "$12"],
-                ],
-                headerRow: true,
-                border: { width: uniformSides(1), style: "solid", color: "#e4e4e7", radius: 8 },
-            },
-        });
-        const { html } = await renderEmail(document);
-        // separate borders (collapse would disable border-radius)
-        expect(html).toContain("border-collapse:separate");
-        // Cells are rich text; plain strings (legacy documents) are wrapped
-        // into a paragraph on read — header cell: bold + background.
-        expect(html).toMatch(/<td[^>]*font-weight:600[^>]*>\s*<p[^>]*>[^<]*Plan/);
-        expect(html).toMatch(/<td[^>]*>\s*<p[^>]*>[^<]*\$12/);
-        // 1px default cell borders: every cell right+bottom, first row adds top
-        expect(html).toMatch(/<td[^>]*border-right:1px solid[^>]*border-bottom:1px solid[^>]*border-top:1px solid/);
-        // radius rounds the frame and the corner cells
-        expect(html).toMatch(/<table[^>]*border-radius:8px/);
-        expect(html).toMatch(/<td[^>]*border-top-left-radius:8px/);
     });
 
     it("renders paragraphs with an explicit inline margin", async () => {

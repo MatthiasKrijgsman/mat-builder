@@ -109,6 +109,70 @@ const containerBase = {
 
 const textBase = { spacing: defaultSpacing, effects: defaultEffects, layout: defaultLayout };
 
+/*
+ * The invoice table. A table is table → table-row → table-cell → text, so even
+ * this small grid is 36 flat blocks — generated from the rows below rather than
+ * spelled out. Row variants carry the header fill and the footer's total line;
+ * the amount column is right-aligned per cell.
+ */
+const invoiceRows: { variant: "header" | "body" | "footer"; cells: string[] }[] = [
+    { variant: "header", cells: ["Item", "Qty", "Amount"] },
+    { variant: "body", cells: ["Pro plan", "1", "€49.00"] },
+    { variant: "body", cells: ["Additional seats", "4", "€36.00"] },
+    { variant: "body", cells: ["Priority support", "1", "€12.00"] },
+    { variant: "footer", cells: ["Total", "", "€97.00"] },
+];
+
+const cellBase = { background: "", padding: null, verticalAlign: "top" as const, width: "", colSpan: 1, rowSpan: 1 };
+
+function invoiceTableBlocks(tableId: string): BuilderDocument["blocks"] {
+    const blocks: BuilderDocument["blocks"] = {};
+    const rowIds = invoiceRows.map((row, r) => {
+        const rowId = `${tableId}-row-${r}`;
+        const cellIds = row.cells.map((value, c) => {
+            const cellId = `${rowId}-cell-${c}`;
+            const textId = `${cellId}-text`;
+            blocks[textId] = {
+                id: textId,
+                type: "text",
+                props: { ...textBase, content: richDoc(paragraph([text(value)])) },
+                children: {},
+            };
+            blocks[cellId] = {
+                id: cellId,
+                type: "table-cell",
+                // Last column holds the money — right-aligned, as in any invoice
+                props: { ...cellBase, align: c === row.cells.length - 1 ? "right" : "left" },
+                children: { content: [textId] },
+            };
+            return cellId;
+        });
+        blocks[rowId] = {
+            id: rowId,
+            type: "table-row",
+            props: { variant: row.variant, background: "", minHeight: 0 },
+            children: { cells: cellIds },
+        };
+        return rowId;
+    });
+    blocks[tableId] = {
+        id: tableId,
+        type: "table",
+        props: {
+            tableLayout: "auto",
+            background: defaultBackground,
+            border: { width: uniformSides(1), style: "solid" as const, color: "#e7e5e4", radius: 8 },
+            borderMode: "all",
+            cellPadding: uniformSides(10),
+            stripe: { enabled: false, color: "#fafafa" },
+            spacing: defaultSpacing,
+            effects: defaultEffects,
+        },
+        children: { rows: rowIds },
+    };
+    return blocks;
+}
+
 const initialDocument: BuilderDocument = {
     version: 1,
     rootId: "root",
@@ -203,26 +267,7 @@ const initialDocument: BuilderDocument = {
             props: { ...textBase, content: invoiceLabel },
             children: {},
         },
-        "invoice-table": {
-            id: "invoice-table",
-            type: "table",
-            props: {
-                cells: [
-                    ["Item", "Qty", "Amount"],
-                    ["Pro plan", "1", "\u20ac49.00"],
-                    ["Additional seats", "4", "\u20ac36.00"],
-                    ["Priority support", "1", "\u20ac12.00"],
-                    ["Total", "", "\u20ac97.00"],
-                ],
-                headerRow: true,
-                headerBackground: "#f4f4f5",
-                cellPadding: 10,
-                border: { width: uniformSides(1), style: "solid" as const, color: "#e7e5e4", radius: 8 },
-                spacing: defaultSpacing,
-                effects: defaultEffects,
-            },
-            children: {},
-        },
+        ...invoiceTableBlocks("invoice-table"),
         "invoice-note": {
             id: "invoice-note",
             type: "text",

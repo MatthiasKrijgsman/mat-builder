@@ -13,7 +13,7 @@ import { useBuilderState } from "../../../react/hooks.ts";
 import type { SideValues } from "../../../style-props/index.ts";
 import { InheritableField } from "./InheritableField.tsx";
 import {
-    emailDataTableDefaults,
+    emailTableDefaults,
     resolveCellContext,
     ROW_VARIANT_FILL,
     type EmailTableCellProps,
@@ -46,9 +46,9 @@ const VALIGN_OPTIONS: Fields.SegmentedFieldOption<EmailTableCellProps["verticalA
 function useInheritedPadding(id: BlockId): SideValues {
     return useBuilderState((state) => {
         const location = findLocation(state.document, id);
-        if (!location) return emailDataTableDefaults.cellPadding;
+        if (!location) return emailTableDefaults.cellPadding;
         const context = resolveCellContext({ document: state.document, location, siblingCount: 1 });
-        return context.table?.cellPadding ?? emailDataTableDefaults.cellPadding;
+        return context.table?.cellPadding ?? emailTableDefaults.cellPadding;
     });
 }
 

@@ -15,8 +15,7 @@ import { buttonBlock } from "./blocks/button/index.tsx";
 import { imageBlock } from "./blocks/image/index.tsx";
 import { dividerBlock } from "./blocks/divider/index.tsx";
 import { spacerBlock } from "./blocks/spacer/index.tsx";
-import { tableBlock } from "./blocks/table/index.tsx";
-import { dataTableBlock, tableCellBlock, tableRowBlock } from "./blocks/data-table/index.tsx";
+import { tableBlock, tableCellBlock, tableRowBlock } from "./blocks/table/index.tsx";
 
 export {
     emailRootBlock,
@@ -27,7 +26,6 @@ export {
     dividerBlock,
     spacerBlock,
     tableBlock,
-    dataTableBlock,
     tableRowBlock,
     tableCellBlock,
 };
@@ -39,14 +37,13 @@ export type { EmailButtonProps } from "./blocks/button/styles.ts";
 export type { EmailImageProps } from "./blocks/image/styles.ts";
 export type { EmailDividerProps } from "./blocks/divider/styles.ts";
 export type { EmailSpacerProps } from "./blocks/spacer/styles.ts";
-export type { EmailTableProps } from "./blocks/table/styles.ts";
 export type {
-    EmailDataTableProps,
+    EmailTableProps,
     EmailTableCellProps,
     EmailTableRowProps,
     TableBorderMode,
     TableRowVariant,
-} from "./blocks/data-table/styles.ts";
+} from "./blocks/table/styles.ts";
 
 /** The preset handed to <BuilderProvider blocks={emailBlocks}> (defined in
  * ./preset.ts so <EmailBuilder> can use it without importing this barrel) */

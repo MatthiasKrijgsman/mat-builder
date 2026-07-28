@@ -203,7 +203,7 @@ export interface BlockDefinition<P = Record<string, unknown>> {
      * inside it — then clicks reach the actual block under the pointer
      * (Figma's group model, see src/core/selection.ts).
      *
-     * For composite blocks whose parts are blocks (the data table's rows and
+     * For composite blocks whose parts are blocks (the table's rows and
      * cells): without it the innermost part always wins and the composite is
      * reachable only from the layers tree, and never draggable.
      */
