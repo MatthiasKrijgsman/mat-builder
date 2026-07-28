@@ -9,8 +9,8 @@ import "./style.css";
 
 // Core — document model, block definitions, traversal (server-safe; see docs/03 §4)
 export { defineBlock } from "./core/define-block.ts";
-export { createRegistry } from "./core/registry.ts";
-export type { BlockRegistry } from "./core/registry.ts";
+export { createRegistry, mergeBlockDefinitions } from "./core/registry.ts";
+export type { BlockRegistry, AnyBlockDefinition } from "./core/registry.ts";
 export { createDocument, migrateDocument, validateDocument } from "./core/document.ts";
 export { walkDocument, findLocation, findAncestors, isDescendant } from "./core/traversal.ts";
 export type { WalkContext, WalkVisitor } from "./core/traversal.ts";
@@ -35,6 +35,8 @@ export type {
 
 // React — provider & hooks
 export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
+export { useDocumentSave } from "./react/save.ts";
+export type { SaveController, SaveStatus, UseDocumentSaveOptions } from "./react/save.ts";
 export type { MergeTag } from "./react/merge-tags.ts";
 export {
     useEditor,
@@ -47,6 +49,13 @@ export {
 } from "./react/hooks.ts";
 export type { UseEditorResult, SelectedBlock, RenderedSize } from "./react/hooks.ts";
 export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts";
+
+// The assembled editor: provider + docked layout + panels + saving (docs/04 §Shell).
+// Block-set agnostic — the email builder is <EmailBuilder> in ./email.
+export { BuilderShell, type BuilderShellProps, type BuilderShellPanels } from "./components/shell/BuilderShell.tsx";
+export { ShellTopBar, SaveControls, type ShellTopBarProps } from "./components/shell/ShellTopBar.tsx";
+export { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./components/shell/labels.ts";
+export { dockedPanel, dottedSurface, transparentSurface } from "./components/shell/chrome.ts";
 
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";

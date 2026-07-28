@@ -35,6 +35,26 @@ export function createRegistry(definitions: AnyBlockDefinition[]): BlockRegistry
     };
 }
 
+/**
+ * Combines a base preset with host-supplied definitions: a definition whose
+ * `type` already exists **replaces** the preset one in place (keeping palette
+ * order), anything new is appended. `createRegistry` throws on duplicates, so
+ * concatenating a preset with an override would crash — this is what the
+ * shell components' optional `blocks` prop runs on (docs/04 §Shell).
+ */
+export function mergeBlockDefinitions(
+    base: readonly AnyBlockDefinition[],
+    extra?: readonly AnyBlockDefinition[],
+): AnyBlockDefinition[] {
+    const merged = [...base];
+    for (const definition of extra ?? []) {
+        const index = merged.findIndex((existing) => existing.type === definition.type);
+        if (index === -1) merged.push(definition);
+        else merged[index] = definition;
+    }
+    return merged;
+}
+
 /** Evaluates a container's `accepts` rule (array or function form; omitted = accept all). */
 export function containerAccepts(container: ContainerDef, childType: string, ctx: AcceptCtx): boolean {
     if (!container.accepts) return true;

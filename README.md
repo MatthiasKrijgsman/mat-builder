@@ -6,6 +6,23 @@
 
 Built with React 19, Tailwind CSS v4, [Pragmatic drag and drop](https://atlassian.design/components/pragmatic-drag-and-drop/), and [mat-ui](https://github.com/matthiaskrijgsman/mat-ui) for UI primitives. Emails render via [react-email](https://react.email) through the server-safe `./email/render` entry.
 
+Headless-first does not mean assembly-required: the whole email builder is one component.
+
+```tsx
+import "@matthiaskrijgsman/mat-builder/style";
+import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
+
+<EmailBuilder
+  className="h-screen"
+  defaultValue={template}                    // omit to start a blank email
+  onSave={(document) => api.save(document)}  // Save button + ⌘S; autoSaveMs to autosave
+  blocks={[myCustomBlock]}                   // optional, merged into the email preset
+  documentName="July invoice"
+/>;
+```
+
+Need a different layout? Every part it is built from — `BuilderProvider`, `Canvas`, `Palette`, `Inspector`, `LayersPanel`, `useDocumentSave` — is exported separately (see [docs/04](docs/04-components-and-interactions.md)).
+
 ## Status
 
 Early development — see [docs/README.md](docs/README.md) for the architecture plan, agreed decisions, and build order.

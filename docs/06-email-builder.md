@@ -138,13 +138,33 @@ Output: the walker's `merge-tag` case emits the literal token as escaped text; `
 
 ## Preview mode
 
-The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry (a Toolbar `PreviewToggle` can wrap it later — hosts currently swap `<Canvas/>` for `<EmailPreview/>` themselves, see `site/app/page.tsx`):
+The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry; `<EmailBuilder>` (below) owns the mode state and the Edit/Preview tabs, and hosts composing their own layout swap `<Canvas/>` for `<EmailPreview/>` themselves:
 
 - Debounced call to `renderEmail(doc)` (client-side is fine — `render` works in the browser) → `<iframe srcDoc={html} />`.
 - The iframe isolates the email from the app's Tailwind preflight/global CSS — rendering the output HTML inline in the app DOM would be contaminated by it, which is why preview uses an iframe even though the editing canvas doesn't.
 - The iframe sits in the same freely resizable `Artboard` frame as the editing canvas (drag the edge bars to any width/height — this replaces fixed device-width presets; drag to ~375 px for a mobile check).
 - Plain-text tab shows the `plainText` render.
 - Browser preview ≠ Outlook: for real client coverage, pipe the exported HTML to Litmus/Email on Acid manually or in CI. Also surface a size warning in the toolbar when the HTML approaches ~100 KB (Gmail clipping).
+
+## `<EmailBuilder>` — the one-component entry point
+
+The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample document it opens.
+
+```tsx
+<EmailBuilder
+  className="h-screen"                     // the shell fills its container
+  defaultValue={template}                  // omit entirely to start a blank email
+  onSave={(document) => api.save(document)}
+  blocks={[productGridBlock]}              // optional; merged into the preset by type
+  mergeTags={mergeTags}
+  documentName="July invoice"
+/>
+```
+
+- Everything `<BuilderShell>` accepts passes through (saving, panels, `actions`, `topBar`, labels), plus `mode`/`defaultMode`/`onModeChange`, `showModeToggle` and `previewDebounceMs`. Title and icon default to "Email builder" + `IconMail`.
+- With no `value`/`defaultValue` it seeds a blank document from `email-root`, whose `onCreate` already supplies the white container — so the zero-config form opens on an empty-but-usable email.
+- `onSave` receives the **document**, never HTML: rendering belongs to `./email/render`, on whichever side the host persists from. An autosaving editor must not pay a react-email render per keystroke burst.
+- Preview mode is per-instance UI state, not document state — it stays out of the store (like `mode` did in the playground), so it never enters history or a save payload.
 
 ## Editor-canvas styling notes
 

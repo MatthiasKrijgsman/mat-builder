@@ -248,18 +248,21 @@ Snapshot history — immer's structural sharing makes snapshots cheap (unchanged
 </BuilderProvider>
 ```
 
+`onChange` fires for committed **user commands** only. An external `value` replacement syncs the store without it (`syncExternalDocument`), which is what lets the shell's save controller treat `onChange` as the dirty signal (04 §Shell): a document handed in from the outside is already saved. Saving itself is host state and stays out of the store — `useDocumentSave` owns it.
+
 ## 4. Public API sketch
 
 ```ts
 // core (server-safe)
-export { defineBlock, createRegistry, createDocument, validateDocument, migrateDocument,
-         walkDocument, findLocation, findAncestors, isDescendant, canDropAt } from "./core";
+export { defineBlock, createRegistry, mergeBlockDefinitions, createDocument, validateDocument,
+         migrateDocument, walkDocument, findLocation, findAncestors, isDescendant, canDropAt } from "./core";
 export type { BuilderDocument, BlockNode, BlockDefinition, BlockRegistry, Location } from "./core";
 // createRegistry/BlockRegistry are public because createDocument & validateDocument take a
 // registry; the command & history functions stay internal — the provider's store drives them.
 
 // react
 export { BuilderProvider } from "./react/provider";
+export { useDocumentSave } from "./react/save"; // dirty tracking + save orchestration (04 §Shell)
 export { useEditor,        // actions + history: { undo, redo, canUndo, canRedo }
          useSelectedBlock, // { id, node, definition } | null
          useBlockNode,     // (id) => node slice subscription
@@ -270,6 +273,9 @@ export type { MergeTag } from "./react/merge-tags"; // { token, label } — lite
 
 // UI components (each independent & restylable — see 04)
 export { Canvas, Palette, Inspector, LayersPanel, Toolbar } from "./components";
+export { BuilderShell,     // all of the above assembled: provider + docked layout + saving
+         ShellTopBar, SaveControls,
+         dockedPanel, dottedSurface, transparentSurface } from "./components/shell";
 export * as Fields from "./components/fields"; // TextField, MergeTagTextField, NumberField,
                                                // SliderField, SelectField, ColorField, ToggleField, …
 ```
@@ -286,6 +292,7 @@ mat-builder/
     dnd/                      # pragmatic-drag-and-drop integration (see 05)
     components/
       canvas/  palette/  inspector/  layers/  toolbar/
+      shell/                  # BuilderShell: the assembled editor + docked chrome (see 04)
       fields/                 # shared inspector field helpers (wrapping mat-ui inputs)
     email/                    # email block set + server-safe renderer (see 06)
   site/                       # playground app (the email builder — deployed to GitHub Pages on push to main)

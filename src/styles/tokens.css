@@ -75,6 +75,8 @@
     /* Panels (inspector & friends) */
     /* Width of the side panel columns (palette/layers left, inspector right) */
     --mat-builder-sidebar-width: 300px;
+    /* Surface behind the docked chrome (BuilderShell's top bar and side panels) */
+    --mat-builder-color-panel-bg: #ffffff;
     /* Primary text in panels — layer-row labels, etc. Soft, not pure black. */
     --mat-builder-color-panel-fg: #3f3f46;
     --mat-builder-color-panel-muted-fg: #71717a;

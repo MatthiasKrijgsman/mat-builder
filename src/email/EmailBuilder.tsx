@@ -1,0 +1,108 @@
+import { TabButtons } from "@matthiaskrijgsman/mat-ui";
+import { IconMail } from "@tabler/icons-react";
+import { useMemo, useState } from "react";
+import { Canvas } from "../components/canvas/Canvas.tsx";
+import { BuilderShell, type BuilderShellProps } from "../components/shell/BuilderShell.tsx";
+import { mergeBlockDefinitions, type AnyBlockDefinition } from "../core/index.ts";
+import { EMAIL_ROOT_TYPE, emailBlocks } from "./preset.ts";
+import { EmailPreview } from "./preview.tsx";
+
+/*
+ * <EmailBuilder> — the whole email builder as one component (docs/06):
+ * <BuilderShell> plus the email preset, the Edit/Preview toggle and the
+ * preview surface. Pass a document and a save handler and you have an editor;
+ * everything else is optional.
+ *
+ * Hosts needing a different layout keep composing <BuilderProvider> with the
+ * individual components — this component is assembled from exactly those.
+ */
+
+export type EmailBuilderMode = "edit" | "preview";
+
+export interface EmailBuilderModeLabels {
+    edit: string;
+    preview: string;
+}
+
+const DEFAULT_MODE_LABELS: EmailBuilderModeLabels = { edit: "Edit", preview: "Preview" };
+
+export interface EmailBuilderProps extends Omit<BuilderShellProps, "blocks" | "rootType" | "canvas"> {
+    /** Custom block definitions on top of the email preset. A definition whose
+     * `type` matches a preset block **replaces** it (keeping its palette
+     * position); anything else is appended. */
+    blocks?: AnyBlockDefinition[];
+    /** Controlled editing/preview mode … */
+    mode?: EmailBuilderMode;
+    /** … or the starting mode for uncontrolled usage (default "edit") */
+    defaultMode?: EmailBuilderMode;
+    onModeChange?: (mode: EmailBuilderMode) => void;
+    /** Hide the built-in Edit/Preview tabs (for a host driving `mode` itself) */
+    showModeToggle?: boolean;
+    modeLabels?: Partial<EmailBuilderModeLabels>;
+    /** Debounce before the preview re-renders the email HTML */
+    previewDebounceMs?: number;
+}
+
+export function EmailBuilder(props: EmailBuilderProps) {
+    const {
+        blocks,
+        mode: controlledMode,
+        defaultMode,
+        onModeChange,
+        showModeToggle = true,
+        modeLabels,
+        previewDebounceMs,
+        actions,
+        title = "Email builder",
+        icon = IconMail,
+        ...shellProps
+    } = props;
+
+    const definitions = useMemo(() => mergeBlockDefinitions(emailBlocks, blocks), [blocks]);
+
+    const [uncontrolledMode, setUncontrolledMode] = useState<EmailBuilderMode>(defaultMode ?? "edit");
+    const mode = controlledMode ?? uncontrolledMode;
+    const setMode = (next: EmailBuilderMode) => {
+        if (controlledMode === undefined) setUncontrolledMode(next);
+        onModeChange?.(next);
+    };
+
+    const labels = { ...DEFAULT_MODE_LABELS, ...modeLabels };
+
+    return (
+        <BuilderShell
+            {...shellProps}
+            blocks={definitions}
+            rootType={EMAIL_ROOT_TYPE}
+            title={title}
+            icon={icon}
+            actions={
+                <>
+                    {showModeToggle && (
+                        <TabButtons
+                            size="sm"
+                            tabs={(["edit", "preview"] as const).map((value) => ({
+                                label: labels[value],
+                                active: mode === value,
+                                onClick: () => setMode(value),
+                            }))}
+                        />
+                    )}
+                    {actions}
+                </>
+            }
+            canvas={
+                mode === "edit" ? (
+                    <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />
+                ) : (
+                    <EmailPreview
+                        className="h-full"
+                        initialWidth="fill"
+                        initialHeight="fill"
+                        debounceMs={previewDebounceMs}
+                    />
+                )
+            }
+        />
+    );
+}

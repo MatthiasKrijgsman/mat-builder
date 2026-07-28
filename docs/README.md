@@ -22,6 +22,7 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 | Canvas rendering | Separate **editor render** (divs/Tailwind) and **output render** (react-email) per block |
 | Packaging | **Standalone repo, published npm package** — same model as mat-ui; the in-repo `site/` playground (the email builder, auto-deployed to [GitHub Pages](https://matthiaskrijgsman.github.io/mat-builder/) on push to `main`) is the primary dev surface. (Supersedes the earlier internal-workspace-package choice — multiple companies' projects will consume the builder.) |
 | Package shape | Single package with subpath exports: `.` (editor), `./email` (block preset), `./email/render` (server-safe renderer), `./style` |
+| Consumer entry point | Two layers: `<BuilderShell>` (`.`) is the assembled editor — provider, docked layout, panels, saving; `<EmailBuilder>` (`./email`) is that plus the preset, preview mode and the Edit/Preview toggle. Every part stays individually exported, so custom layouts keep composing `<BuilderProvider>` (04 §Shell) |
 | UI primitives | `@matthiaskrijgsman/mat-ui` (peer dependency); editor chrome themable via `--mat-builder-*` CSS tokens |
 | v1 scope | Undo/redo **in** v1; multi-select and copy/paste deferred |
 | DnD engine | Atlassian Pragmatic drag and drop |

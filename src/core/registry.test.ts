@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containerAccepts, createRegistry } from "./registry.ts";
+import { containerAccepts, createRegistry, mergeBlockDefinitions } from "./registry.ts";
 import { exampleDoc, sectionBlock, testRegistry, textBlock } from "./test-fixtures.ts";
 
 describe("createRegistry", () => {
@@ -16,6 +16,37 @@ describe("createRegistry", () => {
 
     it("throws on duplicate types", () => {
         expect(() => createRegistry([textBlock, textBlock])).toThrow(/duplicate block type "text"/);
+    });
+});
+
+describe("mergeBlockDefinitions", () => {
+    const customText = { ...textBlock, label: "Custom text" };
+    const heroBlock = { ...sectionBlock, type: "hero", label: "Hero" };
+
+    it("returns the base set when there is nothing to merge", () => {
+        expect(mergeBlockDefinitions([textBlock, sectionBlock])).toEqual([textBlock, sectionBlock]);
+        expect(mergeBlockDefinitions([textBlock], [])).toEqual([textBlock]);
+    });
+
+    it("appends new types", () => {
+        expect(mergeBlockDefinitions([textBlock], [heroBlock])).toEqual([textBlock, heroBlock]);
+    });
+
+    it("replaces a matching type in place, keeping palette order", () => {
+        expect(mergeBlockDefinitions([textBlock, sectionBlock], [customText])).toEqual([customText, sectionBlock]);
+    });
+
+    it("produces a registry-safe list (no duplicates) even for repeated overrides", () => {
+        const merged = mergeBlockDefinitions([textBlock], [customText, { ...customText, label: "Last wins" }]);
+        expect(merged).toHaveLength(1);
+        expect(merged[0].label).toBe("Last wins");
+        expect(() => createRegistry(merged)).not.toThrow();
+    });
+
+    it("does not mutate the base set", () => {
+        const base = [textBlock];
+        mergeBlockDefinitions(base, [customText, heroBlock]);
+        expect(base).toEqual([textBlock]);
     });
 });
 

@@ -1,8 +1,6 @@
 "use client";
 
 import {
-    BuilderProvider,
-    Canvas,
     defaultBackground,
     defaultBorder,
     defaultEffects,
@@ -10,27 +8,19 @@ import {
     defaultSize,
     defaultSpacing,
     defaultTypography,
-    Inspector,
-    LayersPanel,
-    Palette,
     richTextMergeTagNode,
     symmetricSides,
     SYSTEM_FONT_STACK,
-    UndoRedoButtons,
     uniformSides,
     type BuilderDocument,
     type MergeTag,
 } from "@matthiaskrijgsman/mat-builder";
-import { emailBlocks, EmailPreview } from "@matthiaskrijgsman/mat-builder/email";
-import { TabButtons } from "@matthiaskrijgsman/mat-ui";
-import { IconMail } from "@tabler/icons-react";
-import { useState } from "react";
-import { dockedPanel, dottedSurface, transparentSurface } from "./floating-chrome";
+import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 
 /*
- * The email builder (docs/06): the ./email preset + preview mode.
- * Edit shows the canvas (editRender); Preview shows the real react-email
- * output in an iframe at desktop/mobile widths.
+ * The email builder (docs/06) — the whole editor is <EmailBuilder>: the
+ * ./email preset, the docked layout, preview mode and saving. This page is
+ * therefore mostly the sample document it opens with.
  */
 
 /** Consumer-provided personalization tokens (docs/06 §merge tags) — the
@@ -336,113 +326,28 @@ const initialDocument: BuilderDocument = {
     },
 };
 
-type Mode = "edit" | "preview";
-
 /** Name of the open document, shown as the top bar's trailing breadcrumb.
  * A constant for now: the playground opens one fixed sample, and the
  * document model has no name field (docs/03 §BuilderDocument) — a host app
  * would pass whatever its own storage calls this record. */
 const DOCUMENT_NAME = "July invoice";
 
+/** Stand-in for a host's persistence: the playground is a static export with
+ * no backend, so "saving" is a round trip to nowhere — enough to exercise the
+ * shell's dirty → saving → saved states and the ⌘S shortcut. */
+async function saveDocument(document: BuilderDocument): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    console.info("saved document", document);
+}
+
 export default function EmailBuilderPage() {
-    const [mode, setMode] = useState<Mode>("edit");
-
     return (
-        <BuilderProvider blocks={emailBlocks} defaultValue={initialDocument} mergeTags={mergeTags}>
-            {/* One continuous dotted surface; the top bar and panels float over it */}
-            <div className="relative h-screen" style={dottedSurface}>
-                <MainArea mode={mode} onModeChange={setMode} />
-            </div>
-        </BuilderProvider>
-    );
-}
-
-/** App bar docked full-width at the top of the screen, above the side
- * panels and canvas. Sits in flow above the work area so the artboard fits
- * (and resize-clamps) below it rather than expanding underneath.
- *
- * Left side is the doc-aware identity: an app chip (accent tile + app icon),
- * the app name, then the open document's name behind a slash — a breadcrumb,
- * so the app name stays fixed and only the trailing segment changes per
- * document. Geometry mirrors the inspector's block header (`pl-4` to line the
- * chip up with the panel icons below it, semibold label at the inherited
- * size) so the bar reads as the same chrome. */
-function TopBar({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
-    return (
-        <header
-            // mat-builder-compact-controls: the mode tabs and undo/redo are
-            // mat-ui controls like the inspector's, and opt into the same
-            // compact sm scale so they match the panels rather than sitting a
-            // size larger with a rounder corner
-            className={`mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-3 pl-4 pr-3 ${dockedPanel}`}
-        >
-            {/* min-w-0 all the way down so a long document name truncates
-                instead of shoving the mode tabs off the bar */}
-            <div className="flex min-w-0 items-center gap-3">
-                <span
-                    aria-hidden
-                    className="flex size-7 shrink-0 items-center justify-center rounded-(--border-radius-menu-item)"
-                    style={{ backgroundColor: "var(--mat-builder-color-selection)" }}
-                >
-                    <IconMail className="size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
-                </span>
-                {/* Tighter gap than the chip's: the two segments read as one
-                    path, the chip as a separate object */}
-                <div className="flex min-w-0 items-center gap-2">
-                    <h1 className="shrink-0 font-semibold">Email builder</h1>
-                    <span aria-hidden className="shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
-                        /
-                    </span>
-                    <p className="truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                        {DOCUMENT_NAME}
-                    </p>
-                </div>
-            </div>
-            <div className="ml-auto flex shrink-0 items-center gap-3">
-                <TabButtons
-                    size="sm"
-                    tabs={(["edit", "preview"] as const).map((value) => ({
-                        label: value === "edit" ? "Edit" : "Preview",
-                        active: mode === value,
-                        onClick: () => onModeChange(value),
-                    }))}
-                />
-                <UndoRedoButtons />
-            </div>
-        </header>
-    );
-}
-
-function MainArea({ mode, onModeChange }: { mode: Mode; onModeChange: (mode: Mode) => void }) {
-    return (
-        <div className="absolute inset-0 flex flex-col">
-            <TopBar mode={mode} onModeChange={onModeChange} />
-            {/* Work area below the bar: canvas column between the docked panels */}
-            <div className="relative min-h-0 flex-1">
-                {/* Canvas column. Wrapper, not className: the Artboard root is
-                    position:relative itself. transparentSurface lets the root's
-                    dot layer show through, so there is no phase seam where the
-                    canvas meets the app background */}
-                <div
-                    className="absolute inset-y-0 left-(--mat-builder-sidebar-width) right-(--mat-builder-sidebar-width)"
-                    style={transparentSurface}
-                >
-                    {mode === "edit" ? (
-                        <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />
-                    ) : (
-                        <EmailPreview className="h-full" initialWidth="fill" initialHeight="fill" />
-                    )}
-                </div>
-                <aside
-                    className={`absolute inset-y-0 left-0 z-30 flex w-(--mat-builder-sidebar-width) flex-col border-r ${dockedPanel}`}
-                >
-                    <Palette className="min-h-0 flex-1" />
-                    <LayersPanel className="min-h-0 flex-1 border-t border-stone-200" />
-                </aside>
-                <Inspector
-                    className={`absolute inset-y-0 right-0 z-30 w-(--mat-builder-sidebar-width) border-l ${dockedPanel}`}
-                />
-            </div>
-        </div>
+        <EmailBuilder
+            className="h-screen"
+            defaultValue={initialDocument}
+            mergeTags={mergeTags}
+            documentName={DOCUMENT_NAME}
+            onSave={saveDocument}
+        />
     );
 }

@@ -5,7 +5,7 @@
  */
 
 export { defineBlock } from "./define-block.ts";
-export { createRegistry, containerAccepts } from "./registry.ts";
+export { createRegistry, containerAccepts, mergeBlockDefinitions } from "./registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./registry.ts";
 export { createDocument, migrateDocument, validateDocument, DOCUMENT_VERSION } from "./document.ts";
 export { walkDocument, findLocation, findAncestors, isDescendant } from "./traversal.ts";

@@ -48,19 +48,16 @@ export type {
     TableRowVariant,
 } from "./blocks/data-table/styles.ts";
 
-/** The preset handed to <BuilderProvider blocks={emailBlocks}> */
-export const emailBlocks = [
-    emailRootBlock,
-    containerBlock,
-    textBlock,
-    buttonBlock,
-    imageBlock,
-    dividerBlock,
-    spacerBlock,
-    tableBlock,
-    dataTableBlock,
-    tableRowBlock,
-    tableCellBlock,
-];
+/** The preset handed to <BuilderProvider blocks={emailBlocks}> (defined in
+ * ./preset.ts so <EmailBuilder> can use it without importing this barrel) */
+export { emailBlocks, EMAIL_ROOT_TYPE } from "./preset.ts";
 
 export { EmailPreview, type EmailPreviewProps } from "./preview.tsx";
+
+/** The whole email builder in one component — preset, layout, preview, saving */
+export {
+    EmailBuilder,
+    type EmailBuilderProps,
+    type EmailBuilderMode,
+    type EmailBuilderModeLabels,
+} from "./EmailBuilder.tsx";

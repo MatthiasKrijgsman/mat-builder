@@ -1,5 +1,7 @@
 # 04 — Components & Interactions
 
+Two ways in, same parts underneath. **`<BuilderShell>`** (and its email flavour `<EmailBuilder>`, 06) is the assembled editor — provider, docked layout, panels, undo/redo and saving in one component; see [§Shell](#shell) below. Everything it is built from stays individually exported, so the composable route below remains first-class.
+
 Every editor surface is an independent component. The host app composes them inside `<BuilderProvider>` — the package ships no fixed layout:
 
 ```tsx
@@ -34,6 +36,11 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 ├── LayersPanel                    hierarchy tree
 │   └── LayerRow                   icon + label, expand caret, drag source + drop target
 └── Toolbar                        undo/redo, zoom/device width, preview toggle, custom slots
+
+BuilderShell                       all of the above, assembled + docked + saving
+├── ShellTopBar                    app/document breadcrumb, host actions, undo/redo, save
+│   └── SaveControls               status line ("Unsaved changes" / "Saving…" / …) + Save button
+└── (the panels and canvas above, in the docked layout)
 ```
 
 ### Canvas
@@ -102,6 +109,28 @@ All three panels share the same anatomy so they read as one family: any pinned r
 ### Toolbar
 
 Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<DeviceWidthSwitch />`, `<PreviewToggle />`, plus a children slot for app-specific actions (Save, Send test email). Ships as a convenience assembly; hosts can build their own from `useEditor()`.
+
+### Shell
+
+`<BuilderShell>` is the whole editor as one component — the layout every consumer was otherwise re-deriving from the playground page. It renders the provider itself, so it is the outermost builder element:
+
+```tsx
+<BuilderShell
+  blocks={blocks} rootType="email-root"      // rootType starts a blank document
+  defaultValue={document}                    // or value/onChange for controlled
+  onSave={(doc) => api.save(doc)}            // Save button + ⌘S; autoSaveMs to debounce
+  documentName="July invoice" title="Email builder" icon={IconMail}
+  actions={<Button>Send test</Button>}       // extra top-bar controls
+  panels={{ layers: false }}                 // any panel can be dropped
+  canvas={<EmailPreview />}                  // swap the editing surface
+  className="h-screen"                       // the shell fills its container
+/>
+```
+
+- **Layout**: one continuous dotted surface (`dottedSurface`, exported with `dockedPanel`/`transparentSurface` from the same module) with the top bar in flow above a work area, palette + layers docked left, inspector docked right, canvas between them. Hiding a side panel gives its width back to the canvas. `topBar={false}` (or a node) replaces the bar for hosts bringing their own header.
+- **Document**: `value`/`defaultValue` exactly as the provider takes them; with neither, `rootType` seeds a blank document through `createDocument` (the root's `onCreate` fills it).
+- **Blocks**: the shell takes a final list. The presets' wrappers (`<EmailBuilder blocks={…}>`) merge host definitions into the preset with `mergeBlockDefinitions` — same `type` replaces in place, new types append — because `createRegistry` throws on duplicates.
+- **Saving** (`useDocumentSave`, exported for custom layouts): host state, deliberately **not** in the editor store, and driven by the provider's `onChange` rather than by watching the document. That is what makes an external `value` replacement land clean: `onChange` fires only for committed user commands, while a document loaded from the server is already saved. `onSave` gets the document; hosts needing HTML call `renderEmail` themselves (`./email/render`) — the shell never renders output on the save path. Manual save is a Save button plus ⌘/Ctrl+S (bound on the window, so it beats the browser's own save dialog from anywhere in the app); `autoSaveMs` adds debounced background saves on top. Status runs `idle → dirty → saving → saved`, a rejected `onSave` shows "Save failed" and leaves the edits pending so the button is the retry, and unsaved edits arm a `beforeunload` guard. Wording is overridable (`saveLabels`) for non-English hosts.
 
 ## Interaction model
 
