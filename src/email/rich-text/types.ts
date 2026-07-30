@@ -76,8 +76,9 @@ export interface RichMergeTagNode extends RichNodeBase {
     type: "merge-tag";
     token: string;
     label?: string;
-    /** Inline CSS string (text-node syntax) — typography snapshot so canvas
-     * chips scale with the surrounding text; ignored by the output path. */
+    /** Inline CSS string (text-node syntax) — typography snapshot so the tag
+     * matches the run it sits in: canvas chips scale with the surrounding
+     * text, and the output token carries the same style. */
     style?: string;
 }
 

@@ -40,9 +40,10 @@ export interface EmailPreviewProps {
 }
 
 export function EmailPreview({ className, initialWidth = 600, initialHeight = 720, debounceMs = 300 }: EmailPreviewProps) {
-    const { store } = useBuilderContext();
+    const { store, registry } = useBuilderContext();
     const document = useBuilderState((s) => s.document);
     const actions = useBuilderState((s) => s.actions);
+    const rootNode = document.blocks[document.rootId];
     const [html, setHtml] = useState<string>("");
     // Mount-time read — a size the user dragged on the Canvas carries over
     const [persistedSize] = useState(() => store.getState().artboardSize);
@@ -79,6 +80,10 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
             initialHeight={initialHeight}
             size={persistedSize}
             onSizeChange={(size) => actions.setArtboardSize(size)}
+            // Same reason as the Canvas (docs/03 §getArtboardStyle): the email's
+            // page background stops at the iframe's content width, so without
+            // this the frame's own paper shows in the scrollbar's gutter.
+            frameStyle={rootNode && registry.getDefinition(rootNode.type)?.getArtboardStyle?.(rootNode.props)}
         >
             <iframe title="Email preview" srcDoc={html} className="h-full w-full border-0" />
         </Artboard>

@@ -158,6 +158,7 @@ interface BlockDefinition<P> {
   // rendering & inspecting
   editRender: ComponentType<EditRenderProps<P>>;
   inspector?: ComponentType<InspectorProps<P>>;
+  getArtboardStyle?: (props: P) => CSSProperties; // root blocks only — see below
   // behavior policy
   canDelete?: boolean;                     // default true
   canDrag?: boolean;                       // default true (root: false)
@@ -182,6 +183,8 @@ interface InspectorProps<P> {
 `update` merges **shallowly** (top-level keys replace). Object-valued props — the style-group values below — must therefore always be patched with the *complete* next object, never a nested partial; the shipped style-group components guarantee this.
 
 `getWrapperProps` exists for blocks whose wrapper **is** the styled element (a `<td>`: its fill, padding, width and spans have nowhere else to go — an inner div would not be the table cell). It receives a `BlockContext` (`{ document, location, siblingCount }`) because such a block is usually one part of a composite and needs state from its ancestors and siblings — a cell resolving its table's border mode, its own row/column index, the row count for corner radii. `EmailRenderer` takes the same context as a third argument, threaded down by `buildEmailTree`, so both renders resolve identically. Two caveats: BlockView reads the document from the store **unsubscribed** (correct only because an ancestor change re-renders the subtree top-down — memoizing BlockView would break it), and walking up costs a `findLocation` scan per block.
+
+`getArtboardStyle` styles the Artboard frame — the paper the canvas draws on — and applies only when the block is the document root. A root that paints a page background needs it: `editRender` output sits inside the frame's scroll container, so it covers the content width only, and the frame's own `--mat-builder-color-artboard-bg` stays visible in the scrollbar's gutter (the track itself is transparent). The email root maps its `backgroundColor` through it, so page colour and gutter always agree.
 
 `onCreate` children are **defaults**: an explicit `NewBlockSpec` from the parent wins, so a block that seeds a whole subtree (a table describing its rows and their cells) does not have those children replaced by each child type's own `onCreate`.
 

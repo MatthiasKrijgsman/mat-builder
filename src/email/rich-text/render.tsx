@@ -116,8 +116,16 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions, isLast 
                 );
             }
             // Output path: the literal token as escaped text — substitution
-            // happens downstream (the ESP), never here.
-            return element.token;
+            // happens downstream (the ESP), never here. The snapshot still
+            // applies: the token stands in for text inside its run, so it has
+            // to read like that run and not like the block's base typography.
+            const css = parseTextStyle(element.style);
+            if (Object.keys(css).length === 0) return element.token;
+            return (
+                <span key={key} style={css}>
+                    {element.token}
+                </span>
+            );
         }
         case "paragraph": {
             const element = node as RichElementNode;

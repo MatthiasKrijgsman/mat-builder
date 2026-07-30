@@ -191,6 +191,15 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     /* rendering & inspecting */
     editRender: ComponentType<EditRenderProps<P>>;
     inspector?: ComponentType<InspectorProps<P>>;
+    /**
+     * Style merged onto the Artboard frame when this block is the document
+     * ROOT (ignored otherwise) — the paper the canvas draws the document on.
+     *
+     * A root that paints a page background needs this: `editRender` output
+     * lives inside the frame's scroll container, so it only covers the content
+     * width and the scrollbar gutter keeps showing the frame's own colour.
+     */
+    getArtboardStyle?: (props: P) => CSSProperties;
 
     /* behavior policy */
     /** @default true */

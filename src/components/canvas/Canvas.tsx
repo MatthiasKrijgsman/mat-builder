@@ -81,6 +81,10 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
             // the artboard); the transition is always present so the ring/glow animate
             // in AND out with the same spring as block chrome
             frameStyle={{
+                // The root paints the artboard itself (a page background) — without
+                // this the frame's own colour stays visible in the scrollbar gutter,
+                // which the root's editRender can't reach from inside the scroller.
+                ...(rootNode && registry.getDefinition(rootNode.type)?.getArtboardStyle?.(rootNode.props)),
                 transition:
                     "box-shadow var(--mat-builder-duration-shadow) var(--mat-builder-ease-spring)",
                 ...(isRootSelected

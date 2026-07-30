@@ -24,6 +24,10 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
       main: [ { type: "container", props: { background: { ...defaultBackground, type: "solid", color: "#FFFFFF" } } } ],
     },
   }),
+  // The artboard IS the email page, so the page colour belongs on the frame too
+  // — the body div below stops at the content width and leaves the canvas
+  // scrollbar's gutter on bare paper.
+  getArtboardStyle: (props) => ({ backgroundColor: props.backgroundColor }),
   editRender: ({ props, containers }) => (
     <div style={ emailRootBodyStyles(props) }>
       <div style={ { ...emailRootContainerStyles(props), margin: "0 auto", width: "100%" } }>

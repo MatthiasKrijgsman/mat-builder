@@ -82,12 +82,17 @@ export const ensureRichText = (content: string): string =>
     isRichTextContent(content) ? content : richTextParagraph(content);
 
 /** A merge-tag node (docs/06 §merge tags) for composing documents in samples
- * and tests; matches MergeTagNode.exportJSON on the editor side. */
-export const richTextMergeTagNode = (token: string, label?: string) => ({
+ * and tests; matches MergeTagNode.exportJSON on the editor side.
+ *
+ * `style` is the typography snapshot the editor takes from the caret on
+ * insert — pass the style of the run the tag sits in, or the tag falls back
+ * to the block's base typography and reads as an outlier in both renders. */
+export const richTextMergeTagNode = (token: string, label?: string, style?: string) => ({
     type: "merge-tag",
     version: 1,
     token,
     ...(label !== undefined ? { label } : {}),
+    ...(style ? { style } : {}),
 });
 
 export const DEFAULT_TEXT_CONTENT = richTextParagraph("Lorem ipsum dolor sit amet");

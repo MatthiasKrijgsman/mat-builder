@@ -21,48 +21,29 @@ The docs are living documents: when an implementation decision deviates from the
 
 ## Repository layout
 
-This is a pnpm workspace (`pnpm-workspace.yaml`) with two packages, mirroring the mat-ui repo:
-- **Root** (`@matthiaskrijgsman/mat-builder`) — the published library, built with Vite from `src/`
-- **`site/`** (`@matthiaskrijgsman/mat-builder-site`, private) — the Next.js playground app (port 6007), depends on the library via `workspace:*`. This is the primary development surface — most iteration happens here, not in consuming projects. The playground **is** the email builder (root page, `site/app/page.tsx`); it's statically exported (`output: "export"`, basePath `/mat-builder`) and auto-deployed to GitHub Pages at <https://matthiaskrijgsman.github.io/mat-builder/> on every push to `main` (`.github/workflows/deploy-site.yml`).
+`site/` is the primary development surface — most iteration happens here, not in consuming projects. The playground **is** the email builder (root page, `site/app/page.tsx`).
 
 ## Commands
 
-- **Build (library):** `pnpm build` (Vite library build + TypeScript declaration emit)
 - **Watch build:** `pnpm dev:watch` (rebuilds `dist/` on change — run alongside `pnpm site`, since the site consumes `dist/`)
-- **Test:** `pnpm test` (vitest; `pnpm test:watch` for watch mode)
-- **Lint:** `pnpm lint`
-- **Playground:** `pnpm site` (Next.js dev server on port 6007)
 
 ## Architecture
 
 ### Library build & entry points
 
-Three build entries (see `vite.config.ts`), ESM only:
-
-| Export | Source | Notes |
-|---|---|---|
-| `@matthiaskrijgsman/mat-builder` | `src/index.tsx` | editor: core + provider + UI components (client, `"use client"` banner) |
-| `./email` | `src/email/index.tsx` | email block definitions preset (client) |
-| `./email/render` | `src/email/render.ts` | **server-safe** — document → email HTML via react-email; imported by backend code. Must never import editor code, mat-ui, or anything client-only. The build omits its `"use client"` banner. |
-| `./style` | `src/style.css` | consumers must import this for editor styles |
-
 - All `dependencies` and `peerDependencies` (including subpaths) are externalized — never bundle them. Pragmatic drag and drop keeps module-level registries; duplicating it breaks drags.
-- Type declarations are emitted separately via `tsconfig.build.json`.
+- `./email/render` is **server-safe** — it must never import editor code, mat-ui, or anything client-only, and the build omits its `"use client"` banner.
+- `./style` must be imported by consumers for editor styles.
 - `react-email` is an **optional peer dependency** — only consumers using the email preset install it. Core (`.`) must never import it.
 
 ### Source organization (follows docs/03 §5)
 
 - `src/core/` — document model, block definitions/registry, commands, history, traversal. **Pure and server-safe: no React DOM, no browser APIs.** All document mutations go through the command layer.
-- `src/react/` — `BuilderProvider`, per-instance zustand store, hooks, keyboard handling
-- `src/dnd/` — Pragmatic drag and drop integration
-- `src/components/` — `canvas/`, `palette/`, `inspector/`, `layers/`, `toolbar/`, `fields/`
-- `src/email/` — email block set + server-safe renderer
 
 ### UI primitives & styling
 
 - Editor chrome (inspector fields, buttons, panels) is built from **mat-ui components** — don't hand-roll primitives mat-ui already has.
 - All editor-chrome colors/structure use CSS custom properties in `src/styles/tokens.css` (prefix `--mat-builder-*`), so consuming projects can retheme without forking. Same philosophy as mat-ui's tokens.
-- Tailwind v4 via `@tailwindcss/vite`; path alias `@/` → `src/` (tsconfig + vite config).
 
 ### Key design invariants
 
