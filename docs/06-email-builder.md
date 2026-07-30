@@ -149,7 +149,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 ## `<EmailBuilder>` — the one-component entry point
 
-The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample document it opens.
+The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample documents it opens (`site/app/samples/` — a July invoice and an Aura One product launch, each using every block in the preset) plus the picker that switches between them, passed through `actions`.
 
 ```tsx
 <EmailBuilder
