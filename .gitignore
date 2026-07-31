@@ -27,6 +27,7 @@ dist-ssr
 site/.next
 site/out
 site/next-env.d.ts
+site/tsconfig.tsbuildinfo
 
 # Claude Code local config
 .claude/settings.local.json
