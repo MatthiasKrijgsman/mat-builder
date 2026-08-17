@@ -25,8 +25,10 @@ import type { EmailSample } from "./types";
  *
  * It uses every block in the preset, deliberately — nav and feature grid are
  * horizontal containers, the spec sheet is a table, and the hero pairs a
- * filled button with a borderless one as the quiet secondary action — so the
- * playground's one open document doubles as a visual smoke test.
+ * filled button with a borderless one as the quiet secondary action — so
+ * whichever sample is open doubles as a visual smoke test. `./northbound` is
+ * the colourful counterpart, and covers the gradient and conditional block
+ * this one has no use for.
  */
 
 const mergeTags: MergeTag[] = [

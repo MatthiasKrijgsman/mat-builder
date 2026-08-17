@@ -216,7 +216,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 ## `<EmailBuilder>` — the one-component entry point
 
-The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample document it opens (`site/app/samples/` — an Aura One product launch, using every block in the preset so it doubles as a visual smoke test). `EMAIL_SAMPLES` stays a list: a second template plus a picker passed through `actions` (which is how two samples were switched between) drops straight back in.
+The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample documents it opens (`site/app/samples/`) and the `InputSelect` it passes through `actions` to switch between them. Both templates — an Aura One product launch and a Northbound '26 conference invite — use every block in the preset, so whichever is open doubles as a visual smoke test; between them they also cover the two things one template had no use for, a gradient background and a conditional block. Switching remounts the builder (the picker keys it on the sample id), which is what a host does when it loads another document.
 
 ```tsx
 <EmailBuilder
