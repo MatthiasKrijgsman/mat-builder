@@ -17,7 +17,7 @@ import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
   defaultValue={template}                    // omit to start a blank email
   onSave={(document) => api.save(document)}  // Save button + ⌘S; autoSaveMs to autosave
   blocks={[myCustomBlock]}                   // optional, merged into the email preset
-  documentName="July invoice"
+  documentName="Aura One launch"
 />;
 ```
 

@@ -23,9 +23,10 @@ import type { EmailSample } from "./types";
  * section, generous vertical rhythm, grey feature cards and a comparison
  * table with hairline rules only.
  *
- * Like the invoice sample it uses every block in the preset — nav and feature
- * grid are horizontal containers, the spec sheet is a table, and the hero
- * pairs a filled button with a borderless one as the quiet secondary action.
+ * It uses every block in the preset, deliberately — nav and feature grid are
+ * horizontal containers, the spec sheet is a table, and the hero pairs a
+ * filled button with a borderless one as the quiet secondary action — so the
+ * playground's one open document doubles as a visual smoke test.
  */
 
 const mergeTags: MergeTag[] = [

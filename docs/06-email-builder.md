@@ -216,7 +216,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 ## `<EmailBuilder>` — the one-component entry point
 
-The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample documents it opens (`site/app/samples/` — a July invoice and an Aura One product launch, each using every block in the preset) plus the picker that switches between them, passed through `actions`.
+The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample document it opens (`site/app/samples/` — an Aura One product launch, using every block in the preset so it doubles as a visual smoke test). `EMAIL_SAMPLES` stays a list: a second template plus a picker passed through `actions` (which is how two samples were switched between) drops straight back in.
 
 ```tsx
 <EmailBuilder
@@ -225,7 +225,7 @@ The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + t
   onSave={(document) => api.save(document)}
   blocks={[productGridBlock]}              // optional; merged into the preset by type
   mergeTags={mergeTags}
-  documentName="July invoice"
+  documentName="Aura One launch"
 />
 ```
 

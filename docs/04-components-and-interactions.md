@@ -126,7 +126,7 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
   blocks={blocks} rootType="email-root"      // rootType starts a blank document
   defaultValue={document}                    // or value/onChange for controlled
   onSave={(doc) => api.save(doc)}            // Save button + ⌘S; autoSaveMs to debounce
-  documentName="July invoice" title="Email builder" icon={IconMail}
+  documentName="Aura One launch" title="Email builder" icon={IconMail}
   actions={<Button>Send test</Button>}       // extra top-bar controls
   panels={{ layers: false }}                 // any panel can be dropped
   canvas={<EmailPreview />}                  // swap the editing surface
