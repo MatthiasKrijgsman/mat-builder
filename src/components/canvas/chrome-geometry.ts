@@ -69,6 +69,49 @@ export function computeChromeGeometry(
     };
 }
 
+/** Badge box (px) and how far it sits from the block's top-right corner. */
+export const MARKER_SIZE = 18;
+export const MARKER_INSET = 6;
+
+export interface MarkerGeometry {
+    /** Top-left of the badge, relative to the overlay */
+    x: number;
+    y: number;
+    /**
+     * The badge is a persistent mark on an unselected block, so it cannot be
+     * clipped mid-glyph the way a ring can — it is shown only while it fits
+     * entirely inside the artboard viewport, and hidden the moment its block
+     * scrolls far enough that it wouldn't.
+     */
+    visible: boolean;
+}
+
+/**
+ * Places the conditional badge in a block's top-right corner (ChromeOverlay).
+ *
+ * The inset collapses on blocks too small to host it — a 1px divider centers
+ * the badge on its line instead of hanging it below — so the mark stays
+ * attached to what it describes at any block size.
+ */
+export function computeMarkerGeometry(block: RectLike, overlay: RectLike, scroller: RectLike): MarkerGeometry {
+    const inset = (extent: number) => Math.min(MARKER_INSET, (extent - MARKER_SIZE) / 2);
+    const left = block.right - MARKER_SIZE - inset(block.width);
+    const top = block.top + inset(block.height);
+    return {
+        x: left - overlay.left,
+        y: top - overlay.top,
+        visible:
+            top >= scroller.top &&
+            top + MARKER_SIZE <= scroller.bottom &&
+            left >= scroller.left &&
+            left + MARKER_SIZE <= scroller.right,
+    };
+}
+
+export function markerChanged(a: MarkerGeometry, b: MarkerGeometry): boolean {
+    return a.x !== b.x || a.y !== b.y || a.visible !== b.visible;
+}
+
 export function geometryChanged(a: ChromeGeometry, b: ChromeGeometry): boolean {
     return (
         a.x !== b.x ||

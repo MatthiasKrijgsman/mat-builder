@@ -14,6 +14,9 @@ import { type ReactNode, useState } from "react";
 export interface InspectorGroupProps {
   label: string;
   defaultOpen?: boolean;
+  /** Status shown at the right of the header, before the chevron — a summary
+   * that stays readable while the group is collapsed ("2 rules"). */
+  meta?: ReactNode;
   children: ReactNode;
 }
 
@@ -27,7 +30,7 @@ const headerClasses =
   "transition-colors duration-(--control-transition-duration) " +
   "hover:bg-(--mat-builder-color-layer-row-hover-bg) focus:outline-none focus:ring-0";
 
-export function InspectorGroup({ label, defaultOpen = true, children }: InspectorGroupProps) {
+export function InspectorGroup({ label, defaultOpen = true, meta, children }: InspectorGroupProps) {
   const [ open, setOpen ] = useState(defaultOpen);
   // Animate only user-initiated opens — groups mount open (selection change)
   // without a cascade of entrance animations.
@@ -49,10 +52,17 @@ export function InspectorGroup({ label, defaultOpen = true, children }: Inspecto
         >
           { label }
         </span>
-        <IconChevronRight
-          className={ `size-4 shrink-0 transition-transform duration-200 ${ open ? "rotate-90" : "" }` }
-          style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
-        />
+        <span className="flex min-w-0 shrink-0 flex-row items-center gap-1.5">
+          { meta !== undefined && meta !== null && (
+            <span className="truncate text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+              { meta }
+            </span>
+          ) }
+          <IconChevronRight
+            className={ `size-4 shrink-0 transition-transform duration-200 ${ open ? "rotate-90" : "" }` }
+            style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+          />
+        </span>
       </button>
       { open && (
         <motion.div

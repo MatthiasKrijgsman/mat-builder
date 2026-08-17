@@ -5,6 +5,7 @@ import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 import { computeChromeGeometry, geometryChanged, RING_SLACK, type ChromeGeometry } from "./chrome-geometry.ts";
 import { ChromePill } from "./ChromePill.tsx";
+import { ConditionalMarkers } from "./ConditionalMarkers.tsx";
 
 /*
  * ChromeOverlay — the per-block selection/hover chrome layer (docs/04
@@ -66,6 +67,10 @@ export function ChromeOverlay({ scrollerRef }: { scrollerRef: RefObject<HTMLDivE
                     />
                 ))}
             </AnimatePresence>
+            {/* Persistent, not interaction-driven: one badge per conditional
+                block, under the interaction frames so a selection ring and its
+                handles always win the corner. */}
+            <ConditionalMarkers scrollerRef={scrollerRef} />
         </div>
     );
 }

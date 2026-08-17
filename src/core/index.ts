@@ -18,10 +18,22 @@ export {
     insertBlock,
     moveBlock,
     updateProps,
+    setVisibility,
     removeBlock,
     duplicateBlock,
     setDocument,
 } from "./commands.ts";
+export {
+    defaultVisibility,
+    describeVisibility,
+    evaluateRule,
+    hasVisibilityRules,
+    isBlockVisible,
+    isVisible,
+    OPERATOR_LABELS,
+    VALUE_OPERATORS,
+} from "./visibility.ts";
+export type { BlockVisibility, MergeTagValues, VisibilityOperator, VisibilityRule } from "./visibility.ts";
 export type { InsertBlockPayload } from "./commands.ts";
 export { createHistory, recordHistory, undo, redo, HISTORY_CAP, HISTORY_COALESCE_MS } from "./history.ts";
 export type { RecordHistoryOptions } from "./history.ts";

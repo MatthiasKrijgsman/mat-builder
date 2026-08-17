@@ -11,7 +11,8 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 3. [Architecture](03-architecture.md) — document model, block definition API, editor state, undo/redo, repository layout
 4. [Components & interactions](04-components-and-interactions.md) — canvas, inspector, palette, layers tree; selection, keyboard, user flows
 5. [Drag and drop](05-drag-and-drop.md) — Pragmatic drag and drop integration: palette → canvas, reordering, reparenting, tree panel
-6. [Email builder](06-email-builder.md) — the `./email` preset: block set, editor vs output rendering, export pipeline
+6. [Email builder](06-email-builder.md) — the `./email` preset: block set, editor vs output rendering, export pipeline, merge tags & conditional visibility
+7. [Production readiness](07-production-readiness.md) — what's left before external consumers install it: publishing, packaging, the control seams, output QA
 
 ## Key decisions
 
@@ -25,6 +26,7 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 | Consumer entry point | Two layers: `<BuilderShell>` (`.`) is the assembled editor — provider, docked layout, panels, saving; `<EmailBuilder>` (`./email`) is that plus the preset, preview mode and the Edit/Preview toggle. Every part stays individually exported, so custom layouts keep composing `<BuilderProvider>` (04 §Shell) |
 | UI primitives | `@matthiaskrijgsman/mat-ui` (peer dependency); editor chrome themable via `--mat-builder-*` CSS tokens |
 | v1 scope | Undo/redo **in** v1; multi-select and copy/paste deferred |
+| Conditional blocks | Rules live on `BlockNode.visibility` (a node field, so every block has it); resolved **at render time** — `renderEmail(doc, { values })` omits blocks whose rules fail. Emitting ESP template conditionals (`{{#if}}`/Liquid) is deliberately not built; it needs a consumer-supplied syntax adapter (06 §Conditional visibility) |
 | DnD engine | Atlassian Pragmatic drag and drop |
 
 Decisions agreed 2026-07-03; docs seeded from the claude-research exploration the same day. These are living documents — update them in the same change when implementation deviates.
@@ -35,6 +37,7 @@ Decisions agreed 2026-07-03; docs seeded from the claude-research exploration th
 - **Keyboard-only block moving** — native DnD isn't keyboard-accessible; a "Move up/down/into" menu is cheap to add on top of `moveBlock`. v1 or v1.5?
 - **Release automation** — versioning is manual `0.x` bumps like mat-ui for now; adopt changesets + CI publish-on-merge once release frequency makes manual bumps annoying.
 - **Template features** — saved/reusable block presets ("saved sections") are a likely email-builder ask; the document model supports it (serialize a subtree), but it's unscoped.
+- **ESP-side conditionals** — visibility rules resolve at render time today. A host that uploads the template and lets the ESP personalize needs the rules emitted as `{{#if}}`/Liquid/`*|IF:|*` wrappers instead: a consumer-supplied conditional-syntax adapter plus a sentinel/string-replace pass around `render()` (React escapes quotes in text children). The rule model already fits; nobody has needed it yet.
 
 ## Build order
 

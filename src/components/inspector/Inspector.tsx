@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
 import { tintByCategory, tintCssVar } from "../palette/tints.ts";
+import { VisibilityGroup } from "./VisibilityGroup.tsx";
 
 /*
  * Inspector — see docs/04 §Inspector. Binds to the selection: pinned header
@@ -80,20 +81,30 @@ export function Inspector({ className }: InspectorPanelProps) {
         <Divider />
       </header>
 
-      { InspectorForm ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+      { /* The definition's own form, then the groups every block gets whether
+           its definition asked for them or not — conditional visibility is a
+           node field, so a consumer's blocks inherit it without doing
+           anything (docs/06 §Conditional visibility). */ }
+      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+        { InspectorForm ? (
           <InspectorForm
             key={ id }
             id={ id }
             props={ node.props }
             update={ (patch) => actions.updateProps(id, patch as Record<string, unknown>) }
           />
-        </div>
-      ) : (
-        <p className="text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
-          This block has no settings.
-        </p>
-      ) }
+        ) : (
+          <p className="px-3 py-2 text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+            This block has no settings.
+          </p>
+        ) }
+        { !isRoot && (
+          <>
+            { InspectorForm && <Divider/> }
+            <VisibilityGroup key={ id } id={ id }/>
+          </>
+        ) }
+      </div>
     </div>
   );
 }

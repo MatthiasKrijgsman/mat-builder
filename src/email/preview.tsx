@@ -43,6 +43,11 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
     const { store, registry } = useBuilderContext();
     const document = useBuilderState((s) => s.document);
     const actions = useBuilderState((s) => s.actions);
+    // Stand-in merge-tag data (docs/06 §Preview data): substituted into the
+    // copy and evaluated by conditional blocks, so the preview shows what a
+    // recipient with this data would get. Always passed — even empty, which
+    // is what makes "is provided" rules resolve to false here.
+    const values = useBuilderState((s) => s.previewValues);
     const rootNode = document.blocks[document.rootId];
     const [html, setHtml] = useState<string>("");
     // Mount-time read — a size the user dragged on the Canvas carries over
@@ -59,7 +64,7 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
     useEffect(() => {
         let cancelled = false;
         const timer = setTimeout(() => {
-            renderEmail(document)
+            renderEmail(document, { values, substituteTokens: true })
                 .then((result) => {
                     if (!cancelled) setHtml(withPreviewScrollbar(result.html));
                 })
@@ -71,7 +76,7 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [document, debounceMs]);
+    }, [document, values, debounceMs]);
 
     return (
         <Artboard

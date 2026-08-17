@@ -114,6 +114,46 @@
     left: 6px;
 }
 
+/* Conditional-visibility badge (ConditionalMarkers): a persistent mark in the
+   top-right corner of every block with visibility rules. Positioned by the
+   overlay's rAF loop via transform, so left/top stay at 0. */
+.mat-builder-chrome-conditional {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--mat-builder-conditional-badge-size);
+    height: var(--mat-builder-conditional-badge-size);
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--mat-builder-color-conditional-bg);
+    color: var(--mat-builder-color-conditional-fg);
+    box-shadow:
+        0 0 0 1px var(--mat-builder-color-conditional-ring),
+        0 1px 3px rgb(0 0 0 / 0.12);
+    opacity: var(--mat-builder-conditional-badge-opacity);
+    /* The overlay is pointer-events-none; the badge opts back in for its
+       tooltip and click-to-select. */
+    pointer-events: auto;
+    cursor: pointer;
+    /* Opacity only: `transform` is the rAF loop's placement channel, and
+       transitioning it would spring-lag the badge behind its block on every
+       scroll and resize. The hover pop lives on the glyph instead. */
+    transition: opacity var(--mat-builder-duration-ring) ease;
+}
+.mat-builder-chrome-conditional > svg {
+    transition: transform var(--mat-builder-duration-ring) var(--mat-builder-ease-spring);
+}
+.mat-builder-chrome-conditional:hover {
+    opacity: 1;
+}
+.mat-builder-chrome-conditional:hover > svg {
+    transform: scale(1.15);
+}
+
 /* The block element itself (BlockView wrapper) — lift-in-place drag treatment.
    Ring/shadows live in the overlay; the block only scales (real content lifts)
    and the overlay tracks the transformed rect. */

@@ -301,3 +301,74 @@ describe("merge tags", () => {
         expect(store.getState().mergeTags).toBe(tags);
     });
 });
+
+describe("visibility", () => {
+    const visibility = {
+        mode: "rules" as const,
+        match: "all" as const,
+        rules: [{ token: "{{plan}}", operator: "eq" as const, value: "Pro" }],
+    };
+
+    it("sets and clears a block's rules", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.setVisibility("t1", visibility);
+        expect(store.getState().document.blocks.t1.visibility).toEqual(visibility);
+        actions.setVisibility("t1", undefined);
+        expect(store.getState().document.blocks.t1.visibility).toBeUndefined();
+    });
+
+    it("is a no-op on the root and on unknown blocks", () => {
+        const { store } = makeStore();
+        const before = store.getState().document;
+        store.getState().actions.setVisibility("root", visibility);
+        store.getState().actions.setVisibility("ghost", visibility);
+        expect(store.getState().document).toBe(before);
+    });
+
+    it("coalesces per block, so tweaking one rule is one undo step", () => {
+        const { store, tick } = makeStore();
+        const { actions } = store.getState();
+        actions.setVisibility("t1", visibility);
+        tick(100);
+        actions.setVisibility("t1", { ...visibility, match: "any" });
+        expect(store.getState().history.past).toHaveLength(1);
+
+        actions.undo();
+        expect(store.getState().document.blocks.t1.visibility).toBeUndefined();
+    });
+});
+
+describe("preview values", () => {
+    it("sets values and treats an emptied field as absent", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        expect(store.getState().previewValues).toEqual({});
+
+        actions.setPreviewValue("{{plan}}", "Pro");
+        expect(store.getState().previewValues).toEqual({ "{{plan}}": "Pro" });
+
+        // Cleared, not stored as "" — `exists` rules have to read it as missing
+        actions.setPreviewValue("{{plan}}", "");
+        expect(store.getState().previewValues).toEqual({});
+    });
+
+    it("skips no-op writes", () => {
+        const { store } = makeStore();
+        store.getState().actions.setPreviewValue("{{plan}}", "Pro");
+        const values = store.getState().previewValues;
+        store.getState().actions.setPreviewValue("{{plan}}", "Pro");
+        expect(store.getState().previewValues).toBe(values);
+    });
+
+    it("stays out of history and out of the document", () => {
+        const { store } = makeStore();
+        const { actions } = store.getState();
+        actions.setPreviewValue("{{plan}}", "Pro");
+        expect(store.getState().history.past).toHaveLength(0);
+
+        actions.updateProps("t1", { text: "changed" });
+        actions.undo();
+        expect(store.getState().previewValues).toEqual({ "{{plan}}": "Pro" });
+    });
+});

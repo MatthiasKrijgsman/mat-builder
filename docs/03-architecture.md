@@ -34,6 +34,7 @@ interface BlockNode {
   type: string;                          // key into the block registry
   props: Record<string, unknown>;        // block-specific, shaped by the block's definition
   children: Record<string, BlockId[]>;   // container name → ordered child ids
+  visibility?: BlockVisibility;          // conditional rendering rules — see 06 §Conditional visibility
 }
 
 interface BuilderDocument {
@@ -65,6 +66,7 @@ Notes:
 - **The root is a block like any other** (marked `hidden` so it never appears in the palette). Document-level settings (email background, content width) are just the root block's props, edited through the same inspector mechanism.
 - **A "location"** — the universal address used by insert/move commands and DnD — is `{ parentId: BlockId, container: string, index: number }`.
 - **Integrity invariants** (enforced by the command layer, checked by a `validateDocument()` dev helper): every non-root block appears in exactly one parent's child list; every referenced id exists; every container name exists on the parent's definition; `accepts` rules hold.
+- **`visibility` is a node field, not a prop** — every block gets conditional visibility whether or not its definition asked for it, so it can neither collide with a consumer's prop names nor be missing from a block that shipped before the feature. Absent means "always visible", so documents only carry it where the author set something, and older documents load unchanged (no migration needed). The rule vocabulary and its evaluator live in `src/core/visibility.ts`; the semantics are in [06 §Conditional visibility](06-email-builder.md#conditional-visibility).
 - **Versioning**: `version` + a `migrate(doc)` chain in core, run on load. Cheap now, indispensable in a year.
 
 ## 2. Block definitions & registry
@@ -222,11 +224,12 @@ All mutations go through a small command layer — the only code allowed to touc
 | `insertBlock(type, at: Location)` | creates node from `defaultProps` (+ `onCreate`), inserts id at location |
 | `moveBlock(id, to: Location)` | validates `accepts` + no-descendant-cycle, then two array edits; `to.index` uses pre-move coordinates (what hitboxes compute while the block is still in place) |
 | `updateProps(id, patch)` | shallow-merge; **history-coalesced** (below) |
+| `setVisibility(id, visibility?)` | replaces the node's conditional rules (`undefined` clears); refuses the root; **history-coalesced** per block |
 | `removeBlock(id)` | removes subtree; selection falls back to parent |
 | `duplicateBlock(id)` | deep-clone subtree with fresh ids, insert after source |
 | `setDocument(doc)` | load/replace (runs `migrate` + validation) |
 
-Implementation notes (src/core/commands.ts): commands that need definitions take the registry as a final argument; `insertBlock` and `duplicateBlock` return `{ document, blockId }` — callers (store, DnD) need the new id to select it. The shared drop-validity predicate `canDropAt(doc, registry, childType, at, movingId?)` (accepts + maxChildren + container-exists + root/canDrag/cycle rules) is what the DnD layer uses to gate drop targets before a command ever runs.
+Implementation notes (src/core/commands.ts): `duplicateBlock` rebuilds nodes field by field rather than spreading them, so **every new BlockNode field has to be added there** or clones silently lose it (`visibility` was exactly this trap); commands that need definitions take the registry as a final argument; `insertBlock` and `duplicateBlock` return `{ document, blockId }` — callers (store, DnD) need the new id to select it. The shared drop-validity predicate `canDropAt(doc, registry, childType, at, movingId?)` (accepts + maxChildren + container-exists + root/canDrag/cycle rules) is what the DnD layer uses to gate drop targets before a command ever runs.
 
 ### Undo/redo
 
@@ -270,9 +273,16 @@ export { useEditor,        // actions + history: { undo, redo, canUndo, canRedo 
          useSelectedBlock, // { id, node, definition } | null
          useBlockNode,     // (id) => node slice subscription
          useBuilderState,  // selector escape hatch
-         useMergeTags      // the provider's mergeTags (empty when unconfigured)
+         useMergeTags,     // the provider's mergeTags (empty when unconfigured)
+         useMergeTagUsage, // the tags THIS document uses (06 §Preview data)
+         useMergeTagValues // the preview's stand-in values
        } from "./react/hooks";
-export type { MergeTag } from "./react/merge-tags"; // { token, label } — literal token, no delimiter assumed
+export type { MergeTag } from "./react/merge-tags"; // { token, label, values? } — literal token, no delimiter assumed
+export { collectMergeTagUsage } from "./react/merge-tags";
+// Conditional visibility (06) — also re-exported from ./email/render, so a backend
+// resolving conditions never imports the client entry
+export { isVisible, isBlockVisible, evaluateRule, hasVisibilityRules, defaultVisibility } from "./core/visibility";
+export type { BlockVisibility, VisibilityRule, VisibilityOperator, MergeTagValues } from "./core/visibility";
 
 // UI components (each independent & restylable — see 04)
 export { Canvas, Palette, Inspector, LayersPanel, Toolbar } from "./components";

@@ -30,6 +30,9 @@ const mergeTags: MergeTag[] = [
     { token: "{{last_name}}", label: "Last name", group: "Contact" },
     { token: "{{invoice_url}}", label: "Invoice URL", group: "Billing" },
     { token: "*|COMPANY|*", label: "Company", group: "Billing" },
+    // A closed set of values, so visibility rules and the preview data sheet
+    // offer a dropdown instead of a free-text field (docs/06 §merge tags)
+    { token: "{{plan}}", label: "Plan", group: "Billing", values: ["Free", "Pro", "Enterprise"] },
     { token: "{{unsubscribe_url}}", label: "Unsubscribe URL" },
 ];
 
@@ -218,6 +221,17 @@ const document: BuilderDocument = {
                 layout: { ...defaultLayout, horizontal: "center" as const, gap: 16 },
             },
             children: { content: ["cta-copy", "cta-button"] },
+            // Conditional visibility (docs/06): the pay-now card is only worth
+            // showing to a paying plan that actually has an invoice to open.
+            // Switch to Preview and fill the data sheet to watch it appear.
+            visibility: {
+                mode: "rules",
+                match: "all",
+                rules: [
+                    { token: "{{plan}}", operator: "eq", value: "Pro" },
+                    { token: "{{invoice_url}}", operator: "exists" },
+                ],
+            },
         },
         "cta-copy": {
             id: "cta-copy",

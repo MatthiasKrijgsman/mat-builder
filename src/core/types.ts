@@ -1,4 +1,5 @@
 import type { ComponentType, CSSProperties, ReactNode } from "react";
+import type { BlockVisibility } from "./visibility.ts";
 
 /* ─────────────────────────────────────────────────────────────
  * Document model — see docs/03-architecture.md §1
@@ -17,6 +18,14 @@ export interface BlockNode {
     props: Record<string, unknown>;
     /** Container name → ordered child ids */
     children: Record<string, BlockId[]>;
+    /**
+     * Conditional visibility rules (visibility.ts). Deliberately a NODE field
+     * rather than a block prop: every block has it regardless of its
+     * definition, so it can neither collide with a consumer's prop names nor
+     * be forgotten by a block that ships without it. Absent = always visible,
+     * so documents only carry it where the author set something.
+     */
+    visibility?: BlockVisibility;
 }
 
 export interface BuilderDocument {

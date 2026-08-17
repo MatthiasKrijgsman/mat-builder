@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { AnyBlockDefinition, BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockNode } from "../core/types.ts";
+import type { MergeTagValues } from "../core/visibility.ts";
 import { useBuilderContext } from "./context.ts";
-import type { MergeTag } from "./merge-tags.ts";
+import { collectMergeTagUsage, type MergeTag, type MergeTagUsage } from "./merge-tags.ts";
 import type { EditorActions, EditorState } from "./store.ts";
 
 /*
@@ -42,6 +43,23 @@ export function useBlockNode(id: BlockId): BlockNode | undefined {
 /** The provider's merge tags (see merge-tags.ts); empty when none configured. */
 export function useMergeTags(): MergeTag[] {
     return useBuilderState((s) => s.mergeTags);
+}
+
+/** Stand-in merge-tag values the preview renders with (docs/06 §Preview data). */
+export function useMergeTagValues(): MergeTagValues {
+    return useBuilderState((s) => s.previewValues);
+}
+
+/**
+ * The merge tags this document actually uses (docs/06 §Preview data) — what
+ * the preview-data panel lists. Recomputed when the document or the tag list
+ * changes; it walks every block's props, so don't call it per keystroke on
+ * a hot path.
+ */
+export function useMergeTagUsage(): MergeTagUsage[] {
+    const document = useBuilderState((s) => s.document);
+    const tags = useMergeTags();
+    return useMemo(() => collectMergeTagUsage(document, tags), [document, tags]);
 }
 
 export interface SelectedBlock {

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { computeChromeGeometry, geometryChanged, PILL_CLEARANCE, type RectLike } from "./chrome-geometry.ts";
+import {
+    computeChromeGeometry,
+    computeMarkerGeometry,
+    geometryChanged,
+    markerChanged,
+    MARKER_INSET,
+    MARKER_SIZE,
+    PILL_CLEARANCE,
+    type RectLike,
+} from "./chrome-geometry.ts";
 
 const rect = (top: number, left: number, width: number, height: number): RectLike => ({
     top,
@@ -73,5 +82,52 @@ describe("geometryChanged", () => {
         const c = computeChromeGeometry(rect(301, 200, 600, 120), overlay, scroller, ALLOWANCE);
         expect(geometryChanged(a, b)).toBe(false);
         expect(geometryChanged(a, c)).toBe(true);
+    });
+});
+
+describe("computeMarkerGeometry", () => {
+    it("insets the badge from the block's top-right corner", () => {
+        const g = computeMarkerGeometry(rect(300, 250, 500, 120), overlay, scroller);
+        expect(g).toEqual({
+            // right edge 750, less the badge and its inset, overlay-relative
+            x: 750 - MARKER_SIZE - MARKER_INSET - overlay.left,
+            y: 300 + MARKER_INSET - overlay.top,
+            visible: true,
+        });
+    });
+
+    it("centers on blocks too small to hold the inset, instead of hanging off them", () => {
+        // A 1px divider: the badge straddles the line rather than sitting under it
+        const thin = computeMarkerGeometry(rect(300, 250, 500, 1), overlay, scroller);
+        expect(thin.y).toBe(300 - 100 + (1 - MARKER_SIZE) / 2);
+
+        // Tall enough for the full inset
+        const tall = computeMarkerGeometry(rect(300, 250, 500, 120), overlay, scroller);
+        expect(tall.y).toBe(300 - 100 + MARKER_INSET);
+    });
+
+    it("hides the badge unless it fits entirely inside the artboard viewport", () => {
+        // The block may hang above the viewport — what matters is the BADGE's
+        // own box, which rides MARKER_INSET below the block's top edge
+        const lastVisible = rect(scroller.top - MARKER_INSET, 250, 500, 400);
+        expect(computeMarkerGeometry(lastVisible, overlay, scroller).visible).toBe(true);
+        const scrolledPast = rect(scroller.top - MARKER_INSET - 1, 250, 500, 400);
+        expect(computeMarkerGeometry(scrolledPast, overlay, scroller).visible).toBe(false);
+        // Bottom edge: the badge's own box must clear it, not just the block
+        const atBottom = rect(scroller.bottom - MARKER_SIZE - MARKER_INSET, 250, 500, 400);
+        expect(computeMarkerGeometry(atBottom, overlay, scroller).visible).toBe(true);
+        const past = rect(scroller.bottom - MARKER_SIZE - MARKER_INSET + 1, 250, 500, 400);
+        expect(computeMarkerGeometry(past, overlay, scroller).visible).toBe(false);
+    });
+});
+
+describe("markerChanged", () => {
+    it("detects moves and visibility flips", () => {
+        const a = computeMarkerGeometry(rect(300, 250, 500, 120), overlay, scroller);
+        const b = computeMarkerGeometry(rect(300, 250, 500, 120), overlay, scroller);
+        const moved = computeMarkerGeometry(rect(301, 250, 500, 120), overlay, scroller);
+        expect(markerChanged(a, b)).toBe(false);
+        expect(markerChanged(a, moved)).toBe(true);
+        expect(markerChanged(a, { ...a, visible: !a.visible })).toBe(true);
     });
 });

@@ -63,6 +63,10 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     panels?: BuilderShellPanels;
     /** The editing surface — defaults to a `<Canvas>` filling the work area */
     canvas?: ReactNode;
+    /** The right-hand panel — defaults to `<Inspector>`. Swapped by surfaces
+     * where a block inspector makes no sense (`<EmailBuilder>` shows the
+     * preview's merge-tag data sheet here instead). */
+    inspector?: ReactNode;
     /** The shell fills its container: give it (or an ancestor) a height */
     className?: string;
     style?: CSSProperties;
@@ -90,6 +94,7 @@ export function BuilderShell(props: BuilderShellProps) {
         saveLabels,
         panels,
         canvas,
+        inspector,
         className,
         style,
     } = props;
@@ -130,6 +135,7 @@ export function BuilderShell(props: BuilderShellProps) {
                 saveLabels={saveLabels}
                 panels={panels}
                 canvas={canvas}
+                inspector={inspector}
                 className={className}
                 style={style}
             />
@@ -154,6 +160,7 @@ interface BuilderShellLayoutProps {
     saveLabels?: Partial<ShellSaveLabels>;
     panels?: BuilderShellPanels;
     canvas?: ReactNode;
+    inspector?: ReactNode;
     className?: string;
     style?: CSSProperties;
 }
@@ -162,7 +169,7 @@ interface BuilderShellLayoutProps {
  * panels floating over it. Separate component so it renders inside the
  * provider (the panels are all context consumers). */
 function BuilderShellLayout(props: BuilderShellLayoutProps) {
-    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, canvas, className, style } = props;
+    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, canvas, inspector, className, style } = props;
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
@@ -225,7 +232,7 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                             className="absolute inset-y-0 right-0 z-30 w-(--mat-builder-sidebar-width) border-l"
                             style={dockedPanel}
                         >
-                            <Inspector className="h-full" />
+                            {inspector ?? <Inspector className="h-full" />}
                         </div>
                     )}
                 </div>

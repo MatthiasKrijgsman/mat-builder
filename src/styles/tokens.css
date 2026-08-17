@@ -71,6 +71,25 @@
     --mat-builder-color-merge-tag-bg: #ede9fe;
     --mat-builder-color-merge-tag-fg: #6d28d9;
 
+    /* Conditional visibility (inspector rule builder, docs/06) */
+    /* The card one rule sits in, and the AND/OR chip between two cards */
+    --mat-builder-color-rule-bg: #f4f4f5;
+    --mat-builder-color-rule-border: #e4e4e7;
+    --mat-builder-color-rule-joiner-bg: #e4e4e7;
+    --mat-builder-color-rule-joiner-fg: #52525b;
+    /* Add-rule affordance and the tag glyph — the editor's action colour */
+    --mat-builder-color-rule-accent: var(--mat-builder-color-selection);
+    /* Canvas/layers marker on a block that only renders conditionally.
+       The canvas badge sits ON the block's own content, so it carries its own
+       fill and a ring that keeps it legible over any background. */
+    --mat-builder-color-conditional-fg: #7c3aed;
+    --mat-builder-color-conditional-bg: #ffffff;
+    --mat-builder-color-conditional-ring: color-mix(in srgb, var(--mat-builder-color-conditional-fg) 30%, transparent);
+    --mat-builder-conditional-badge-size: 18px;
+    /* Resting opacity — the badge is always on screen, so it stays quiet until
+       the pointer is near it. Set to 1 for a permanently solid mark. */
+    --mat-builder-conditional-badge-opacity: 0.75;
+
     /* Missing-block fallback (unknown types in old documents) */
     --mat-builder-color-missing-border: #fca5a5;
     --mat-builder-color-missing-bg: #fef2f2;

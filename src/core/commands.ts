@@ -5,6 +5,7 @@ import { materializeBlock } from "./materialize.ts";
 import { containerAccepts, type BlockRegistry } from "./registry.ts";
 import { findAncestors, findLocation, isDescendant } from "./traversal.ts";
 import type { BlockId, BlockLocation, BuilderDocument } from "./types.ts";
+import type { BlockVisibility } from "./visibility.ts";
 
 /*
  * Command layer — see docs/03-architecture.md §3.
@@ -176,6 +177,23 @@ export function updateProps(
     });
 }
 
+/**
+ * Replaces a block's conditional visibility (core/visibility.ts) — a node
+ * field, not a prop, so it needs its own command. Pass `undefined` to clear
+ * it, which is how a document stays free of the default.
+ */
+export function setVisibility(
+    document: BuilderDocument,
+    payload: { id: BlockId; visibility: BlockVisibility | undefined },
+): BuilderDocument {
+    if (!document.blocks[payload.id]) throw new Error(`setVisibility: block "${payload.id}" does not exist`);
+    if (payload.id === document.rootId) throw new Error("setVisibility: the root block is always visible");
+    return produce(document, (draft) => {
+        if (payload.visibility) draft.blocks[payload.id].visibility = payload.visibility;
+        else delete draft.blocks[payload.id].visibility;
+    });
+}
+
 export function removeBlock(
     document: BuilderDocument,
     payload: { id: BlockId },
@@ -233,6 +251,9 @@ export function duplicateBlock(
                         ids.filter((id) => idMap.has(id)).map(cloneId),
                     ]),
                 ),
+                // Rebuilt field by field rather than spread, so every node
+                // field has to be listed here — a copy keeps its conditions.
+                ...(source.visibility ? { visibility: structuredClone(source.visibility) } : undefined),
             };
         }
         draft.blocks[at.parentId].children[at.container].splice(at.index, 0, cloneId(payload.id));

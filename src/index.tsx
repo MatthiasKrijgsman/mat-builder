@@ -15,6 +15,24 @@ export { createDocument, migrateDocument, validateDocument } from "./core/docume
 export { walkDocument, findLocation, findAncestors, isDescendant } from "./core/traversal.ts";
 export type { WalkContext, WalkVisitor } from "./core/traversal.ts";
 export { canDropAt } from "./core/commands.ts";
+// Conditional visibility — the rule vocabulary and its evaluator (docs/06).
+// Also exported from ./email/render, so backends never import the client entry.
+export {
+    defaultVisibility,
+    describeVisibility,
+    evaluateRule,
+    hasVisibilityRules,
+    isBlockVisible,
+    isVisible,
+    OPERATOR_LABELS,
+    VALUE_OPERATORS,
+} from "./core/visibility.ts";
+export type {
+    BlockVisibility,
+    MergeTagValues,
+    VisibilityOperator,
+    VisibilityRule,
+} from "./core/visibility.ts";
 export type {
     BlockId,
     BlockNode,
@@ -37,13 +55,16 @@ export type {
 export { BuilderProvider, type BuilderProviderProps } from "./react/provider.tsx";
 export { useDocumentSave } from "./react/save.ts";
 export type { SaveController, SaveStatus, UseDocumentSaveOptions } from "./react/save.ts";
-export type { MergeTag } from "./react/merge-tags.ts";
+export { collectMergeTagUsage } from "./react/merge-tags.ts";
+export type { MergeTag, MergeTagUsage } from "./react/merge-tags.ts";
 export {
     useEditor,
     useSelectedBlock,
     useBlockNode,
     useBuilderState,
     useMergeTags,
+    useMergeTagUsage,
+    useMergeTagValues,
     useRenderedBlockSize,
     SIZE_BOX_CLASS,
 } from "./react/hooks.ts";
@@ -62,6 +83,11 @@ export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";
 export { Artboard, type ArtboardProps } from "./components/canvas/Artboard.tsx";
 export { Inspector, type InspectorPanelProps } from "./components/inspector/Inspector.tsx";
 export { InspectorGroup, type InspectorGroupProps } from "./components/inspector/InspectorGroup.tsx";
+export { VisibilityGroup, type VisibilityGroupProps } from "./components/inspector/VisibilityGroup.tsx";
+export {
+    MergeTagValuesPanel,
+    type MergeTagValuesPanelProps,
+} from "./components/inspector/MergeTagValuesPanel.tsx";
 export { Palette, type PaletteProps } from "./components/palette/Palette.tsx";
 export { LayersPanel, type LayersPanelProps } from "./components/layers/LayersPanel.tsx";
 export { Toolbar, UndoRedoButtons, type ToolbarProps } from "./components/toolbar/Toolbar.tsx";

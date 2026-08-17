@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { insertBlock, updateProps } from "../core/commands.ts";
+import { insertBlock, setVisibility, updateProps } from "../core/commands.ts";
 import { createDocument, validateDocument } from "../core/document.ts";
 import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
+import type { BlockVisibility } from "../core/visibility.ts";
 import { emailBlocks } from "./index.tsx";
 import { buildEmailTree, renderEmail } from "./render.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
@@ -445,5 +446,155 @@ describe("renderEmail", () => {
         // display labels never reach the output
         expect(html).not.toContain("First name");
         expect(text).toContain("Hi {{first_name}}, welcome to *|COMPANY|*");
+    });
+});
+
+/** buildDemoEmail with a second container carrying `visibility`. */
+function buildConditionalEmail(visibility: BlockVisibility): { document: BuilderDocument; conditionalId: string } {
+    let document = buildDemoEmail();
+    const inserted = insertBlock(
+        document,
+        { type: "container", at: { parentId: document.rootId, container: "main", index: 1 } },
+        registry,
+    );
+    document = inserted.document;
+    const text = insertBlock(
+        document,
+        { type: "text", at: { parentId: inserted.blockId, container: "content", index: 0 } },
+        registry,
+    );
+    document = updateProps(text.document, { id: text.blockId, patch: { content: richTextParagraph("Pro-only perk") } });
+    return {
+        document: setVisibility(document, { id: inserted.blockId, visibility }),
+        conditionalId: inserted.blockId,
+    };
+}
+
+const proOnly: BlockVisibility = {
+    mode: "rules",
+    match: "all",
+    rules: [{ token: "{{plan}}", operator: "eq", value: "Pro" }],
+};
+
+describe("conditional visibility", () => {
+    it("renders every block when no values are supplied", async () => {
+        const { document } = buildConditionalEmail(proOnly);
+        const { html, text } = await renderEmail(document);
+        expect(html).toContain("Pro-only perk");
+        expect(text).toContain("Pro-only perk");
+    });
+
+    it("omits a block whose rules do not hold for the supplied values", async () => {
+        const { document } = buildConditionalEmail(proOnly);
+
+        const matched = await renderEmail(document, { values: { "{{plan}}": "Pro" } });
+        expect(matched.html).toContain("Pro-only perk");
+
+        const missed = await renderEmail(document, { values: { "{{plan}}": "Free" } });
+        expect(missed.html).not.toContain("Pro-only perk");
+        expect(missed.text).not.toContain("Pro-only perk");
+        // The rest of the email is untouched
+        expect(missed.html).toContain("Hello from mat-builder");
+    });
+
+    it("keeps the surviving siblings' column split correct", async () => {
+        // Three columns in a horizontal row, one of them conditional: the two
+        // that render must split 50/50, not stay at a third each.
+        let document = buildDemoEmail();
+        const row = insertBlock(document, { type: "container", at: { parentId: document.rootId, container: "main", index: 1 } }, registry);
+        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal" } });
+        const ids: string[] = [];
+        for (let index = 0; index < 3; index++) {
+            const column = insertBlock(
+                document,
+                { type: "container", at: { parentId: row.blockId, container: "content", index } },
+                registry,
+            );
+            document = column.document;
+            ids.push(column.blockId);
+        }
+        document = setVisibility(document, { id: ids[1], visibility: proOnly });
+
+        const all = await renderEmail(document);
+        expect(all.html).toContain("width:33.33%");
+
+        const trimmed = await renderEmail(document, { values: { "{{plan}}": "Free" } });
+        expect(trimmed.html).toContain("width:50.00%");
+        expect(trimmed.html).not.toContain("width:33.33%");
+    });
+
+    it("returns nothing when the walk starts on a hidden block", () => {
+        const { document, conditionalId } = buildConditionalEmail(proOnly);
+        const at = { parentId: document.rootId, container: "main", index: 1 };
+        expect(buildEmailTree(document, conditionalId, at, { values: { "{{plan}}": "Free" } })).toBeNull();
+        expect(buildEmailTree(document, conditionalId, at, { values: { "{{plan}}": "Pro" } })).not.toBeNull();
+        // No values at all: the walk renders it, same as the whole-document case
+        expect(buildEmailTree(document, conditionalId, at)).not.toBeNull();
+    });
+});
+
+describe("token substitution", () => {
+    /** A text block whose copy is a merge tag, plus a tokenized button href. */
+    function buildTokenizedEmail(): BuilderDocument {
+        let document = buildDemoEmail();
+        const sectionId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[sectionId].children.content[0];
+        const buttonId = document.blocks[sectionId].children.content[1];
+        document = updateProps(document, {
+            id: textId,
+            patch: {
+                content: JSON.stringify({
+                    root: {
+                        type: "root",
+                        children: [
+                            {
+                                type: "paragraph",
+                                children: [
+                                    { type: "text", text: "Hi ", format: 0 },
+                                    richTextMergeTagNode("{{first_name}}", "First name"),
+                                ],
+                            },
+                        ],
+                    },
+                }),
+            },
+        });
+        return updateProps(document, { id: buttonId, patch: { href: "https://pay.example/{{invoice_id}}" } });
+    }
+
+    it("leaves tokens alone unless asked — the ESP normally substitutes", async () => {
+        const { html } = await renderEmail(buildTokenizedEmail(), { values: { "{{first_name}}": "Ada" } });
+        expect(html).toContain("{{first_name}}");
+        expect(html).not.toContain("Ada");
+    });
+
+    it("substitutes in the copy, in hrefs and in the plain-text variant", async () => {
+        const { html, text } = await renderEmail(buildTokenizedEmail(), {
+            substituteTokens: true,
+            values: { "{{first_name}}": "Ada", "{{invoice_id}}": "inv_42" },
+        });
+        expect(html).toContain("Ada");
+        expect(html).not.toContain("{{first_name}}");
+        expect(html).toContain('href="https://pay.example/inv_42"');
+        expect(text).toContain("Ada");
+    });
+
+    it("escapes the value it splices into HTML but not into plain text", async () => {
+        const { html, text } = await renderEmail(buildTokenizedEmail(), {
+            substituteTokens: true,
+            values: { "{{first_name}}": "Ada & <b>Co</b>" },
+        });
+        expect(html).toContain("Ada &amp; &lt;b&gt;Co&lt;/b&gt;");
+        expect(html).not.toContain("<b>Co</b>");
+        expect(text).toContain("Ada & <b>Co</b>");
+    });
+
+    it("never re-substitutes a value that looks like another token", async () => {
+        const { html } = await renderEmail(buildTokenizedEmail(), {
+            substituteTokens: true,
+            values: { "{{first_name}}": "{{invoice_id}}", "{{invoice_id}}": "inv_42" },
+        });
+        // The first name renders as the literal text it was given
+        expect(html).toContain("{{invoice_id}}");
     });
 });

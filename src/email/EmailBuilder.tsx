@@ -2,6 +2,7 @@ import { TabButtons } from "@matthiaskrijgsman/mat-ui";
 import { IconMail } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import { Canvas } from "../components/canvas/Canvas.tsx";
+import { MergeTagValuesPanel } from "../components/inspector/MergeTagValuesPanel.tsx";
 import { BuilderShell, type BuilderShellProps } from "../components/shell/BuilderShell.tsx";
 import { mergeBlockDefinitions, type AnyBlockDefinition } from "../core/index.ts";
 import { EMAIL_ROOT_TYPE, emailBlocks } from "./preset.ts";
@@ -26,7 +27,8 @@ export interface EmailBuilderModeLabels {
 
 const DEFAULT_MODE_LABELS: EmailBuilderModeLabels = { edit: "Edit", preview: "Preview" };
 
-export interface EmailBuilderProps extends Omit<BuilderShellProps, "blocks" | "rootType" | "canvas"> {
+// `canvas`/`inspector` are owned here — both are driven by the mode toggle.
+export interface EmailBuilderProps extends Omit<BuilderShellProps, "blocks" | "rootType" | "canvas" | "inspector"> {
     /** Custom block definitions on top of the email preset. A definition whose
      * `type` matches a preset block **replaces** it (keeping its palette
      * position); anything else is appended. */
@@ -103,6 +105,10 @@ export function EmailBuilder(props: EmailBuilderProps) {
                     />
                 )
             }
+            // Preview clears the selection, so a block inspector would sit
+            // empty there. The panel becomes the preview's data sheet instead:
+            // values for the tags this template uses (docs/06 §Preview data).
+            inspector={mode === "preview" ? <MergeTagValuesPanel className="h-full" /> : undefined}
         />
     );
 }

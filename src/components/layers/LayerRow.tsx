@@ -6,12 +6,13 @@ import {
   extractInstruction,
   type Instruction,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/list-item";
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconChevronRight, IconFilter } from "@tabler/icons-react";
 import { type CSSProperties, Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 import { canDropAt } from "../../core/commands.ts";
 import type { BlockRegistry } from "../../core/registry.ts";
 import type { BlockId, BlockLocation, BuilderDocument } from "../../core/types.ts";
+import { hasVisibilityRules } from "../../core/visibility.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType, type DragLike, resolveCombineLocation } from "../../dnd/resolve.ts";
@@ -211,6 +212,15 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         ) }
         { Icon && <Icon className="size-4 shrink-0" style={ { color: iconColor } }/> }
         <span className="min-w-0 flex-1 truncate font-medium" style={ { color: labelColor } }>{ label }</span>
+        { /* A block that only renders for some recipients looks identical to
+             every other one on the canvas — the tree is where that reads. */ }
+        { hasVisibilityRules(node.visibility) && (
+          <IconFilter
+            className="size-3.5 shrink-0"
+            style={ { color: isSelected ? mutedColor : "var(--mat-builder-color-conditional-fg)" } }
+            aria-label="Shown conditionally"
+          />
+        ) }
         { isRoot && (
           <span className="shrink-0 text-xs mr-1" style={ { color: mutedColor } }>Root</span>
         ) }

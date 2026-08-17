@@ -123,11 +123,22 @@ export async function renderEmail(doc: BuilderDocument) {
 }
 ```
 
-Used from a Next.js route handler / server action: load document JSON → `renderEmail` → hand to the ESP (Resend/SES/…). Merge tags (below) reach the output as literal token text; substitution is the ESP's problem until we need conditional blocks.
+Used from a Next.js route handler / server action: load document JSON → `renderEmail` → hand to the ESP (Resend/SES/…). By default merge tags reach the output as literal token text and substitution is the ESP's problem — `renderEmail(document)` with no options renders every block and touches no token, which is the template-for-the-ESP case.
+
+`renderEmail(document, options)` opts into resolving that data instead, for hosts that render per recipient:
+
+| Option | Effect |
+|---|---|
+| `values: MergeTagValues` | Merge-tag values keyed by literal token. Conditional blocks are resolved against them (§Conditional visibility) and omitted when their rules don't hold. |
+| `substituteTokens: boolean` | Also replaces each token in `values` with its value, so the copy is personalized rather than tokenized. Off by default. |
+
+The two are independent: `values` alone resolves conditions while still handing tokens to the ESP; both together produce a finished, recipient-specific email. `buildEmailTree` takes the same options as its fourth argument.
 
 ## Merge tags
 
 Consumer-provided personalization tokens, insertable anywhere in rich text, in the Button label, and in the Button link. The tag list varies per host/ESP, so it enters through the provider — `<BuilderProvider mergeTags={[{ token: "{{first_name}}", label: "First name" }]}>` (`useMergeTags()` reads it back). Each tag carries its **literal token string**: the library assumes no delimiter syntax, so `{{x}}`, `*|FNAME|*` and `%x%` all work unmodified. With no `mergeTags` configured, every bit of merge-tag UI hides — but stored documents containing tags still load and export (node registration and walker support are unconditional).
+
+A tag may also declare `values: string[]` when the host knows the set it can take (a plan name, a locale, a status). Visibility rules and the preview data sheet then offer a dropdown instead of a free-text field; open-ended tags like a first name omit it and stay free text everywhere. It is display-only — nothing validates a stored value against the list, so shrinking the list never breaks a document.
 
 Three insertion surfaces, one dropdown menu (`MergeTagItems.tsx`; list body in `MergeTagList.tsx`). The menu is searchable — it filters on label and token, and the query resets each open. Tags may carry an optional `group` name: grouped tags render under a labeled section (mat-ui `DropdownButtonGroup`), with sections and ungrouped tags keeping first-appearance order from the provider's list.
 
@@ -137,6 +148,61 @@ Three insertion surfaces, one dropdown menu (`MergeTagItems.tsx`; list body in `
 
 Output: the walker's `merge-tag` case emits the literal token as escaped text, wrapped in the snapshot's styled span when it has one; `richTextToPlain` and the plain-text render include it too. **Deliberate canvas/preview deviation** — the canvas shows the chip ("First name", via `RichText`'s editor-only `renderMergeTag` hook, keeping idle/edit pixel parity), while Preview mode and the export show the truth (`{{first_name}}`). Two caveats: tokens containing `&`/`<` get HTML-entity-escaped inside `href` attributes, which ESPs handle inconsistently (avoid such delimiters); and consumers running an **older** `./email/render` will render merge-tag nodes as nothing — upgrade the render side before letting editors insert tags.
 
+## Conditional visibility
+
+Any block but the root can carry rules that decide whether it renders, tested against merge-tag values. The Inspector mounts the control for **every** block (04 §Inspector) — it is not something a block definition opts into, so a consumer's own blocks get it by existing.
+
+### The model
+
+Rules live on the **node**, not in props (03 §1): `BlockNode.visibility`.
+
+```ts
+interface BlockVisibility {
+  mode: "always" | "rules";   // "always" KEEPS the rules — toggling back and forth loses nothing
+  match: "all" | "any";       // AND / OR
+  rules: VisibilityRule[];
+}
+interface VisibilityRule {
+  token: string;              // the literal merge-tag token, exactly as elsewhere
+  operator: "exists" | "notExists" | "eq" | "neq" | "contains" | "notContains";
+  value?: string;             // ignored by the presence-only operators
+}
+```
+
+- **Absent = always visible**, so documents only carry the field where the author set something, and every document written before the feature loads unchanged (no migration).
+- Rules address tags by **token**, never by an index into the provider's list — a rule stays meaningful when the host reorders or renames its tags, and a token the provider dropped still shows (labelled by its own token) instead of silently re-pointing at another tag.
+- Comparisons are **trimmed and case-insensitive**: merge-tag values come from whatever system owns the contact record, so `Pro` / `pro` is not a distinction the person writing the rule meant to make. `exists` means "non-empty after trimming".
+
+### When rules resolve
+
+`renderEmail(document, { values })` evaluates them and drops the blocks that fail (`isVisible`/`isBlockVisible` in `src/core/visibility.ts`, re-exported from `./email/render` so a backend never imports the client entry). Two deliberate semantics:
+
+- **No `values` at all ⇒ everything renders.** There is no data to decide with, so `renderEmail(document)` exports the whole template. An empty object is different: it is a complete set of values that happens to be empty, and rules evaluate against it (which is what makes the preview's untouched data sheet hide `exists` blocks).
+- **Hidden blocks are removed from their parent's child list**, not nulled out in their own render, so the survivors keep correct `index`/`siblingCount`: a horizontal container splits its width across the columns that actually render (three columns minus one conditional = 50/50, not two thirds), and a table cell picks its corner radii from where it ended up.
+
+The export stays free of ESP template syntax — no `{{#if}}`/Liquid/`*|IF:|*` wrappers. That is the model for a host that renders per recipient from its own backend. Emitting conditionals for the ESP to evaluate is the other half of the problem and is **not built**: it needs a consumer-supplied syntax adapter (the library assumes no delimiter syntax for tokens, so it cannot assume one for conditionals either), and React escapes `"`/`&`/`<` in text children, so a wrapper like `{{#if plan == "pro"}}` would have to be emitted as a sentinel and string-replaced after `render()`. The rule model is the same either way, so it can be added without reworking documents.
+
+### The editing surface
+
+`VisibilityGroup` (`src/components/inspector/VisibilityGroup.tsx`) renders the group under whatever the block's own inspector shows, with `InspectorGroup`'s `meta` slot carrying the rule count so it survives collapsing:
+
+- An `Always` / `If rules match` segmented toggle. ("If", not the longer "When", because the label wraps inside a half-width tab at the 300px panel.) Switching to rules mode with nothing there seeds the first rule, so the mode is never an empty box.
+- One card per rule — tag picker (grouped and ordered exactly like the insert menus), operator, and a value control that is a dropdown when the tag declared `values` and a text input otherwise. Presence-only operators (`is provided` / `is empty`) drop the value control and take the full row, so the rule reads as one finished phrase.
+- Between cards, an `AND`/`OR` chip that toggles `match` for the whole group.
+- The group hides itself when the provider configured no tags and the block has no rules — the same disappearing act as every other merge-tag surface.
+
+A conditional block **renders identically on the canvas** and stays fully editable — you have to be able to edit what only some recipients see — so the mark is chrome, not a change to the block: `ConditionalMarkers` puts a small badge in the block's top-right corner, and the layers tree repeats it on the row (04 §BlockFrame, §LayersPanel). Preview mode is where blocks actually come and go.
+
+The badge is **persistent**, not selection-driven: its job is letting you scan a template and see which parts are conditional without clicking through every block. It carries the rules as a tooltip (`describeVisibility` — "Shown when Plan is “Pro” and Invoice URL is provided", the same operator phrasing the inspector's dropdown uses) and selects its block when clicked, like a layers row.
+
+## Preview data
+
+Preview mode shows the real exported email, where tokens are still literal and conditional blocks have nothing to resolve against. `MergeTagValuesPanel` replaces the inspector there (`<EmailBuilder>` passes it as the shell's `inspector`, since preview clears the selection and a block inspector would sit empty) and lists every tag the open template actually uses, with a field per tag. The preview renders with those values: copy reads as it will for a recipient, and visibility rules fire.
+
+- **The values are per-session editor state** (`previewValues` in the store, `useMergeTagValues()`), like `artboardSize` — never in the document, never in history, never in a save payload. Emptying a field deletes the entry rather than storing `""`, so it reads as absent to `exists` rules.
+- **Which tags to list** comes from `collectMergeTagUsage(document, tags)` (`useMergeTagUsage()`). It scans every string in every block's props for each configured token, which catches rich text for free (a `MergeTagNode` serializes its token into `props.content`'s JSON) as well as plain-string props like a button's label or href — and works unchanged for a consumer's own blocks, since it assumes no prop shape. Tokens named only by a visibility rule are included too, flagged so the panel can mark them (they never appear in the copy, so an unchanged preview would otherwise look like a broken tag). Tags a document snapshot still carries but the provider no longer lists are recovered from the rich-text nodes themselves and labelled from their snapshot.
+- **Substitution is a post-render string pass** over the HTML and the plain-text variant, not a hook in the walk: tokens live in arbitrary string props, and one pass catches them identically. It replaces both the raw token and its HTML-escaped spelling (React escapes `&`/`<`/`"` in text and attributes alike), escapes the value it splices into HTML, and matches longest-token-first in a single pass so a value that happens to look like another token is never substituted twice. A tag left empty is not in the value set at all, so it stays visible as its literal token — which is the honest thing to show.
+
 ## Preview mode
 
 The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview` in the `./email` entry; `<EmailBuilder>` (below) owns the mode state and the Edit/Preview tabs, and hosts composing their own layout swap `<Canvas/>` for `<EmailPreview/>` themselves:
@@ -144,6 +210,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 - Debounced call to `renderEmail(doc)` (client-side is fine — `render` works in the browser) → `<iframe srcDoc={html} />`.
 - The iframe isolates the email from the app's Tailwind preflight/global CSS — rendering the output HTML inline in the app DOM would be contaminated by it, which is why preview uses an iframe even though the editing canvas doesn't.
 - The iframe sits in the same freely resizable `Artboard` frame as the editing canvas (drag the edge bars to any width/height — this replaces fixed device-width presets; drag to ~375 px for a mobile check).
+- The inspector slot becomes the preview data sheet (§Preview data), and the render is fed the values it collects.
 - Plain-text tab shows the `plainText` render.
 - Browser preview ≠ Outlook: for real client coverage, pipe the exported HTML to Litmus/Email on Acid manually or in CI. Also surface a size warning in the toolbar when the HTML approaches ~100 KB (Gmail clipping).
 
@@ -165,7 +232,7 @@ The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + t
 - Everything `<BuilderShell>` accepts passes through (saving, panels, `actions`, `topBar`, labels), plus `mode`/`defaultMode`/`onModeChange`, `showModeToggle` and `previewDebounceMs`. Title and icon default to "Email builder" + `IconMail`.
 - With no `value`/`defaultValue` it seeds a blank document from `email-root`, whose `onCreate` already supplies the white container — so the zero-config form opens on an empty-but-usable email.
 - `onSave` receives the **document**, never HTML: rendering belongs to `./email/render`, on whichever side the host persists from. An autosaving editor must not pay a react-email render per keystroke burst.
-- Preview mode is per-instance UI state, not document state — it stays out of the store (like `mode` did in the playground), so it never enters history or a save payload.
+- Preview mode is per-instance UI state, not document state — it stays out of the store (like `mode` did in the playground), so it never enters history or a save payload. The component owns both the shell's `canvas` and its `inspector` for that reason: the mode toggle swaps the two surfaces without the store ever learning about the mode.
 
 ## Editor-canvas styling notes
 

@@ -11,11 +11,13 @@ import {
     redo,
     removeBlock,
     setDocument,
+    setVisibility,
     undo,
     updateProps,
 } from "../core/index.ts";
 import type { BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockLocation, BuilderDocument, HistoryState } from "../core/types.ts";
+import type { BlockVisibility, MergeTagValues } from "../core/visibility.ts";
 import type { MergeTag } from "./merge-tags.ts";
 
 /*
@@ -72,6 +74,13 @@ export interface EditorActions {
     moveBlock(id: BlockId, to: BlockLocation): boolean;
     /** Shallow-merges a patch; history-coalesced so a typing burst is one undo step */
     updateProps(id: BlockId, patch: Record<string, unknown>): void;
+    /** Replaces a block's conditional visibility (`undefined` clears it);
+     * history-coalesced per block, like updateProps */
+    setVisibility(id: BlockId, visibility: BlockVisibility | undefined): void;
+    /** Sets one merge tag's preview value (empty string clears it) */
+    setPreviewValue(token: string, value: string): void;
+    /** Replaces the whole preview value set */
+    setPreviewValues(values: MergeTagValues): void;
     /** Removes the block's subtree; selection falls back to the parent */
     removeBlock(id: BlockId): boolean;
     /** Clones the block after itself and selects the clone; null when refused */
@@ -97,6 +106,11 @@ export interface EditorState {
      * all merge-tag UI. Editor configuration, not document state — never in
      * history snapshots. */
     mergeTags: MergeTag[];
+    /** Stand-in merge-tag values the preview renders with, keyed by literal
+     * token (docs/06 §Preview data). Editor state, never document state: they
+     * are the viewer's scratch data, so they stay out of history and out of
+     * anything `onSave` receives. */
+    previewValues: MergeTagValues;
     /** The artboard size the user last dragged — null until a drag. UI state
      * shared by every artboard surface (Canvas, EmailPreview, …) so swapping
      * surfaces retains the frame; never in history snapshots. */
@@ -112,6 +126,8 @@ export interface CreateEditorStoreOptions {
     document: BuilderDocument;
     /** Consumer-provided personalization tokens (see merge-tags.ts) */
     mergeTags?: MergeTag[];
+    /** Starting stand-in values for preview mode, keyed by literal token */
+    previewValues?: MergeTagValues;
     /** Mutable — the provider reassigns its fields every render so callbacks never go stale */
     callbacks?: EditorCallbacks;
     /** Timestamp source for history coalescing; injectable for tests */
@@ -160,6 +176,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
             drag: null,
             mergeTags: options.mergeTags ?? [],
+            previewValues: options.previewValues ?? {},
             artboardSize: null,
             history: createHistory(),
 
@@ -244,6 +261,29 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                     });
                     commitDocument(updateProps(state.document, { id, patch }), history);
                 },
+
+                setVisibility: (id, visibility) => {
+                    const state = get();
+                    if (!state.document.blocks[id] || id === state.document.rootId) return;
+                    const history = recordHistory(state.history, snapshot(), {
+                        timestamp: now(),
+                        coalesceKey: `setVisibility:${id}`,
+                    });
+                    commitDocument(setVisibility(state.document, { id, visibility }), history);
+                },
+
+                setPreviewValue: (token, value) => {
+                    const current = get().previewValues;
+                    if ((current[token] ?? "") === value) return;
+                    const next = { ...current };
+                    // An empty field is "no value", not an empty value — it
+                    // has to read as absent to `exists` rules.
+                    if (value === "") delete next[token];
+                    else next[token] = value;
+                    set({ previewValues: next });
+                },
+
+                setPreviewValues: (values) => set({ previewValues: values }),
 
                 removeBlock: (id) => {
                     const state = get();
