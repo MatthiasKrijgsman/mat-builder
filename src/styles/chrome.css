@@ -87,13 +87,14 @@
 }
 
 /* Label pill above a selected block (block icon + name — actions live in the
-   inspector/keyboard); flips into the block's corner when the block top is
-   too close to the visible frame top. Type, icon and radius match a palette
-   item / layer row (text-sm + medium, size-4 icon, menu-item radius) — hence
-   rem, not px: the pill must track the panel rows through a root font-size
-   change. Height is icon-driven (1rem + 2×5px padding), so it holds at ~26px
-   and stays in sync with PILL_CLEARANCE (chrome-geometry.ts): top -32px
-   leaves a 6px gap above the ring. */
+   inspector/keyboard); flips below the block when its top is too close to the
+   visible frame top, and only lands inside the corner when neither edge has
+   room (chrome-geometry.ts §choosePillPlacement). Type, icon and radius match
+   a palette item / layer row (text-sm + medium, size-4 icon, menu-item radius)
+   — hence rem, not px: the pill must track the panel rows through a root
+   font-size change. Height is icon-driven (1rem + 2×5px padding), so it holds
+   at ~26px and stays in sync with PILL_CLEARANCE (chrome-geometry.ts): the
+   32px offset leaves a 6px gap between pill and ring on either side. */
 .mat-builder-chrome-pill {
     display: inline-flex;
     align-items: center;
@@ -109,8 +110,14 @@
     line-height: 1;
     white-space: nowrap;
 }
-.mat-builder-chrome-pill[data-inside] {
-    top: 6px;
+.mat-builder-chrome-pill[data-placement="below"] {
+    top: calc(100% + 6px);
+}
+/* The offset is written per frame by the overlay's rAF loop (PILL_INSET by
+   default, larger while the block's top is scrolled above the visible frame
+   top) so the pill of a viewport-spanning block never rides off-screen. */
+.mat-builder-chrome-pill[data-placement="inside"] {
+    top: var(--mat-builder-chrome-pill-offset, 6px);
     left: 6px;
 }
 

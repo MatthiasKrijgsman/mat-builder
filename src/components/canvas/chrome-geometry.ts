@@ -2,7 +2,7 @@
  * Pure geometry for the ChromeOverlay (docs/04 §BlockFrame): converts a
  * block's viewport rect into overlay-relative frame placement, plus the
  * clip-path insets that confine ALL chrome painting (ring, shadows, pill)
- * to the artboard viewport, and the "pill flips inside" decision. Kept
+ * to the artboard viewport, and the name tag's placement decision. Kept
  * DOM-free so it unit-tests.
  */
 
@@ -16,6 +16,14 @@ export interface RectLike {
     height: number;
 }
 
+/**
+ * Where the name tag sits relative to its block: above the top edge (the
+ * default), flipped below the bottom edge when the top is against the visible
+ * frame top, or — only when the block spans the whole viewport, so neither
+ * edge has room — inside its top-left corner, over the block's own content.
+ */
+export type PillPlacement = "above" | "below" | "inside";
+
 export interface ChromeGeometry {
     /** Frame position/size, relative to the overlay (= artboard frame box) */
     x: number;
@@ -24,18 +32,28 @@ export interface ChromeGeometry {
     height: number;
     /**
      * clip-path inset() values relative to the frame's own box, always
-     * applied: the chrome may paint up to the artboard viewport edge plus
-     * the ring allowance, and no further. Negative values grant the paint
-     * slack outside the box (ring, shadows, pill); positive values trim a
-     * block scrolled past the viewport so its ring dies exactly at the
-     * sheet boundary instead of dangling over the frame border.
+     * applied: the chrome may paint up to the artboard viewport edge (plus
+     * the ring allowance where the block's own edge is still inside it), and
+     * no further. Negative values grant the paint slack outside the box
+     * (ring, shadows, pill); positive values trim a block scrolled past the
+     * viewport so its ring dies exactly at the sheet boundary instead of
+     * dangling over the frame border.
      */
     clipTop: number;
     clipRight: number;
     clipBottom: number;
     clipLeft: number;
-    /** Pill flips inside the block's corner when too close to the visible top */
-    pillInside: boolean;
+    /** Which side of the block hosts the name tag (see PillPlacement) */
+    pillPlacement: PillPlacement;
+    /**
+     * Distance from the frame's top edge down to an "inside" pill, in px —
+     * written to a custom property the pill's CSS reads. Normally the corner
+     * inset; it grows to hold the pill just inside the visible frame top when
+     * the block's own top has scrolled above it, since a viewport-spanning
+     * block (the only kind placed inside) would otherwise carry its pill
+     * off-screen and the clip-path would cut it away entirely.
+     */
+    pillOffset: number;
 }
 
 /**
@@ -47,8 +65,39 @@ export interface ChromeGeometry {
  */
 export const RING_SLACK = 6;
 
-/** Room the pill needs above the block: it spans from top -32px down to -6px (26px tall), plus a small margin. */
+/** Room the pill needs outside the block: it stands 32px off the edge (26px tall + a 6px gap), plus a small margin. */
 export const PILL_CLEARANCE = 36;
+
+/** Corner inset of an "inside" pill — matches the `top`/`left` in chrome.css. */
+export const PILL_INSET = 6;
+
+/**
+ * Picks the side of the block the name tag hangs off, preferring the block's
+ * own top edge and never covering the block unless it has to: a block pressed
+ * against the visible frame top (a short one at the head of the email, say)
+ * flips its pill under its bottom edge rather than parking it on top of the
+ * content it names. Only a block spanning the whole viewport — no clearance at
+ * either end — falls back to sitting inside the corner.
+ */
+function choosePillPlacement(block: RectLike, scroller: RectLike): PillPlacement {
+    if (block.top - scroller.top >= PILL_CLEARANCE) return "above";
+    if (scroller.bottom - block.bottom >= PILL_CLEARANCE) return "below";
+    return "inside";
+}
+
+/**
+ * One side's clip inset, from how far the block's edge sits *past* the
+ * artboard viewport edge (negative while it is still inside).
+ *
+ * The ring allowance is granted only to an edge that is still inside: that
+ * slack exists for a ring drawn AROUND a block edge, and a block running past
+ * the fold has no edge there — just content the sheet cuts. Forgiving it
+ * anyway let the ring rails of a scrolled block paint a few px onto the work
+ * surface below the sheet, reading as chrome escaping the artboard.
+ */
+function clipInset(past: number, ringAllowance: number): number {
+    return past > 0 ? past : past - ringAllowance;
+}
 
 export function computeChromeGeometry(
     block: RectLike,
@@ -61,11 +110,12 @@ export function computeChromeGeometry(
         y: block.top - overlay.top,
         width: block.width,
         height: block.height,
-        clipTop: scroller.top - ringAllowance - block.top,
-        clipRight: block.right - (scroller.right + ringAllowance),
-        clipBottom: block.bottom - (scroller.bottom + ringAllowance),
-        clipLeft: scroller.left - ringAllowance - block.left,
-        pillInside: block.top - scroller.top < PILL_CLEARANCE,
+        clipTop: clipInset(scroller.top - block.top, ringAllowance),
+        clipRight: clipInset(block.right - scroller.right, ringAllowance),
+        clipBottom: clipInset(block.bottom - scroller.bottom, ringAllowance),
+        clipLeft: clipInset(scroller.left - block.left, ringAllowance),
+        pillPlacement: choosePillPlacement(block, scroller),
+        pillOffset: Math.max(PILL_INSET, scroller.top - block.top + PILL_INSET),
     };
 }
 
@@ -122,6 +172,7 @@ export function geometryChanged(a: ChromeGeometry, b: ChromeGeometry): boolean {
         a.clipRight !== b.clipRight ||
         a.clipBottom !== b.clipBottom ||
         a.clipLeft !== b.clipLeft ||
-        a.pillInside !== b.pillInside
+        a.pillPlacement !== b.pillPlacement ||
+        a.pillOffset !== b.pillOffset
     );
 }

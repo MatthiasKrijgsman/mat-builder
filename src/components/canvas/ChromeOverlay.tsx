@@ -3,7 +3,13 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import type { BlockId } from "../../core/types.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
-import { computeChromeGeometry, geometryChanged, RING_SLACK, type ChromeGeometry } from "./chrome-geometry.ts";
+import {
+    computeChromeGeometry,
+    geometryChanged,
+    RING_SLACK,
+    type ChromeGeometry,
+    type PillPlacement,
+} from "./chrome-geometry.ts";
 import { ChromePill } from "./ChromePill.tsx";
 import { ConditionalMarkers } from "./ConditionalMarkers.tsx";
 
@@ -87,7 +93,7 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
     const frameRef = useRef<HTMLDivElement>(null);
     const node = useBlockNode(id);
     const isEditing = useBuilderState((s) => s.editing?.blockId === id);
-    const [pillInside, setPillInside] = useState(false);
+    const [pillPlacement, setPillPlacement] = useState<PillPlacement>("above");
     // Hidden until the first successful measure — never flash at 0,0
     const [attached, setAttached] = useState(false);
 
@@ -122,7 +128,10 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
                     // sides): glows never bleed onto the work surface, and the
                     // ring of a block scrolled out dies at the frame edge
                     frame.style.clipPath = `inset(${geometry.clipTop}px ${geometry.clipRight}px ${geometry.clipBottom}px ${geometry.clipLeft}px)`;
-                    if (geometry.pillInside !== last?.pillInside) setPillInside(geometry.pillInside);
+                    // Read by the inside pill's CSS — keeps it against the
+                    // VISIBLE frame top when the block's own top has scrolled by
+                    frame.style.setProperty("--mat-builder-chrome-pill-offset", `${geometry.pillOffset}px`);
+                    if (geometry.pillPlacement !== last?.pillPlacement) setPillPlacement(geometry.pillPlacement);
                     last = geometry;
                 }
                 setAttached(true);
@@ -160,7 +169,7 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
                 <span key={corner} className="mat-builder-chrome-handle" data-corner={corner} aria-hidden />
             ))}
             <AnimatePresence>
-                {showPill && <ChromePill label={label} Icon={definition?.icon} inside={pillInside} />}
+                {showPill && <ChromePill label={label} Icon={definition?.icon} placement={pillPlacement} />}
             </AnimatePresence>
         </motion.div>
     );
