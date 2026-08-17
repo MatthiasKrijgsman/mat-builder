@@ -1,6 +1,7 @@
 import { useCallback, type KeyboardEvent } from "react";
 import { findLocation } from "../core/index.ts";
 import { useBuilderContext } from "./context.ts";
+import { adjacentVisibleRow } from "./layer-tree.ts";
 
 /*
  * Keyboard shortcuts — see docs/04 §Keyboard. Returned as an onKeyDown
@@ -11,7 +12,10 @@ import { useBuilderContext } from "./context.ts";
  */
 
 export interface BuilderKeyboardOptions {
-    /** The layers surface additionally handles ←/→ collapse/expand */
+    /**
+     * The layers surface additionally handles ←/→ collapse/expand, and reads
+     * ↑/↓ as "the next row in the tree" rather than the next sibling.
+     */
     surface?: "canvas" | "layers";
 }
 
@@ -29,7 +33,7 @@ export function useBuilderKeyboard(options?: BuilderKeyboardOptions): (event: Ke
     return useCallback(
         (event: KeyboardEvent) => {
             if (isEditableTarget(event.target)) return;
-            const { document, selectedId, actions } = store.getState();
+            const { document, selectedId, expanded, actions } = store.getState();
             const meta = event.metaKey || event.ctrlKey;
             const key = event.key.toLowerCase();
 
@@ -61,10 +65,20 @@ export function useBuilderKeyboard(options?: BuilderKeyboardOptions): (event: Ke
                     actions.select(document.rootId);
                     return;
                 }
+                const delta = event.key === "ArrowDown" ? 1 : -1;
+                if (surface === "layers") {
+                    // A tree steps through the rows you can SEE, in and out of
+                    // nesting levels — sibling-only navigation dead-ends on an
+                    // only child, which is most of a real document
+                    const next = adjacentVisibleRow(document, expanded, selectedId, delta);
+                    if (next) actions.select(next);
+                    return;
+                }
+                // Canvas: stay at one level, Figma-style — Escape goes up
                 const location = findLocation(document, selectedId);
                 if (!location) return; // the root has no siblings
                 const siblings = document.blocks[location.parentId].children[location.container];
-                const next = siblings[location.index + (event.key === "ArrowDown" ? 1 : -1)];
+                const next = siblings[location.index + delta];
                 if (next) actions.select(next);
                 return;
             }

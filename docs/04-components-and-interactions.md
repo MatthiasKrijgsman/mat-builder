@@ -111,7 +111,7 @@ All three panels share the same anatomy so they read as one family: any pinned r
 - Selection and hover are **bidirectionally synced** with the canvas (`selectedId` / `hoveredId` in the store; hover in the layers panel outlines the canvas block and vice versa).
 - Selecting a row auto-scrolls the canvas to the block; selecting on canvas expands + scrolls the tree.
 - Rows are draggable/droppable for reorder + reparent (see 05 §4).
-- Expand state (`expanded: Set<BlockId>`) lives in the store; newly created parents auto-expand.
+- Expand state (`expanded: Set<BlockId>`) lives in the store; newly created parents auto-expand. It is also what `↑`/`↓` walk (§Keyboard): the arrows step row by row through what is expanded, so the tree reads the same to the keyboard as it does on screen.
 
 ### Toolbar
 
@@ -170,10 +170,12 @@ Implemented as a shared `onKeyDown` handler (`useBuilderKeyboard`, internal) tha
 | `Delete` / `Backspace` | remove selected block (respects `canDelete`) |
 | `Cmd/Ctrl+D` | duplicate selected |
 | `Escape` | select parent / clear selection |
-| `↑` / `↓` | previous / next sibling (no selection: selects the root) |
+| `↑` / `↓` | **layers**: previous / next *visible row*; **canvas**: previous / next sibling (no selection, either surface: selects the root) |
 | `←` / `→` | collapse / expand the selected block (layers panel surface only) |
 
 All of the above are implemented in `useBuilderKeyboard` (internal).
+
+The two readings of `↑`/`↓` are the two mental models the surfaces actually have. On the canvas, arrows stay at one level (Figma's model — `Escape` is how you go up), because a keypress that silently changed nesting depth would move the selection ring somewhere the eye can't predict. The layers panel is a tree widget, and the row under the cursor is the unit there: `↑`/`↓` step through the rows on screen, crossing in and out of nesting levels and skipping whatever a collapsed row is hiding (`visibleLayerRows` / `adjacentVisibleRow` in `src/react/layer-tree.ts`, ordered by the same `walkDocument` pass `LayerRow` renders with). Sibling-only navigation read as a dead key in the tree: most blocks in a real document are an only child or the last of their group, so ↓ did nothing far more often than it did anything. Neither direction wraps, and a selection whose row is hidden — collapse an ancestor while a descendant is selected — steps from the nearest visible ancestor, the row standing in for it on screen.
 
 (A full keyboard-only *move* mode — Atlassian recommends menu-based alternatives to DnD for accessibility — is a v2 item; the primitives (`moveBlock`) already exist, so it's UI work only.)
 
