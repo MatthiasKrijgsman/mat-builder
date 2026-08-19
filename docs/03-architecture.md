@@ -309,6 +309,8 @@ mat-builder/
       fields/                 # shared inspector field helpers (wrapping mat-ui inputs)
     email/                    # email block set + server-safe renderer (see 06)
   site/                       # playground app (the email builder — deployed to GitHub Pages on push to main)
+    app/samples/              # the sample documents a new template starts from
+    app/templates/            # the playground's localStorage template library (see 06 §Playground host)
   docs/                       # these documents
 ```
 

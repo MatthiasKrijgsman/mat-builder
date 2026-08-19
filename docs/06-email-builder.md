@@ -216,7 +216,7 @@ The canvas shows `editRender`; preview shows the truth. Shipped as `EmailPreview
 
 ## `<EmailBuilder>` — the one-component entry point
 
-The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now little more than the sample documents it opens (`site/app/samples/`) and the `InputSelect` it passes through `actions` to switch between them. Both templates — an Aura One product launch and a Northbound '26 conference invite — use every block in the preset, so whichever is open doubles as a visual smoke test; between them they also cover the two things one template had no use for, a gradient background and a conditional block. Switching remounts the builder (the picker keys it on the sample id), which is what a host does when it loads another document.
+The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + the preset + the mode toggle + the preview surface. This is what a host app mounts; the playground page is now only the host around it — a template library, the controls that manage it, and the sample documents a new template starts from (§Playground host below).
 
 ```tsx
 <EmailBuilder
@@ -233,6 +233,16 @@ The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + t
 - With no `value`/`defaultValue` it seeds a blank document from `email-root`, whose `onCreate` already supplies the white container — so the zero-config form opens on an empty-but-usable email.
 - `onSave` receives the **document**, never HTML: rendering belongs to `./email/render`, on whichever side the host persists from. An autosaving editor must not pay a react-email render per keystroke burst.
 - Preview mode is per-instance UI state, not document state — it stays out of the store (like `mode` did in the playground), so it never enters history or a save payload. The component owns both the shell's `canvas` and its `inspector` for that reason: the mode toggle swaps the two surfaces without the store ever learning about the mode.
+
+## Playground host
+
+`site/app/page.tsx` is the reference host: what a consuming app has to bring around `<EmailBuilder>`, kept small enough to read in one sitting. Its backend is **localStorage** (`site/app/templates/`), so the deployed static demo persists real work instead of saving into a `setTimeout`.
+
+- **The library is the documents.** `site/app/templates/storage.ts` stores `{ id, name, mergeTags, document }` under one versioned key. A first visit seeds it with copies of the built-in samples (`site/app/samples/` — an Aura One product launch and a Northbound '26 conference invite), so the samples are starting points rather than a separate read-only mode, and every open document exercises the save/load path. Both samples use every block in the preset, so whichever is open doubles as a visual smoke test; between them they also cover the two things one template had no use for, a gradient background and a conditional block. "Reset to samples" re-seeds; deleting every template lands on an empty state rather than silently re-seeding.
+- **Stored documents are untrusted.** The read path runs `migrateDocument` then `validateDocument` and drops any entry with an *error* issue (warnings are tolerated by design — an unknown block type renders as a missing block rather than losing the document). A document that has sat in a browser across releases is in exactly the position of one coming back from an API, so the playground demonstrates the load contract rather than skipping it.
+- **New templates** are either a blank document — `createDocument(registry, EMAIL_ROOT_TYPE)`, whose `onCreate` supplies the white container — or a `structuredClone` of a sample. Duplicate/rename/delete round out the menu; all of it is mat-ui in the shell's `actions` slot, next to the Edit/Preview tabs.
+- **Switching remounts the builder** (the page keys it on the template id), which is what a host does when it loads another document — history and save state start clean. Because the outgoing instance takes its pending autosave with it, the page mirrors the last `onChange` document and flushes it before switching or duplicating.
+- **Saving is `autoSaveMs` + the manual button/⌘S.** `onSave` writes synchronously to localStorage and lets a `QuotaExceededError` through, so a full store surfaces as the shell's "Save failed" state with the edits still pending — which is the whole point of `onSave` being allowed to reject.
 
 ## Editor-canvas styling notes
 
