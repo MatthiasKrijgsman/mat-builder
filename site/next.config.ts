@@ -13,6 +13,11 @@ const libVersion = (
 const isProd = process.env.NODE_ENV === "production";
 const basePath = isProd ? "/mat-builder" : "";
 
+// Where the built site actually lives. `basePath` only records half of that
+// fact, and social-preview tags need the whole absolute URL — a scraper never
+// resolves a relative one. `metadataBase` in app/layout.tsx reads this.
+const siteUrl = isProd ? "https://matthiaskrijgsman.github.io/mat-builder" : "http://localhost:6007";
+
 const nextConfig: NextConfig = {
   output: "export",
   basePath,
@@ -22,6 +27,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@matthiaskrijgsman/mat-builder"],
   env: {
     NEXT_PUBLIC_LIB_VERSION: libVersion,
+    NEXT_PUBLIC_SITE_URL: siteUrl,
   },
 };
 
