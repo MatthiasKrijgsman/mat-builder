@@ -63,6 +63,9 @@ export function OgFrame() {
 
 /* ── Left half ──────────────────────────────────────────────────────────── */
 
+/** The heading and the line under it are mirrored by `og:title` and
+ * `og:description` in app/layout.tsx — a card whose image and text disagree
+ * reads as two products. Change them together. */
 function Wordmark() {
     return (
         <div className="absolute inset-y-0 left-0 flex w-[600px] flex-col justify-center pl-[76px]">
