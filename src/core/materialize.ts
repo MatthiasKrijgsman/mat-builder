@@ -38,6 +38,8 @@ export function materializeBlock(
         props: { ...definition.defaultProps, ...spec.props },
         children: {},
     };
+    // Absent = always visible, so only stamp the field when the spec carries it.
+    if (spec.visibility) node.visibility = spec.visibility;
     for (const container of definition.containers ?? []) {
         node.children[container.name] = [];
     }

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createRegistry, setDocument, type AnyBlockDefinition } from "../core/index.ts";
-import type { BlockId, BuilderDocument } from "../core/types.ts";
+import type { BlockId, BlockPattern, BuilderDocument } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
 import type { MergeTag } from "./merge-tags.ts";
@@ -25,14 +25,18 @@ export interface BuilderProviderProps {
     /** Personalization tokens available in text surfaces (see merge-tags.ts);
      * omit or pass empty to hide all merge-tag UI. Pass a stable array. */
     mergeTags?: MergeTag[];
+    /** Palette entries that expand into ordinary blocks on insert (docs/08 §7).
+     * Not block definitions — they never enter the registry. Pass a stable array. */
+    patterns?: BlockPattern[];
     children: ReactNode;
 }
 
-/** Stable empty list so an omitted `mergeTags` prop never churns the store. */
+/** Stable empty lists so omitted props never churn the store. */
 const NO_MERGE_TAGS: MergeTag[] = [];
+const NO_PATTERNS: BlockPattern[] = [];
 
 export function BuilderProvider(props: BuilderProviderProps) {
-    const { blocks, value, defaultValue, onChange, onSelectionChange, mergeTags, children } = props;
+    const { blocks, value, defaultValue, onChange, onSelectionChange, mergeTags, patterns, children } = props;
 
     const [instance] = useState<BuilderContextValue & { callbacks: EditorCallbacks }>(() => {
         const registry = createRegistry(blocks);
@@ -41,7 +45,13 @@ export function BuilderProvider(props: BuilderProviderProps) {
             throw new Error("BuilderProvider requires a `value` or `defaultValue` document");
         }
         const callbacks: EditorCallbacks = {};
-        const store = createEditorStore({ registry, document: setDocument(initial, registry), mergeTags, callbacks });
+        const store = createEditorStore({
+            registry,
+            document: setDocument(initial, registry),
+            mergeTags,
+            patterns,
+            callbacks,
+        });
         return {
             store,
             registry,
@@ -67,13 +77,21 @@ export function BuilderProvider(props: BuilderProviderProps) {
         }
     }, [value, instance]);
 
-    // Merge tags are plain editor configuration — keep the store's copy fresh
+    // Merge tags and patterns are plain editor configuration — keep the
+    // store's copies fresh, same contract as any other provider prop.
     useEffect(() => {
         const next = mergeTags ?? NO_MERGE_TAGS;
         if (next !== instance.store.getState().mergeTags) {
             instance.store.setState({ mergeTags: next });
         }
     }, [mergeTags, instance]);
+
+    useEffect(() => {
+        const next = patterns ?? NO_PATTERNS;
+        if (next !== instance.store.getState().patterns) {
+            instance.store.setState({ patterns: next });
+        }
+    }, [patterns, instance]);
 
     return <BuilderContext.Provider value={instance}>{children}</BuilderContext.Provider>;
 }

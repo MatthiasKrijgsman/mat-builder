@@ -153,12 +153,37 @@ export interface InspectorProps<P = Record<string, unknown>> {
     update: (patch: Partial<P>) => void;
 }
 
-/** Declarative spec for a block to create — used by `onCreate` to self-populate children. */
+/** Declarative spec for a block to create — used by `onCreate` to self-populate
+ * children, by `insertBlock` to place a whole subtree, and by patterns (docs/08 §7). */
 export interface NewBlockSpec {
     type: string;
     props?: Record<string, unknown>;
     /** Container name → child specs */
     children?: Record<string, NewBlockSpec[]>;
+    /** Conditional visibility for the created node — a node field, not a prop,
+     * so it has to be carried separately for a spec to round-trip a subtree. */
+    visibility?: BlockVisibility;
+}
+
+/**
+ * A palette entry that expands into ordinary blocks on insert — docs/08 §7.
+ *
+ * Deliberately not a `BlockDefinition`: a pattern has no type of its own, so
+ * it never enters the registry and nothing downstream (validation, drop
+ * rules, the renderers) has to know it exists.
+ */
+export interface BlockPattern {
+    /** Unique among patterns; never a block type */
+    id: string;
+    label: string;
+    /** Palette glyph — same contract as a definition's `icon` */
+    icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
+    /** Palette grouping; falls back to "Patterns" */
+    category?: string;
+    /** Palette search terms */
+    keywords?: string[];
+    /** The subtree this stamps out. Its root type is what drop rules gate on. */
+    spec: NewBlockSpec;
 }
 
 export interface OnCreateCtx {

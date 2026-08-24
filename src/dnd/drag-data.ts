@@ -1,4 +1,4 @@
-import type { BlockId } from "../core/types.ts";
+import type { BlockId, NewBlockSpec } from "../core/types.ts";
 
 /*
  * Drag payloads & drop-target data — see docs/05-drag-and-drop.md §1-2.
@@ -13,7 +13,11 @@ import type { BlockId } from "../core/types.ts";
 export interface NewBlockDrag {
     instanceId: symbol;
     kind: "new-block";
+    /** The type that will land. For a pattern this is its spec's ROOT type,
+     * so hitboxes and `canDropAt` never learn about patterns (docs/08 §7). */
     blockType: string;
+    /** Present for a pattern drag — the subtree to stamp out on drop. */
+    spec?: NewBlockSpec;
     [key: string | symbol]: unknown;
 }
 
@@ -29,6 +33,11 @@ export type BuilderDrag = NewBlockDrag | MoveBlockDrag;
 
 export function makeNewBlockDrag(instanceId: symbol, blockType: string): NewBlockDrag {
     return { instanceId, kind: "new-block", blockType };
+}
+
+/** A palette pattern drag — same payload, carrying the spec it expands to. */
+export function makeNewPatternDrag(instanceId: symbol, spec: NewBlockSpec): NewBlockDrag {
+    return { instanceId, kind: "new-block", blockType: spec.type, spec };
 }
 
 export function makeMoveBlockDrag(instanceId: symbol, blockId: BlockId): MoveBlockDrag {

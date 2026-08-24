@@ -9,6 +9,8 @@ import "./style.css";
 
 // Core — document model, block definitions, traversal (server-safe; see docs/03 §4)
 export { defineBlock } from "./core/define-block.ts";
+// Patterns — palette entries that expand into ordinary blocks (docs/08 §7)
+export { definePattern, specFromSubtree } from "./core/patterns.ts";
 export { createRegistry, mergeBlockDefinitions } from "./core/registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./core/registry.ts";
 export { createDocument, migrateDocument, validateDocument } from "./core/document.ts";
@@ -36,6 +38,7 @@ export type {
 export type {
     BlockId,
     BlockNode,
+    BlockPattern,
     BuilderDocument,
     BlockLocation,
     BlockDefinition,

@@ -1,4 +1,5 @@
 import type { BlockRegistry } from "../../core/registry.ts";
+import type { BlockPattern } from "../../core/types.ts";
 
 /*
  * Palette category tints — the single source of truth shared by the Palette
@@ -14,15 +15,23 @@ export const PALETTE_TINT_COUNT = 7;
  * over the *unfiltered*, non-hidden definitions so colors stay stable while
  * searching and match between the palette and the layer tree.
  */
-export function tintByCategory(registry: BlockRegistry): Map<string, number> {
+export function tintByCategory(registry: BlockRegistry, patterns: readonly BlockPattern[] = []): Map<string, number> {
   const map = new Map<string, number>();
+  const take = (category: string) => {
+    if (!map.has(category)) map.set(category, (map.size % PALETTE_TINT_COUNT) + 1);
+  };
   for (const definition of registry.definitions) {
     if (definition.hidden) continue;
-    const category = definition.category ?? "Blocks";
-    if (!map.has(category)) map.set(category, (map.size % PALETTE_TINT_COUNT) + 1);
+    take(definition.category ?? "Blocks");
   }
+  // Patterns are assigned AFTER every block category, so passing them (the
+  // Palette does, the Layers tree does not) never shifts a block's color.
+  for (const pattern of patterns) take(pattern.category ?? PATTERN_CATEGORY);
   return map;
 }
+
+/** Default palette grouping for patterns that don't name a category. */
+export const PATTERN_CATEGORY = "Patterns";
 
 /** The CSS var for one part of a tint set (e.g. tintCssVar(2, "fg")). */
 export function tintCssVar(tint: number, part: "bg" | "border" | "fg"): string {

@@ -1,6 +1,6 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
-import type { BlockId, BuilderDocument } from "../../core/types.ts";
+import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
 import { BuilderProvider } from "../../react/provider.tsx";
 import { useDocumentSave, type SaveController, type UseDocumentSaveOptions } from "../../react/save.ts";
@@ -46,6 +46,9 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     onSelectionChange?: (id: BlockId | null) => void;
     /** Personalization tokens available in text surfaces; pass a stable array */
     mergeTags?: MergeTag[];
+    /** Palette entries that expand into ordinary blocks on insert (docs/08 §7);
+     * pass a stable array */
+    patterns?: BlockPattern[];
 
     /* ── Chrome ─────────────────────────────────────────────────────── */
     /** App name — the fixed first breadcrumb segment in the top bar */
@@ -86,6 +89,7 @@ export function BuilderShell(props: BuilderShellProps) {
         onChange,
         onSelectionChange,
         mergeTags,
+        patterns,
         onSave,
         autoSaveMs,
         onError,
@@ -130,6 +134,7 @@ export function BuilderShell(props: BuilderShellProps) {
             onChange={handleChange}
             onSelectionChange={onSelectionChange}
             mergeTags={mergeTags}
+            patterns={patterns}
         >
             <BuilderShellLayout
                 save={save}

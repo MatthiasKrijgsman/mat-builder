@@ -3,11 +3,13 @@ import { extractInstruction } from "@atlaskit/pragmatic-drag-and-drop-hitbox/lis
 import { canDropAt } from "../core/commands.ts";
 import { findLocation } from "../core/traversal.ts";
 import type { BlockRegistry } from "../core/registry.ts";
-import type { BlockId, BlockLocation, BuilderDocument } from "../core/types.ts";
+import type { BlockId, BlockLocation, BuilderDocument, NewBlockSpec } from "../core/types.ts";
 import type { BuilderDropTargetData } from "./drag-data.ts";
 
 /** The store's DragState and the branded drag payloads both satisfy this. */
-export type DragLike = { kind: "new-block"; blockType: string } | { kind: "move-block"; blockId: BlockId };
+export type DragLike =
+    | { kind: "new-block"; blockType: string; spec?: NewBlockSpec }
+    | { kind: "move-block"; blockId: BlockId };
 
 /*
  * Drop resolution — see docs/05-drag-and-drop.md §4.

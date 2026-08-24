@@ -1,13 +1,14 @@
 import { draggable } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 import { Input } from "@matthiaskrijgsman/mat-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ComponentType } from "react";
 import { findInsertLocation } from "../../core/commands.ts";
-import type { AnyBlockDefinition } from "../../core/registry.ts";
-import { makeNewBlockDrag } from "../../dnd/drag-data.ts";
+import type { BlockPattern, NewBlockSpec } from "../../core/types.ts";
+import { makeNewBlockDrag, makeNewPatternDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
+import { useBuilderState } from "../../react/hooks.ts";
 import { IconGripVertical, IconSearch } from "@tabler/icons-react";
-import { tintByCategory, tintCssVar } from "./tints.ts";
+import { PATTERN_CATEGORY, tintByCategory, tintCssVar } from "./tints.ts";
 
 /*
  * Palette — see docs/04 §Palette. Grouped by category, searched over
@@ -16,37 +17,78 @@ import { tintByCategory, tintCssVar } from "./tints.ts";
  * a Pragmatic draggable carrying a "new-block" payload; clicking is the
  * complement: it inserts into the selection's nearest accepting container
  * (accessibility & speed).
+ *
+ * This is the ONE place blocks and patterns (docs/08 §7) meet. Both become a
+ * PaletteEntry and render identically; the only difference is what the drop
+ * inserts — a bare type, or the pattern's whole spec. Everything downstream
+ * (hitboxes, drop rules, the registry) keeps dealing only in block types,
+ * because an entry's `type` is a pattern's spec ROOT type.
  */
 
 export interface PaletteProps {
   className?: string;
 }
 
+/** A palette row — a block definition or a pattern, flattened to what the row needs. */
+interface PaletteEntry {
+  key: string;
+  label: string;
+  icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
+  category: string;
+  /** The registered block type a drop of this entry lands */
+  type: string;
+  /** Present for patterns — the subtree to stamp out */
+  spec?: NewBlockSpec;
+  /** Lowercased haystack, precomputed once per entry */
+  search: string;
+}
+
+const haystack = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(" ").toLowerCase();
+
 export function Palette({ className }: PaletteProps) {
   const { registry } = useBuilderContext();
+  const patterns = useBuilderState((s) => s.patterns);
   const [ query, setQuery ] = useState("");
 
   // Category → tint index (shared with the layer tree, see ./tints.ts).
-  const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
+  const tintMap = useMemo(() => tintByCategory(registry, patterns), [ registry, patterns ]);
+
+  const entries = useMemo<PaletteEntry[]>(() => {
+    const blocks = registry.definitions
+      .filter((definition) => !definition.hidden)
+      .map((definition) => ({
+        key: `block:${definition.type}`,
+        label: definition.label,
+        icon: definition.icon,
+        category: definition.category ?? "Blocks",
+        type: definition.type,
+        search: haystack(definition.label, definition.type, definition.keywords?.join(" ")),
+      }));
+    // A pattern whose root type is not registered can never be dropped, so it
+    // is dropped from the palette rather than offered as a dead row.
+    const stamps = patterns
+      .filter((pattern) => registry.has(pattern.spec.type))
+      .map((pattern: BlockPattern) => ({
+        key: `pattern:${pattern.id}`,
+        label: pattern.label,
+        icon: pattern.icon,
+        category: pattern.category ?? PATTERN_CATEGORY,
+        type: pattern.spec.type,
+        spec: pattern.spec,
+        search: haystack(pattern.label, pattern.id, pattern.keywords?.join(" ")),
+      }));
+    return [ ...blocks, ...stamps ];
+  }, [ registry, patterns ]);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const visible = registry.definitions
-      .filter((definition) => !definition.hidden)
-      .filter(
-        (definition) =>
-          !q ||
-          definition.label.toLowerCase().includes(q) ||
-          definition.type.toLowerCase().includes(q) ||
-          definition.keywords?.some((keyword) => keyword.toLowerCase().includes(q)),
-      );
-    const byCategory = new Map<string, AnyBlockDefinition[]>();
-    for (const definition of visible) {
-      const category = definition.category ?? "Blocks";
-      byCategory.set(category, [ ...(byCategory.get(category) ?? []), definition ]);
+    const byCategory = new Map<string, PaletteEntry[]>();
+    for (const entry of entries) {
+      if (q && !entry.search.includes(q)) continue;
+      byCategory.set(entry.category, [ ...(byCategory.get(entry.category) ?? []), entry ]);
     }
     return [ ...byCategory.entries() ];
-  }, [ registry, query ]);
+  }, [ entries, query ]);
 
   return (
     <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
@@ -62,7 +104,7 @@ export function Palette({ className }: PaletteProps) {
         />
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
-      { groups.map(([ category, definitions ]) => (
+      { groups.map(([ category, groupEntries ]) => (
         <div key={ category } className="flex flex-col">
           <p
             className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider"
@@ -70,10 +112,10 @@ export function Palette({ className }: PaletteProps) {
           >
             { category }
           </p>
-          { definitions.map((definition) => (
+          { groupEntries.map((entry) => (
             <PaletteItem
-              key={ definition.type }
-              definition={ definition }
+              key={ entry.key }
+              entry={ entry }
               tint={ tintMap.get(category) ?? 1 }
             />
           )) }
@@ -89,27 +131,29 @@ export function Palette({ className }: PaletteProps) {
   );
 }
 
-function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tint: number }) {
+function PaletteItem({ entry, tint }: { entry: PaletteEntry; tint: number }) {
   const { store, registry, instanceId } = useBuilderContext();
   const ref = useRef<HTMLButtonElement>(null);
-  const Icon = definition.icon;
+  const Icon = entry.icon;
+  const { label, type, spec } = entry;
 
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
     return draggable({
       element,
-      getInitialData: () => makeNewBlockDrag(instanceId, definition.type),
-      onGenerateDragPreview: ({ nativeSetDragImage }) =>
-        setChipDragPreview(nativeSetDragImage, definition.label),
+      getInitialData: () => (spec ? makeNewPatternDrag(instanceId, spec) : makeNewBlockDrag(instanceId, type)),
+      onGenerateDragPreview: ({ nativeSetDragImage }) => setChipDragPreview(nativeSetDragImage, label),
     });
-  }, [ instanceId, definition.type, definition.label ]);
+  }, [ instanceId, type, spec, label ]);
 
-  // Click-to-add: the palette item never moves — a new node is created
+  // Click-to-add: the palette item never moves — a new node is created.
+  // Drop rules run against the entry's block type either way, so a pattern
+  // lands wherever its root block would.
   const onClick = () => {
     const { document, selectedId, actions } = store.getState();
-    const at = findInsertLocation(document, registry, definition.type, selectedId);
-    if (at) actions.insertBlock(definition.type, at);
+    const at = findInsertLocation(document, registry, type, selectedId);
+    if (at) actions.insertBlock(spec ?? type, at);
   };
 
   return (
@@ -123,7 +167,7 @@ function PaletteItem({ definition, tint }: { definition: AnyBlockDefinition; tin
       <span
         className="min-w-0 flex-1 truncate text-left font-medium text-stone-900"
       >
-        { definition.label }
+        { label }
       </span>
       <IconGripVertical
         className="size-4 shrink-0 opacity-40 transition-opacity group-hover:opacity-70"
