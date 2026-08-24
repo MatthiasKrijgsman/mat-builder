@@ -278,3 +278,21 @@
     white-space: nowrap;
     user-select: none;
 }
+
+/*
+ * Panel text colour.
+ *
+ * Deliberately set on the panel roots rather than inherited: without this the
+ * panels take whatever `color` the HOST's body carries, so a host with dark
+ * body text and a dark builder gets near-black labels on a near-black panel.
+ * Scoped to the panels, NOT the shell, because the artboard must keep
+ * inheriting nothing — a block that sets no colour has to look the same on
+ * the canvas as it will in the recipient's inbox, whatever the editor's
+ * scheme. See docs/guides/theming.md.
+ */
+.mat-builder-topbar,
+.mat-builder-palette,
+.mat-builder-layers,
+.mat-builder-inspector {
+    color: var(--mat-builder-color-panel-fg);
+}

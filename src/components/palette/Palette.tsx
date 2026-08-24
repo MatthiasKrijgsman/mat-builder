@@ -165,7 +165,8 @@ function PaletteItem({ entry, tint }: { entry: PaletteEntry; tint: number }) {
     >
       { Icon && <Icon className="size-4 shrink-0" style={ { color: tintCssVar(tint, "fg") } }/> }
       <span
-        className="min-w-0 flex-1 truncate text-left font-medium text-stone-900"
+        className="min-w-0 flex-1 truncate text-left font-medium"
+        style={ { color: "var(--mat-builder-color-panel-fg)" } }
       >
         { label }
       </span>

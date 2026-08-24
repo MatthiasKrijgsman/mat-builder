@@ -86,6 +86,9 @@ export { BuilderShell, type BuilderShellProps, type BuilderShellPanels } from ".
 export { ShellTopBar, SaveControls, type ShellTopBarProps } from "./components/shell/ShellTopBar.tsx";
 export { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./components/shell/labels.ts";
 export { dockedPanel, dottedSurface, transparentSurface } from "./components/shell/chrome.ts";
+// Theming — token overrides per instance, and the colour scheme (docs/guides/theming.md)
+export { themeToStyle, colorSchemeAttr } from "./react/theme.ts";
+export type { BuilderTheme, BuilderToken, BuilderColorScheme } from "./react/theme.ts";
 
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";

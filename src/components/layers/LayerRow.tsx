@@ -156,7 +156,9 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         : undefined),
   };
 
-  const labelColor = isSelected ? "var(--mat-builder-color-layer-row-selected-fg)" : "var(--color-stone-900)";
+  const labelColor = isSelected
+    ? "var(--mat-builder-color-layer-row-selected-fg)"
+    : "var(--mat-builder-color-panel-fg)";
   // Unselected icons take the same tint as their palette tile; blocks without a
   // tile (root/hidden) fall back to the neutral panel-icon gray.
   const iconColor = isSelected
