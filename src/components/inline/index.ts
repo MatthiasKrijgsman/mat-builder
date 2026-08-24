@@ -12,3 +12,10 @@ export {
     type SerializedMergeTagNode,
 } from "./MergeTagNode.tsx";
 export { mergeTagItems, MergeTagPlainItem, type MergeTagPlainItemProps } from "./MergeTagItems.tsx";
+
+export {
+    ComposedFieldProvider,
+    useComposedField,
+    type ComposedFieldBinding,
+    type ResolvedField,
+} from "./composed-field.tsx";

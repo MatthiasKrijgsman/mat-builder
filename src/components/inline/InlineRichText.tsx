@@ -17,6 +17,7 @@ import { selectionTypographyItems } from "./SelectionTypographyItems.tsx";
 import { LineHeightPlugin } from "./LineHeightPlugin.tsx";
 import { MergeTagChip, MergeTagNode } from "./MergeTagNode.tsx";
 import { mergeTagItems } from "./MergeTagItems.tsx";
+import { useComposedField } from "./composed-field.tsx";
 import { focusCanvas } from "./focus.ts";
 import { useSelectionDrag } from "./use-selection-drag.ts";
 
@@ -180,7 +181,10 @@ const EXTRA_NODES = [MergeTagNode];
 
 export function InlineRichText({ id, field = "content", value, onChange, style, className, placeholder, toolbarExtra }: InlineRichTextProps) {
     const actions = useBuilderState((s) => s.actions);
-    const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
+    // Inside a composed block these resolve to the COMPOSITE and the prop
+    // the binding names; outside one they are `id`/`field` unchanged.
+    const { id: editId, field: editField, editable } = useComposedField(id, field);
+    const isEditing = useBuilderState((s) => s.editing?.blockId === editId && s.editing.field === editField);
     const containerRef = useRef<HTMLDivElement>(null);
     // The bar sits right where a selection sweep happens — hide it mid-drag
     const selecting = useSelectionDrag(containerRef, isEditing);
@@ -225,10 +229,13 @@ export function InlineRichText({ id, field = "content", value, onChange, style, 
                 style={style}
                 className={className}
                 onDoubleClick={(event) => {
+                    // An unbound prop inside a composed block has nowhere to
+                    // write, so it stays read-only (docs/08 §3).
+                    if (!editable) return;
                     event.stopPropagation();
                     event.preventDefault(); // no native word-selection flash under the editor
                     clickPointRef.current = { x: event.clientX, y: event.clientY };
-                    actions.startEditing(id, field);
+                    actions.startEditing(editId, editField);
                 }}
             >
                 <RichText content={value} renderMergeTag={renderMergeTag} />

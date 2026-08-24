@@ -7,6 +7,7 @@ import { BuilderShell, type BuilderShellProps } from "../components/shell/Builde
 import { mergeBlockDefinitions, type AnyBlockDefinition } from "../core/index.ts";
 import { EMAIL_ROOT_TYPE, emailBlocks } from "./preset.ts";
 import { EmailPreview } from "./preview.tsx";
+import type { EmailBlockOverride } from "./types.ts";
 
 /*
  * <EmailBuilder> — the whole email builder as one component (docs/06):
@@ -43,6 +44,9 @@ export interface EmailBuilderProps extends Omit<BuilderShellProps, "blocks" | "r
     modeLabels?: Partial<EmailBuilderModeLabels>;
     /** Debounce before the preview re-renders the email HTML */
     previewDebounceMs?: number;
+    /** Output renderers for custom PRIMITIVE blocks, for the preview (docs/08 §8).
+     * Composed blocks are read off the registry and need nothing here. */
+    renderBlocks?: readonly EmailBlockOverride[];
 }
 
 export function EmailBuilder(props: EmailBuilderProps) {
@@ -54,6 +58,7 @@ export function EmailBuilder(props: EmailBuilderProps) {
         showModeToggle = true,
         modeLabels,
         previewDebounceMs,
+        renderBlocks,
         actions,
         title = "Email builder",
         icon = IconMail,
@@ -105,6 +110,7 @@ export function EmailBuilder(props: EmailBuilderProps) {
                         initialWidth="fill"
                         initialHeight="fill"
                         debounceMs={previewDebounceMs}
+                        blocks={renderBlocks}
                     />
                 )
             }

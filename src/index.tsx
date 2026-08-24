@@ -11,6 +11,8 @@ import "./style.css";
 export { defineBlock } from "./core/define-block.ts";
 // Patterns — palette entries that expand into ordinary blocks (docs/08 §7)
 export { definePattern, specFromSubtree } from "./core/patterns.ts";
+// Composed blocks — a block declared as a tree of other blocks (docs/08)
+export { slot, isSlotRef, collectBindings, collectSlots } from "./core/compose.ts";
 export { createRegistry, mergeBlockDefinitions } from "./core/registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./core/registry.ts";
 export { createDocument, migrateDocument, validateDocument } from "./core/document.ts";
@@ -43,6 +45,10 @@ export type {
     BlockLocation,
     BlockDefinition,
     ContainerDef,
+    BlockSpec,
+    BlockCompose,
+    BlockContext,
+    ContainerSlotRef,
     AcceptCtx,
     EditRenderProps,
     InspectorProps,

@@ -1,6 +1,7 @@
 import { IconLayoutRows, IconSquare, IconTable } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
+import { acceptsEmailContent } from "../../accepts.ts";
 import type { BlockLocation, BuilderDocument, NewBlockSpec } from "../../../core/types.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import {
@@ -12,7 +13,6 @@ import {
 import { richTextParagraph } from "../../rich-text/index.ts";
 import { CellInspector } from "./CellInspector.tsx";
 import { InheritableField } from "./InheritableField.tsx";
-import { EMAIL_LEAF_TYPES } from "../container/index.tsx";
 import {
     tableStyles,
     emailTableDefaults,
@@ -250,7 +250,7 @@ export const tableCellBlock = defineBlock<EmailTableCellProps>({
         {
             name: "content",
             layout: "vertical",
-            accepts: [...EMAIL_LEAF_TYPES, "container", "table"],
+            accepts: acceptsEmailContent,
             placeholder: "Empty cell",
         },
     ],

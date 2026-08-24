@@ -1,5 +1,6 @@
 import { IconMail } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
+import { acceptsEmailContent } from "../../accepts.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
 import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
@@ -16,7 +17,7 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
   canDelete: false,
   defaultProps: emailRootDefaults,
   containers: [
-    { name: "main", layout: "vertical", accepts: [ "container" ], placeholder: "Add a container" },
+    { name: "main", layout: "vertical", accepts: acceptsEmailContent, placeholder: "Add a container" },
   ],
   // New documents start with one white container — it owns the content
   // background (the root only paints the page behind it).

@@ -87,7 +87,7 @@ describe("insertBlock with a spec subtree", () => {
         const spec: NewBlockSpec = {
             type: "section",
             children: {
-                body: [{ type: "text", visibility: { match: "all", rules: [{ token: "{{vip}}", operator: "is-provided" }] } }],
+                body: [{ type: "text", visibility: { mode: "rules", match: "all", rules: [{ token: "{{vip}}", operator: "exists" }] } }],
             },
         };
         const { document, blockId } = insertBlock(exampleDoc(), { ...spec, at }, testRegistry);
@@ -137,7 +137,7 @@ describe("specFromSubtree", () => {
 
     it("keeps visibility so a saved pattern does not lose its conditions", () => {
         const source = exampleDoc();
-        source.blocks.t1.visibility = { match: "any", rules: [{ token: "{{name}}", operator: "is-provided" }] };
+        source.blocks.t1.visibility = { mode: "rules", match: "any", rules: [{ token: "{{name}}", operator: "exists" }] };
         const spec = specFromSubtree(source, "sec1");
         expect(spec?.children?.left[0].visibility?.rules).toHaveLength(1);
     });

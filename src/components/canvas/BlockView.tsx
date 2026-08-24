@@ -16,6 +16,7 @@ import { dragBlockType } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 import { pressStartedInInlineEditor } from "../inline/focus.ts";
+import { ComposedView } from "./ComposedView.tsx";
 import { ContainerSlot } from "./ContainerSlot.tsx";
 
 /*
@@ -159,14 +160,14 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
     // block re-renders anyway, because any change to an ancestor re-renders
     // this subtree top-down. Subscribing to the whole document here would
     // re-render every block on the canvas on every keystroke.
-    const { style: wrapperStyle, ...wrapperAttrs } =
-        definition?.getWrapperProps?.(node.props, {
-            document: store.getState().document,
-            location: location ?? null,
-            siblingCount: location
-                ? (store.getState().document.blocks[location.parentId]?.children[location.container]?.length ?? 1)
-                : 1,
-        }) ?? {};
+    const blockContext = {
+        document: store.getState().document,
+        location: location ?? null,
+        siblingCount: location
+            ? (store.getState().document.blocks[location.parentId]?.children[location.container]?.length ?? 1)
+            : 1,
+    };
+    const { style: wrapperStyle, ...wrapperAttrs } = definition?.getWrapperProps?.(node.props, blockContext) ?? {};
     // Row-group tags take no flow content, so the absolutely-positioned edge
     // indicator (a div) would be hoisted out of the table — they draw the drop
     // edge as an inset shadow on themselves instead.
@@ -205,7 +206,23 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
                 actions.hover(null);
             }}
         >
-            {definition ? (
+            {!definition ? (
+                <MissingBlock type={node.type} />
+            ) : definition.compose ? (
+                // Composed: no editRender of its own — walk the tree it
+                // declares and render it from the registered blocks (docs/08).
+                // `containers` are still the real slots, so anything the user
+                // dropped into one behaves exactly as it does anywhere else.
+                <ComposedView
+                    spec={definition.compose(node.props, blockContext)}
+                    compositeId={id}
+                    slots={containers}
+                    isSelected={isSelected}
+                    isEditing={isEditing}
+                    update={update}
+                    context={blockContext}
+                />
+            ) : (
                 <definition.editRender
                     id={id}
                     props={node.props}
@@ -214,8 +231,6 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
                     isEditing={isEditing}
                     update={update}
                 />
-            ) : (
-                <MissingBlock type={node.type} />
             )}
             {closestEdge && canHostOverlay && <EdgeIndicator edge={closestEdge} />}
         </Wrapper>

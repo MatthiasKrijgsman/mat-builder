@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Artboard } from "../components/canvas/Artboard.tsx";
 import { useBuilderContext } from "../react/context.ts";
 import { useBuilderState } from "../react/hooks.ts";
 import { renderEmail } from "./render.ts";
+import type { EmailBlockOverride } from "./types.ts";
 
 /*
  * EmailPreview — see docs/06 §Preview mode. Shows the truth: the real
@@ -37,9 +38,25 @@ export interface EmailPreviewProps {
     /** Initial artboard height in px, or "fill" */
     initialHeight?: number | "fill";
     debounceMs?: number;
+    /**
+     * Output renderers for custom PRIMITIVE blocks (docs/08 §8) — the preview
+     * has no other way to reach them, since a primitive's email render lives
+     * outside its definition.
+     *
+     * Composed blocks need nothing here: their `compose` is on the definition,
+     * so the preview reads them straight off the registry and stays in step
+     * with the export automatically.
+     */
+    blocks?: readonly EmailBlockOverride[];
 }
 
-export function EmailPreview({ className, initialWidth = 600, initialHeight = 720, debounceMs = 300 }: EmailPreviewProps) {
+export function EmailPreview({
+    className,
+    initialWidth = 600,
+    initialHeight = 720,
+    debounceMs = 300,
+    blocks,
+}: EmailPreviewProps) {
     const { store, registry } = useBuilderContext();
     const document = useBuilderState((s) => s.document);
     const actions = useBuilderState((s) => s.actions);
@@ -49,6 +66,20 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
     // is what makes "is provided" rules resolve to false here.
     const values = useBuilderState((s) => s.previewValues);
     const rootNode = document.blocks[document.rootId];
+
+    // Composed definitions come off the registry, so a host that registered a
+    // composed block gets a faithful preview without wiring anything — the
+    // preview and the export walk the identical specs (docs/08 §4).
+    const renderBlocks = useMemo<EmailBlockOverride[]>(() => {
+        const composed = registry.definitions
+            .filter((definition) => definition.compose)
+            .map((definition) => ({
+                type: definition.type,
+                defaultProps: definition.defaultProps,
+                compose: definition.compose,
+            }));
+        return [...composed, ...(blocks ?? [])];
+    }, [registry, blocks]);
     const [html, setHtml] = useState<string>("");
     // Mount-time read — a size the user dragged on the Canvas carries over
     const [persistedSize] = useState(() => store.getState().artboardSize);
@@ -64,7 +95,7 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
     useEffect(() => {
         let cancelled = false;
         const timer = setTimeout(() => {
-            renderEmail(document, { values, substituteTokens: true })
+            renderEmail(document, { values, substituteTokens: true, blocks: renderBlocks })
                 .then((result) => {
                     if (!cancelled) setHtml(withPreviewScrollbar(result.html));
                 })
@@ -76,7 +107,7 @@ export function EmailPreview({ className, initialWidth = 600, initialHeight = 72
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [document, values, debounceMs]);
+    }, [document, values, debounceMs, renderBlocks]);
 
     return (
         <Artboard

@@ -44,8 +44,8 @@ export interface BlockSpec {
     bind?: Record<string, string>;
 }
 
-export interface Slot { readonly __slot: string }
-export const slot = (name: string): Slot => ({ __slot: name });
+export interface ContainerSlotRef { readonly __slot: string }
+export const slot = (name: string): ContainerSlotRef => ({ __slot: name });
 ```
 
 `BlockDefinition` becomes a union — a block is *either* a primitive *or* composed, never both:
@@ -143,7 +143,7 @@ Two things this needs:
   renderEmail(doc, { blocks: [productCard, …] })   // pure {type, defaultProps, compose} is all it reads
   ```
 
-  Consumers put `compose` in a server-safe module (natural — it returns data). This also subsumes the raw-`EmailRenderer` escape hatch: same option, `renderers` for primitives.
+  Consumers put `compose` in a server-safe module (natural — it returns data). One option covers both tiers: an `EmailBlockOverride` carries `compose` for a composed block **or** `render` for a custom primitive, and an entry whose `type` matches a preset block replaces it. `EmailPreview` derives the composed entries straight off the registry, so a host gets preview/export parity without wiring anything; only custom primitives need passing explicitly (`<EmailBuilder renderBlocks={…}>`).
 
 **Canvas.** `BlockView` branches on `definition.compose`: a `ComposedView` walks the same spec, rendering each node's `editRender` inline with merged defaults, `update` routed through the bind context, and `containers` resolved as — nested specs → recurse; `slot(name)` → a real `<ContainerSlot parentId={compositeId} container={name}>`, which is exactly today's component. So a composite's *slots* hold real child nodes and behave normally, while its composed scaffolding does not.
 
@@ -179,6 +179,8 @@ Widening those to a spec is ~1 day and needs nothing else — no renderer, no ac
 Composition must not be the only route. `email-root` and `table` are both blocks that could not have been composed, and consumers hit the same wall: Outlook VML for bulletproof buttons and background images, `<style>` blocks with media queries for responsive stacking, a repeater over line-item data, an ESP's required `data-*` attribute. Raw `editRender` + `EmailRenderer` stays supported — it just stops being the first thing a consumer meets.
 
 ## 9. Cost
+
+Actuals against the estimate below: the whole of §2–§7 landed in one session. The estimate held up on shape but not on scale — the pieces were right, the days were not.
 
 | Piece | Est. |
 |---|---|

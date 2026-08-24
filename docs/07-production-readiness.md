@@ -13,13 +13,15 @@ The library is already architecturally right for both. What is missing is almost
 
 ## The control ladder
 
-Everything below is organized around this. It is the promise we make to consumers, and it is what the API reference should be structured by. Levels 0, 3 and 4 exist and work today; **levels 1 and 2 are the gap.**
+Everything below is organized around this. It is the promise we make to consumers, and it is what the API reference should be structured by. Levels 0, 3 and 4 exist and work today; **level 1 is the gap.**
+
+Level 2 was rated "works, undocumented" when this was written, which was too generous: registration worked, but a custom block was in no container's `accepts` list and had no seam for its output renderer, so it could be registered, shown in the palette, dropped nowhere, and — if forced into a document — vanish silently from the export. Both are fixed, and composed blocks (`compose`) mean the common case needs no renderer at all. See `08-composed-blocks.md`. What is still owed is B7's cookbook.
 
 | Level | Consumer writes | Controls | Status |
 |---|---|---|---|
 | 0 | `<EmailBuilder defaultValue onSave />` | nothing — batteries included | ✅ ships |
 | 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial |
-| 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works, undocumented |
+| 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works (see below) |
 | 3 | `<BuilderProvider>` + components | their own layout entirely | ✅ ships |
 | 4 | `./email/render`, `core` exports | server rendering, validation, migration, own pipeline | ✅ ships |
 
