@@ -170,7 +170,7 @@ No error boundary anywhere in the tree. A `editRender` that throws on a malforme
 
 `docs/01–06` explain *why* the library is shaped this way — excellent for us, wrong artifact for a consumer. The README's 10-line snippet is currently the entire integration documentation, and level 2 (custom blocks — arguably the biggest selling point) is undocumented outside the type comments.
 
-- [ ] **Getting started** — install, `.npmrc`, CSS import, first builder, saving, rendering server-side.
+- [x] **Getting started** — `guides/getting-started.md`. Every example typechecks against a tarball install in a clean scratch project, and the server-render, personalization and conditional-visibility claims were run there. It documents A5 (preflight) and A6 (peer list, the react-email optionality lie) as live hazards with workarounds — delete those callouts when the fixes land.
 - [ ] **API reference** — every export in `src/index.tsx`, generated or hand-written, organized by the control ladder.
 - [x] **Custom blocks cookbook** — `guides/custom-blocks.md`. Covers all three tiers (patterns, composed blocks, primitives), the field/style-group/style-props toolkit, containers and drop rules, extending preset blocks, and troubleshooting. Its examples typecheck against `dist` and run as `src/email/cookbook.test.tsx`; `site/app/custom/` is the executable block set.
 - [ ] **Theming guide** — the token table, the panel scopes, what `./style` touches.
