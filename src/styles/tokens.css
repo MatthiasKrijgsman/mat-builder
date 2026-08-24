@@ -249,3 +249,35 @@
     --mat-builder-palette-tint-6-fg: #4f46e5;
     --mat-builder-palette-tint-7-fg: #e11d48;
 }
+
+/* ─────────────────────────────────────────────────────────────
+ * Derived tokens, re-declared on the shell.
+ *
+ * A `var()` inside a custom property is substituted where the property is
+ * DECLARED, not where it is read. With these living only on `:root`, they
+ * would already hold a resolved colour by the time the shell inherits them,
+ * so overriding a source token on the shell — which is exactly what the
+ * `theme` prop does — changed the source and nothing downstream.
+ *
+ * Re-declaring them here re-runs the substitution against whatever the shell
+ * resolves, so `theme={{ "color-selection": … }}` reaches all seven of that
+ * token's dependants. The `:root` copies above stay for UI that portals
+ * outside the shell.
+ *
+ * Keep this list in step with the derived tokens above — tokens.test.ts
+ * fails if one is missing.
+ * ───────────────────────────────────────────────────────────── */
+
+.mat-builder-shell {
+    --mat-builder-color-hover: color-mix(in srgb, var(--mat-builder-color-selection) 60%, transparent);
+    --mat-builder-chrome-shadow-drag:
+        0 30px 60px color-mix(in srgb, var(--mat-builder-color-selection) 32%, transparent),
+        0 0 0 1.5px color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+    --mat-builder-color-drop-indicator: var(--mat-builder-color-selection);
+    --mat-builder-color-drop-parent: color-mix(in srgb, var(--mat-builder-color-drop-indicator) 40%, transparent);
+    --mat-builder-color-resize-handle-active: var(--mat-builder-color-selection);
+    --mat-builder-color-rule-accent: var(--mat-builder-color-selection);
+    --mat-builder-color-conditional-ring: color-mix(in srgb, var(--mat-builder-color-conditional-fg) 30%, transparent);
+    --mat-builder-color-layer-row-selected-bg: var(--mat-builder-color-selection);
+    --mat-builder-color-layer-row-hover-bg: color-mix(in srgb, var(--mat-builder-color-panel-fg) 6%, transparent);
+}

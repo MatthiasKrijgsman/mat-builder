@@ -103,6 +103,26 @@ describe("the dark block", () => {
     });
 });
 
+describe("the shell's derived block", () => {
+    /*
+     * A `var()` inside a custom property substitutes where the property is
+     * DECLARED. Without these re-declared on the shell, the `theme` prop —
+     * which sets tokens inline on the shell — could change a source token and
+     * leave everything derived from it untouched.
+     */
+    const shellTokens = tokensIn(".mat-builder-shell {");
+
+    it("re-declares every derived token, so the theme prop propagates", () => {
+        expect([...shellTokens].sort()).toEqual([...derived].sort());
+    });
+
+    it("keeps each one an expression, not a resolved value", () => {
+        for (const token of shellTokens) {
+            expect(valueIn(".mat-builder-shell {", token), token).toContain("var(--mat-builder-");
+        }
+    });
+});
+
 describe("the forced-light block", () => {
     it("covers exactly what the dark block covers", () => {
         expect([...forcedLightTokens].sort()).toEqual([...darkTokens].sort());

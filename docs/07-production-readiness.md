@@ -151,13 +151,13 @@ Grepped across `src/components` and `src/email`: ~230 literal UI strings ("Dupli
 - [ ] `fonts={[{ name, stack, webfont?: { url, weights } }]}` merged into (or replacing) the built-in stacks.
 - [ ] Emit `@font-face`/`<link>` into `<Head>` for web fonts, with the fallback stack intact for Outlook.
 
-### B5. Theming is light-only
+### B5. Theming is light-only — DONE
 
 81 `--mat-builder-*` tokens, all defined once under `:root`, no dark variants — while `style.css` already declares a `dark` variant. Host apps with a dark backoffice will look broken.
 
-- [ ] Dark token set behind the existing `dark` variant.
-- [ ] A typed `theme` prop (or just documented token overrides — decide, then document; today it is neither).
-- [ ] Document the token list in the theming guide, grouped by surface.
+- [x] Dark token set — chrome only; the content layer deliberately stays put.
+- [x] Both, because they answer different questions: a stylesheet rule for a fixed look, the typed `theme` prop for per-instance values and values that come from data. Plus `colorScheme` for hosts not using the `.dark` convention.
+- [x] Token list documented, grouped by layer rather than by surface — which layer a token is on is what decides whether it flips.
 
 ### B6. A consumer block that throws kills the canvas
 
@@ -173,7 +173,7 @@ No error boundary anywhere in the tree. A `editRender` that throws on a malforme
 - [x] **Getting started** — `guides/getting-started.md`. Every example typechecks against a tarball install in a clean scratch project, and the server-render, personalization and conditional-visibility claims were run there. It documents A5 (preflight) and A6 (peer list, the react-email optionality lie) as live hazards with workarounds — delete those callouts when the fixes land.
 - [ ] **API reference** — every export in `src/index.tsx`, generated or hand-written, organized by the control ladder.
 - [x] **Custom blocks cookbook** — `guides/custom-blocks.md`. Covers all three tiers (patterns, composed blocks, primitives), the field/style-group/style-props toolkit, containers and drop rules, extending preset blocks, and troubleshooting. Its examples typecheck against `dist` and run as `src/email/cookbook.test.tsx`; `site/app/custom/` is the executable block set.
-- [ ] **Theming guide** — the token table, the panel scopes, what `./style` touches.
+- [x] **Theming guide** — `guides/theming.md`. The chrome/content split, dark mode, both override routes, the full token reference, and what `./style` touches.
 - [ ] **Server rendering guide** — `./email/render`, merge tags vs. `substituteTokens`, conditional visibility, why the entry is server-safe.
 - [ ] **Upgrade notes per 0.x** — breaking changes are allowed on 0.x, but only if they're written down.
 - [ ] Publish these alongside the demo (same protected host), not just in-repo.

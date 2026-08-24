@@ -18,6 +18,7 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 ### Guides (written for consumers, not for us)
 
 - [Getting started](guides/getting-started.md) — install, the stylesheet, first builder, documents, saving, rendering to email, personalization
+- [Theming](guides/theming.md) — the chrome/content split, dark mode, token overrides and the `theme` prop, the token reference
 - [Custom blocks — a cookbook](guides/custom-blocks.md) — patterns, composed blocks and primitives end to end, the field/style-group/style-props toolkit, extending preset blocks, troubleshooting
 
 ## Key decisions
