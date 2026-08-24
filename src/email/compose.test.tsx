@@ -106,6 +106,17 @@ describe("composed blocks in the output", () => {
         expect(html).toContain("<table");
     });
 
+    it("fills a prop a stored node never had, so old documents keep rendering", async () => {
+        // The canvas merges defaults under stored props before calling
+        // `compose`; the output must do the same or the two surfaces drift on
+        // every prop added after a document was saved.
+        const document = cardDoc({ price: "€12" });
+        delete (document.blocks.card.props as Record<string, unknown>).ctaLabel;
+        const { html } = await renderEmail(document, { blocks: [productCard] });
+        expect(html).toContain("€12");        // the stored prop wins
+        expect(html).toContain("Buy");        // the absent one falls back
+    });
+
     it("renders nothing when the host forgets to pass the definition", async () => {
         const { html } = await renderEmail(cardDoc());
         expect(html).not.toContain("Product");

@@ -6,6 +6,8 @@ import {
     type BackgroundValue,
     defaultSpacing,
     defaultBackground,
+    defaultLayout,
+    defaultSize,
     symmetricSides,
 } from "@matthiaskrijgsman/mat-builder";
 
@@ -43,6 +45,13 @@ export const productCardDefaults: ProductCardProps = {
     spacing: { padding: symmetricSides(20, 20), margin: defaultSpacing.margin },
 };
 
+/*
+ * NOTE the spread on every nested style value below. A spec's props are
+ * merged SHALLOWLY over the target block's defaultProps — the same rule
+ * `updateProps` follows — so `layout: { gap: 12 }` would REPLACE the whole
+ * layout value and silently drop the block's own alignment defaults.
+ * Nested style values must always be complete.
+ */
 export function composeProductCard(props: ProductCardProps): BlockSpec {
     return {
         type: "container",
@@ -50,11 +59,11 @@ export function composeProductCard(props: ProductCardProps): BlockSpec {
             direction: "vertical",
             background: props.background,
             spacing: props.spacing,
-            layout: { gap: 12 },
+            layout: { ...defaultLayout, gap: 12 },
         },
         children: {
             content: [
-                { type: "image", props: { src: props.imageSrc, size: { width: "full" } } },
+                { type: "image", props: { src: props.imageSrc, size: { ...defaultSize, width: "full" } } },
                 // `bind` is what makes the title editable in place: an edit to
                 // the composed text block's `content` is written to the card's
                 // own `title` prop (docs/08 §3).

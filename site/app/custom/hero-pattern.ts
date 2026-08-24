@@ -3,6 +3,7 @@ import {
     richTextParagraph,
     richTextHeading,
     defaultBackground,
+    defaultLayout,
     symmetricSides,
     uniformSides,
 } from "@matthiaskrijgsman/mat-builder";
@@ -30,7 +31,7 @@ export const heroPattern = definePattern({
             direction: "vertical",
             background: { ...defaultBackground, type: "solid", color: "#1C1917" },
             spacing: { padding: symmetricSides(48, 32), margin: uniformSides(0) },
-            layout: { gap: 16 },
+            layout: { ...defaultLayout, gap: 16 },
         },
         children: {
             content: [

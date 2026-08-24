@@ -214,7 +214,12 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
                 // `containers` are still the real slots, so anything the user
                 // dropped into one behaves exactly as it does anywhere else.
                 <ComposedView
-                    spec={definition.compose(node.props, blockContext)}
+                    // Defaults under the stored props — the output walk does
+                    // the same, and `compose` must see one shape on both.
+                    spec={definition.compose(
+                        { ...definition.defaultProps, ...node.props },
+                        blockContext,
+                    )}
                     compositeId={id}
                     slots={containers}
                     isSelected={isSelected}

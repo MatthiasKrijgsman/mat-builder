@@ -237,14 +237,18 @@ export function buildEmailTree(
         ? (visibleChildIds(document, location.parentId, location.container, options.values).length || 1)
         : 1;
     const ctx: BlockContext = { document, location, siblingCount };
+    // Defaults under the stored props, for both paths alike. `materializeBlock`
+    // makes props complete at creation, so this is normally a no-op — it earns
+    // its keep on documents saved before a block gained a prop, and it must
+    // match what the canvas does or the two surfaces drift (docs/08 §4).
+    const props = { ...resolve.defaults(node.type), ...node.props };
 
     if (compose) {
         // Composed: the node's children are its SLOT children, spliced into
         // the tree wherever the spec references them.
-        const props = { ...resolve.defaults(node.type), ...node.props };
         return renderSpec(compose(props, ctx), children, ctx, resolve, 0);
     }
-    return renderer!(node.props, children, ctx);
+    return renderer!(props, children, ctx);
 }
 
 export interface RenderedEmail {

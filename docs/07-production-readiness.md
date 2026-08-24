@@ -15,7 +15,7 @@ The library is already architecturally right for both. What is missing is almost
 
 Everything below is organized around this. It is the promise we make to consumers, and it is what the API reference should be structured by. Levels 0, 3 and 4 exist and work today; **level 1 is the gap.**
 
-Level 2 was rated "works, undocumented" when this was written, which was too generous: registration worked, but a custom block was in no container's `accepts` list and had no seam for its output renderer, so it could be registered, shown in the palette, dropped nowhere, and — if forced into a document — vanish silently from the export. Both are fixed, and composed blocks (`compose`) mean the common case needs no renderer at all. See `08-composed-blocks.md`. What is still owed is B7's cookbook.
+Level 2 was rated "works, undocumented" when this was written, which was too generous: registration worked, but a custom block was in no container's `accepts` list and had no seam for its output renderer, so it could be registered, shown in the palette, dropped nowhere, and — if forced into a document — vanish silently from the export. Both are fixed, composed blocks (`compose`) mean the common case needs no renderer at all, and the cookbook is written. See `08-composed-blocks.md` for the design and `guides/custom-blocks.md` for the consumer guide.
 
 | Level | Consumer writes | Controls | Status |
 |---|---|---|---|
@@ -172,7 +172,7 @@ No error boundary anywhere in the tree. A `editRender` that throws on a malforme
 
 - [ ] **Getting started** — install, `.npmrc`, CSS import, first builder, saving, rendering server-side.
 - [ ] **API reference** — every export in `src/index.tsx`, generated or hand-written, organized by the control ladder.
-- [ ] **Custom blocks cookbook** — `defineBlock` end to end: props, `editRender`, inspector with the shared style groups, containers, the matching email renderer, registering it. Build it from a real second block set so the doc is executable.
+- [x] **Custom blocks cookbook** — `guides/custom-blocks.md`. Covers all three tiers (patterns, composed blocks, primitives), the field/style-group/style-props toolkit, containers and drop rules, extending preset blocks, and troubleshooting. Its examples typecheck against `dist` and run as `src/email/cookbook.test.tsx`; `site/app/custom/` is the executable block set.
 - [ ] **Theming guide** — the token table, the panel scopes, what `./style` touches.
 - [ ] **Server rendering guide** — `./email/render`, merge tags vs. `substituteTokens`, conditional visibility, why the entry is server-safe.
 - [ ] **Upgrade notes per 0.x** — breaking changes are allowed on 0.x, but only if they're written down.
