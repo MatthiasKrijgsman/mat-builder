@@ -59,6 +59,9 @@ const modeLabel = (mode: SizeMode, axis: DimensionAxis, effective: number | null
 
 export interface DimensionFieldProps {
     axis: DimensionAxis;
+    /** Visible label above the box. Omit inside a SizeGroup — the W/H glyph and
+     * the group header name the field there; a standalone one needs words. */
+    label?: string;
     /** The whole size value — the field owns the mode/number relationship */
     value: SizeValue;
     /** Receives the complete next value (shallow-merge safe, like style groups) */
@@ -69,7 +72,7 @@ export interface DimensionFieldProps {
     blockId?: BlockId;
 }
 
-export function DimensionField({ axis, value, onChange, modes, blockId }: DimensionFieldProps) {
+export function DimensionField({ axis, label, value, onChange, modes, blockId }: DimensionFieldProps) {
     const selectedId = useBuilderState((s) => s.selectedId);
     const rendered = useRenderedBlockSize(blockId ?? selectedId);
 
@@ -106,6 +109,7 @@ export function DimensionField({ axis, value, onChange, modes, blockId }: Dimens
         <div className="mat-builder-dimension" data-authored={authored}>
             <NumberField
                 Icon={AxisIcon}
+                label={label}
                 title={`${axisName} — ${modeLabel(mode, axis, effective, pct)}`}
                 value={isPercent ? pct : authored ? px : (measured ?? undefined)}
                 // No canvas to measure (or the block isn't rendered): say so

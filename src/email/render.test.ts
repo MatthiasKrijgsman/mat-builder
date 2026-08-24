@@ -12,7 +12,7 @@ const registry = createRegistry(emailBlocks);
 
 /** email-root > container > (text, button) built through the real preset + commands. */
 function buildDemoEmail(): BuilderDocument {
-    let document = createDocument(registry, "email-root", { previewText: "Preview snippet" });
+    let document = createDocument(registry, "email-root");
     // The root's onCreate seeds one container — build inside it
     const containerId = document.blocks[document.rootId].children.main[0];
 
@@ -57,7 +57,6 @@ describe("renderEmail", () => {
         expect(html).toContain("Hello from mat-builder");
         expect(html).toContain("Buy now");
         expect(html).toContain('href="https://example.com/buy"');
-        expect(html).toContain("Preview snippet");
         expect(html).toContain("padding:24px 12px"); // root paddingY/paddingX controls
         // Table-based layout (react-email Container/Section), not flex
         expect(html).toContain("<table");

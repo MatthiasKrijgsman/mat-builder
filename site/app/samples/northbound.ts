@@ -267,7 +267,6 @@ const document: BuilderDocument = {
                 contentWidth: 600,
                 spacing: { padding: symmetricSides(28, 12), margin: uniformSides(0) },
                 typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK, fontSize: 15, lineHeight: 1.6, color: BODY },
-                previewText: "Northbound ’26 · 12–13 November, Rotterdam. Your seat is held until 1 October.",
             },
             children: { main: ["page"] },
         },

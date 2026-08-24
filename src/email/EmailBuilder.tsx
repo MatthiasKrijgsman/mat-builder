@@ -93,6 +93,9 @@ export function EmailBuilder(props: EmailBuilderProps) {
                     {actions}
                 </>
             }
+            // Preview has nothing to drag in and no tree to walk — the left
+            // column slides away and the preview gets the width.
+            collapseLeftPanel={mode === "preview"}
             canvas={
                 mode === "edit" ? (
                     <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />

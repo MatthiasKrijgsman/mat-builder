@@ -225,7 +225,6 @@ const document: BuilderDocument = {
                 contentWidth: 600,
                 spacing: { padding: uniformSides(0), margin: uniformSides(0) },
                 typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK, fontSize: 15, lineHeight: 1.6, color: INK },
-                previewText: "Aura One. Titanium. Featherlight. Pre-order from August 8.",
             },
             children: { main: ["page"] },
         },

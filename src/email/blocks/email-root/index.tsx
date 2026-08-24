@@ -2,7 +2,8 @@ import { IconMail } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
-import { defaultBackground } from "../../../style-props/index.ts";
+import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
+import { defaultBackground, defaultSize } from "../../../style-props/index.ts";
 import { emailRootBodyStyles, emailRootContainerStyles, emailRootDefaults, type EmailRootProps } from "./styles.ts";
 import { Divider } from '@matthiaskrijgsman/mat-ui';
 
@@ -30,7 +31,7 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
   getArtboardStyle: (props) => ({ backgroundColor: props.backgroundColor }),
   editRender: ({ props, containers }) => (
     <div style={ emailRootBodyStyles(props) }>
-      <div style={ { ...emailRootContainerStyles(props), margin: "0 auto", width: "100%" } }>
+      <div className={ SIZE_BOX_CLASS } style={ { ...emailRootContainerStyles(props), margin: "0 auto", width: "100%" } }>
         { containers.main }
       </div>
     </div>
@@ -38,18 +39,21 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
   inspector: ({ props, update }) => (
     <>
       <div className={'flex flex-col gap-4 px-3 pb-4 pt-2'}>
-        <Fields.TextField
-          label="Preview text"
-          value={ props.previewText }
-          description="Inbox snippet shown next to the subject"
-          onChange={ (previewText) => update({ previewText }) }
-        />
-        <Fields.NumberField
+        <Fields.DimensionField
+          axis="width"
           label="Content width"
-          value={ props.contentWidth }
-          min={ 320 }
-          max={ 1000 }
-          onChange={ (contentWidth) => update({ contentWidth }) }
+          value={ {
+            ...defaultSize,
+            width: props.contentWidthMode === "full" ? "full" : "fixed",
+            widthPx: props.contentWidth,
+          } }
+          modes={ [ "fixed", "full" ] }
+          onChange={ (size) =>
+            update({
+              contentWidthMode: size.width === "full" ? "full" : "fixed",
+              contentWidth: size.widthPx,
+            })
+          }
         />
         <Fields.ColorField
           label="Page background"

@@ -16,6 +16,7 @@ import { hasVisibilityRules } from "../../core/visibility.ts";
 import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType, type DragLike, resolveCombineLocation } from "../../dnd/resolve.ts";
+import { scrollBlockIntoView } from "../../react/canvas-scroll.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 
@@ -68,7 +69,7 @@ export interface LayerRowProps {
 }
 
 export function LayerRow({ id, depth, location }: LayerRowProps) {
-  const { store, registry, instanceId } = useBuilderContext();
+  const { store, registry, instanceId, canvasRef } = useBuilderContext();
   const node = useBlockNode(id);
   const actions = useBuilderState((s) => s.actions);
   const isSelected = useBuilderState((s) => s.selectedId === id);
@@ -181,6 +182,10 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         onClick={ (event) => {
           event.stopPropagation();
           actions.select(id);
+          // Picking a row is navigation — bring the block it names into view.
+          // Selection only repaints chrome (an overlay), so the block's box is
+          // already final and this needs no frame to wait for.
+          scrollBlockIntoView(canvasRef.current, id);
         } }
         onPointerOver={ (event) => {
           event.stopPropagation();

@@ -61,6 +61,11 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     saveLabels?: Partial<ShellSaveLabels>;
     /** Which side panels to dock; all shown by default */
     panels?: BuilderShellPanels;
+    /** Slide the left column (palette + layers) out to the left and give the
+     * canvas its width. The panels stay mounted — tree expansion, scroll and
+     * palette search survive the round trip (`<EmailBuilder>` collapses it in
+     * preview mode). */
+    collapseLeftPanel?: boolean;
     /** The editing surface — defaults to a `<Canvas>` filling the work area */
     canvas?: ReactNode;
     /** The right-hand panel — defaults to `<Inspector>`. Swapped by surfaces
@@ -93,6 +98,7 @@ export function BuilderShell(props: BuilderShellProps) {
         topBar,
         saveLabels,
         panels,
+        collapseLeftPanel,
         canvas,
         inspector,
         className,
@@ -134,6 +140,7 @@ export function BuilderShell(props: BuilderShellProps) {
                 topBar={topBar}
                 saveLabels={saveLabels}
                 panels={panels}
+                collapseLeftPanel={collapseLeftPanel}
                 canvas={canvas}
                 inspector={inspector}
                 className={className}
@@ -159,6 +166,7 @@ interface BuilderShellLayoutProps {
     topBar?: ReactNode | false;
     saveLabels?: Partial<ShellSaveLabels>;
     panels?: BuilderShellPanels;
+    collapseLeftPanel?: boolean;
     canvas?: ReactNode;
     inspector?: ReactNode;
     className?: string;
@@ -169,12 +177,18 @@ interface BuilderShellLayoutProps {
  * panels floating over it. Separate component so it renders inside the
  * provider (the panels are all context consumers). */
 function BuilderShellLayout(props: BuilderShellLayoutProps) {
-    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, canvas, inspector, className, style } = props;
+    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style } = props;
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
     const showLeftColumn = showPalette || showLayers;
+    // Rendered but slid away: the column keeps its state, the canvas takes the space
+    const leftDocked = showLeftColumn && !collapseLeftPanel;
     const sidebar = "var(--mat-builder-sidebar-width)";
+    // A CSS transition, not motion: `left` and `transform` both animate from a
+    // token-valued length, and the two stay in step without measuring the var.
+    const slide = (property: string) =>
+        `${property} var(--mat-builder-duration-panel-slide) var(--mat-builder-ease-panel-slide)`;
 
     return (
         <div className={`mat-builder-shell relative h-full ${className ?? ""}`} style={{ ...dottedSurface, ...style }}>
@@ -191,8 +205,11 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                         saveLabels={saveLabels}
                     />
                 )}
-                {/* Work area below the bar: canvas column between the docked panels */}
-                <div className="relative min-h-0 flex-1">
+                {/* Work area below the bar: canvas column between the docked
+                    panels. Clipped, so a collapsed column parks off-stage
+                    instead of hanging outside the shell. (Panel popovers are
+                    portalled to the body and are not affected.) */}
+                <div className="relative min-h-0 flex-1 overflow-hidden">
                     {/* Canvas column. A wrapper, not a className on the surface:
                         the Artboard root is position:relative itself.
                         transparentSurface lets the root's dot layer show
@@ -202,8 +219,9 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                         className="absolute inset-y-0"
                         style={{
                             ...transparentSurface,
-                            left: showLeftColumn ? sidebar : 0,
+                            left: leftDocked ? sidebar : 0,
                             right: showInspector ? sidebar : 0,
+                            transition: slide("left"),
                         }}
                     >
                         {canvas ?? <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />}
@@ -214,7 +232,16 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                     {showLeftColumn && (
                         <aside
                             className="absolute inset-y-0 left-0 z-30 flex w-(--mat-builder-sidebar-width) flex-col border-r"
-                            style={dockedPanel}
+                            // Off-stage is also out of the tab order and out of
+                            // the accessibility tree — it is not a panel you can
+                            // reach, only one that is coming back.
+                            inert={leftDocked ? undefined : true}
+                            aria-hidden={leftDocked ? undefined : true}
+                            style={{
+                                ...dockedPanel,
+                                transform: leftDocked ? "translateX(0)" : "translateX(-100%)",
+                                transition: slide("transform"),
+                            }}
                         >
                             {showPalette && <Palette className="min-h-0 flex-1" />}
                             {showLayers && (

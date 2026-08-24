@@ -98,6 +98,10 @@
     /* Panels (inspector & friends) */
     /* Width of the side panel columns (palette/layers left, inspector right) */
     --mat-builder-sidebar-width: 300px;
+    /* Docking/undocking a side column (BuilderShell) — the iOS sheet curve, a
+       long decelerating tail with no overshoot, matching the artboard reveal */
+    --mat-builder-duration-panel-slide: 0.34s;
+    --mat-builder-ease-panel-slide: cubic-bezier(0.32, 0.72, 0, 1);
     /* Surface behind the docked chrome (BuilderShell's top bar and side panels) */
     --mat-builder-color-panel-bg: #ffffff;
     /* Primary text in panels — layer-row labels, etc. Soft, not pure black. */
