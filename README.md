@@ -48,6 +48,7 @@ pnpm dev:watch   # rebuild the library on change
 pnpm site        # playground on http://localhost:6007 (separate terminal)
 pnpm test        # vitest
 pnpm test:pack   # clean-room consumer smoke test (packs, installs, renders, typechecks)
+                 # all of the above run on every push and PR — .github/workflows/ci.yml
 pnpm build       # library build + type declarations
 ```
 

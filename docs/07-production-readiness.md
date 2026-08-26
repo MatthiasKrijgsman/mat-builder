@@ -54,12 +54,13 @@ Tasks:
 - [ ] Move the playground to **Vercel/Cloudflare Pages with access protection** (recommended — it is also the fastest thing to show a prospective consumer), or accept a public demo of a private library, or drop the hosted demo and rely on `pnpm site`.
 - [ ] Fix the README link either way.
 
-### A3. No CI gate on the code
+### A3. No CI gate on the code — DONE (except release)
 
-The only workflow deploys the site. Tests, types and lint have never run in CI.
+The only workflow deployed the site. Tests, types and lint had never run in CI.
 
-- [ ] `ci.yml` on PR + push: `pnpm lint`, `pnpm test`, `tsc --noEmit`, `pnpm build`.
-- [ ] `release.yml` on tag: build → `npm publish`. Keep `prepublishOnly` as the local safety net.
+- [x] `.github/workflows/ci.yml`, two jobs in parallel. **check**: lint, test, `tsc --noEmit` over `tsconfig.json`, build, and a typecheck of the playground against `dist/` — which is what catches an API break the library's own build cannot see. **pack**: `pnpm test:pack`, the only job that sees packaging.
+- [x] Fixed the five pre-existing type errors that would have made CI red from its first run. Two were test-file casts; the third was real — `ContainerDef.accepts` is now `readonly string[]`, so a consumer passing a shared list or an `as const` literal is no longer rejected.
+- [ ] `release.yml` on tag: build → `npm publish`. Blocked on A1 (no registry chosen, nothing published).
 - [ ] Branch protection on `main` once external consumers exist.
 
 ### A4. Uncommitted work in the tree
@@ -102,7 +103,7 @@ Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on s
 - [x] One command in `guides/getting-started.md` §2.1, grouped by why each package is needed, and verified by installing it verbatim into an empty project (zero unmet peers).
 - [x] Lazy-imported in `EmailPreview`, so `./email` no longer statically pulls them and the flag is truthful: verified by walking the built chunk graph — only `./email/render` requires them now. A missing peer surfaces as a message naming the packages rather than a module-not-found.
 - [x] `scripts/smoke-test.mjs` (`pnpm test:pack`): packs, checks the tarball carries every entry in `exports`, installs into an empty project with only the declared peers, renders an email from plain node, typechecks a consumer's custom block + pattern + theme against the published types, and asserts the optional peers really are skippable. Confirmed it fails on a typo'd `exports` path that all 333 unit tests and the build pass.
-- [ ] Still needs wiring into CI — blocked on A3 (there is no CI workflow yet).
+- [x] Wired into CI as the `pack` job.
 
 ---
 

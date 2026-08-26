@@ -15,7 +15,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync, readFileSync, readdirSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,7 +49,7 @@ try {
     /* ── Install into an empty project ────────────────────────────────── */
     heading("install into a clean project, with only the declared peers");
     const app = join(work, "app");
-    run("mkdir", ["-p", app]);
+    mkdirSync(app, { recursive: true });
     writeFileSync(join(app, "package.json"),
         JSON.stringify({ name: "smoke", private: true, version: "0.0.0", type: "module" }, null, 2));
 
@@ -136,7 +136,7 @@ export function App({ doc }: { doc: BuilderDocument }) {
     /* ── The optional peers must really be optional ───────────────────── */
     heading("core entry works without the optional email peers");
     const core = join(work, "core-only");
-    run("mkdir", ["-p", core]);
+    mkdirSync(core, { recursive: true });
     writeFileSync(join(core, "package.json"),
         JSON.stringify({ name: "core-only", private: true, version: "0.0.0", type: "module" }, null, 2));
     const nonOptional = Object.entries(pkg.peerDependencies)

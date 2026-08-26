@@ -511,7 +511,7 @@ A block declares drop regions with `containers`; each gets a pre-rendered elemen
 | `layout` | `"vertical" \| "horizontal" \| "grid"` — decides hitbox axis and indicator orientation |
 | `getLayout?` | resolve it from the parent's props (e.g. a direction toggle) |
 | `grid?` | `{ columns }` |
-| `accepts?` | `string[]` or `(childType, ctx) => boolean`; omit to accept everything |
+| `accepts?` | `readonly string[]` or `(childType, ctx) => boolean`; omit to accept everything |
 | `maxChildren?` | cap |
 | `placeholder?` | empty-state hint |
 | `slotAs?` | canvas element (`"none"` = the parent's wrapper doubles as the slot) |

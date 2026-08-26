@@ -1,0 +1,79 @@
+name: CI
+
+# Every push and every PR. Until this existed, lint, tests and types had only
+# ever run when somebody remembered (docs/07 §A3).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A second push to the same branch supersedes the first.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: lint · test · types · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      # tsconfig.json covers the tests too; tsconfig.build.json (what ships) is
+      # checked by `pnpm build` below.
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit -p tsconfig.json
+
+      - name: Build
+        run: pnpm build
+
+      # The site consumes dist/ through workspace:*, so this typechecks the
+      # PUBLISHED types against a real consumer — it catches an API break that
+      # the library's own build cannot see.
+      - name: Typecheck the playground against dist/
+        run: pnpm --filter @matthiaskrijgsman/mat-builder-site exec tsc --noEmit -p tsconfig.json
+
+  pack:
+    name: clean-room consumer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Packs the tarball, installs it into an empty project with only the
+      # declared peers, renders an email from plain node, and typechecks a
+      # consumer's own block against the published types. The only job that
+      # sees packaging: a typo in the `exports` map passes every check above.
+      - name: Smoke test
+        run: pnpm test:pack

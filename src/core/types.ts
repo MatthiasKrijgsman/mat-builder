@@ -101,8 +101,9 @@ export interface ContainerDef {
      */
     getLayout?: (props: Record<string, unknown>) => "vertical" | "horizontal" | "grid" | undefined;
     grid?: { columns: number };
-    /** Allowed child block types; omit = accept all */
-    accepts?: string[] | ((childType: string, ctx: AcceptCtx) => boolean);
+    /** Allowed child block types; omit = accept all. `readonly` so a shared
+     * list or an `as const` literal is accepted — it is only ever read. */
+    accepts?: readonly string[] | ((childType: string, ctx: AcceptCtx) => boolean);
     maxChildren?: number;
     /** Empty-container hint text */
     placeholder?: string;

@@ -157,7 +157,7 @@ Full walkthrough in the [cookbook](custom-blocks.md).
 `OnCreateCtx` — `{ document, location }`.
 `BlockContext` — `{ document, location, siblingCount }`, passed to `compose` and `getWrapperProps`.
 
-**`ContainerDef`** — `name`, `label?`, `layout` (`"vertical" \| "horizontal" \| "grid"`), `getLayout?`, `grid?`, `accepts?` (array or predicate), `maxChildren?`, `placeholder?`, `slotAs?`, `emptyAs?`, `getGap?`, `getSlotStyle?`.
+**`ContainerDef`** — `name`, `label?`, `layout` (`"vertical" \| "horizontal" \| "grid"`), `getLayout?`, `grid?`, `accepts?` (`readonly string[]` or predicate), `maxChildren?`, `placeholder?`, `slotAs?`, `emptyAs?`, `getGap?`, `getSlotStyle?`.
 
 ### Composing
 
