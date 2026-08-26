@@ -22,15 +22,6 @@ export function isSlotRef(value: unknown): value is ContainerSlotRef {
     return typeof value === "object" && value !== null && typeof (value as ContainerSlotRef).__slot === "string";
 }
 
-/**
- * The prop a composed block should render, and the composite prop an edit to
- * it belongs to. Returns null when the prop is not bound — the caller renders
- * it read-only (docs/08 §3).
- */
-export function boundPropKey(spec: BlockSpec, propName: string): string | null {
-    return spec.bind?.[propName] ?? null;
-}
-
 /** Every composite prop key a spec tree binds, for uniqueness checks. */
 export function collectBindings(spec: BlockSpec, into: string[] = []): string[] {
     for (const key of Object.values(spec.bind ?? {})) into.push(key);

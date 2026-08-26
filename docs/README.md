@@ -20,6 +20,8 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 - [Getting started](guides/getting-started.md) — install, the stylesheet, first builder, documents, saving, rendering to email, personalization
 - [Theming](guides/theming.md) — the chrome/content split, dark mode, token overrides and the `theme` prop, the token reference
 - [Custom blocks — a cookbook](guides/custom-blocks.md) — patterns, composed blocks and primitives end to end, the field/style-group/style-props toolkit, extending preset blocks, troubleshooting
+- [Server rendering](guides/server-rendering.md) — `renderEmail`, the two entry points, tokens vs substitution, conditional blocks, custom blocks on the server
+- [API reference](guides/api-reference.md) — every public export, organized by the control ladder
 
 ## Key decisions
 
