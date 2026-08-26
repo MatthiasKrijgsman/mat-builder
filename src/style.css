@@ -1,4 +1,24 @@
-@import "tailwindcss";
+/*
+ * Tailwind, WITHOUT preflight — see docs/guides/theming.md §6.
+ *
+ * `@import "tailwindcss"` pulls in theme + preflight + utilities, and
+ * preflight is 4.6 kB of UNSCOPED element selectors: h1-h6 lose their size
+ * and weight, links lose colour and underline, lists lose their markers,
+ * img becomes display:block, form controls lose native styling. In a host
+ * already on Tailwind v4 that is a no-op. In any other host it silently
+ * restyles their whole app the moment they import our stylesheet.
+ *
+ * So we take theme and utilities only, and re-add the resets the editor
+ * actually depends on, scoped to our own roots (./styles/preflight.css).
+ * Verified by site/public/preflight-check.html, a deliberately non-Tailwind
+ * page: with this stylesheet loaded, nothing on it may change.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* The scoped stand-in for preflight */
+@import "./styles/preflight.css";
 
 @variant dark (&:where(.dark, .dark *));
 
@@ -277,4 +297,22 @@
     font-weight: 500;
     white-space: nowrap;
     user-select: none;
+}
+
+/*
+ * Panel text colour.
+ *
+ * Deliberately set on the panel roots rather than inherited: without this the
+ * panels take whatever `color` the HOST's body carries, so a host with dark
+ * body text and a dark builder gets near-black labels on a near-black panel.
+ * Scoped to the panels, NOT the shell, because the artboard must keep
+ * inheriting nothing — a block that sets no colour has to look the same on
+ * the canvas as it will in the recipient's inbox, whatever the editor's
+ * scheme. See docs/guides/theming.md.
+ */
+.mat-builder-topbar,
+.mat-builder-palette,
+.mat-builder-layers,
+.mat-builder-inspector {
+    color: var(--mat-builder-color-panel-fg);
 }

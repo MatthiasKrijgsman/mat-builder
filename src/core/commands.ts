@@ -4,7 +4,7 @@ import { migrateDocument, validateDocument } from "./document.ts";
 import { materializeBlock } from "./materialize.ts";
 import { containerAccepts, type BlockRegistry } from "./registry.ts";
 import { findAncestors, findLocation, isDescendant } from "./traversal.ts";
-import type { BlockId, BlockLocation, BuilderDocument } from "./types.ts";
+import type { BlockId, BlockLocation, BuilderDocument, NewBlockSpec } from "./types.ts";
 import type { BlockVisibility } from "./visibility.ts";
 
 /*
@@ -112,6 +112,15 @@ export interface InsertBlockPayload {
     at: BlockLocation;
     /** Overrides on top of the definition's defaultProps */
     props?: Record<string, unknown>;
+    /**
+     * Container name → child specs, materialized recursively with the block
+     * itself. This is what lets a whole subtree be inserted in one command —
+     * a pattern stamping out its tree (docs/08 §7). Beats the definition's own
+     * `onCreate` children, same precedence rule as `materializeBlock`.
+     */
+    children?: Record<string, NewBlockSpec[]>;
+    /** Conditional visibility for the new block */
+    visibility?: BlockVisibility;
     /** Fixed id for the new block (tests, collaborative echo); defaults to a fresh nanoid */
     id?: BlockId;
 }
@@ -124,7 +133,12 @@ export function insertBlock(
     const error = getDropError(document, registry, payload.type, payload.at);
     if (error) throw new Error(`insertBlock: ${error}`);
 
-    const spec = { type: payload.type, props: payload.props };
+    const spec: NewBlockSpec = {
+        type: payload.type,
+        props: payload.props,
+        children: payload.children,
+        visibility: payload.visibility,
+    };
     const { rootId, nodes } = materializeBlock(document, registry, spec, payload.at, payload.id);
 
     const next = produce(document, (draft) => {

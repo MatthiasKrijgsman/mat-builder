@@ -1,6 +1,7 @@
 import { IconArrowDown, IconArrowRight, IconGrid3x3 } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
+import { acceptsEmailContent } from "../../accepts.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import {
   BackgroundGroup,
@@ -22,9 +23,9 @@ import {
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
 export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer" ];
 
-/** Everything a container accepts: leaves, nested containers, and the table
- * (which owns children of its own but is dropped like any other content block). */
-const CONTAINER_ACCEPTS = [ ...EMAIL_LEAF_TYPES, "container", "table" ];
+/** Everything a container accepts — see ../../accepts.ts. Deliberately a rule
+ * rather than a list, so a consumer's own blocks are admitted too (docs/08 §6). */
+const CONTAINER_ACCEPTS = acceptsEmailContent;
 
 // Figma-style: flow direction as arrows (icon-only segments with tooltips)
 const DIRECTION_OPTIONS: Fields.SegmentedFieldOption<ContainerDirection>[] = [

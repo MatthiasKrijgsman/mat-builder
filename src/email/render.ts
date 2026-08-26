@@ -10,7 +10,17 @@ import { imageEmail } from "./blocks/image/email.tsx";
 import { dividerEmail } from "./blocks/divider/email.tsx";
 import { spacerEmail } from "./blocks/spacer/email.tsx";
 import { tableCellEmail, tableEmail, tableRowEmail } from "./blocks/table/email.tsx";
-import type { AnyEmailRenderer } from "./types.ts";
+import type { AnyEmailRenderer, EmailBlockOverride } from "./types.ts";
+import { isSlotRef } from "../core/compose.ts";
+import type { BlockContext, BlockSpec } from "../core/types.ts";
+import { emailRootDefaults } from "./blocks/email-root/styles.ts";
+import { emailContainerDefaults } from "./blocks/container/styles.ts";
+import { emailTextDefaults } from "./blocks/text/styles.ts";
+import { emailButtonDefaults } from "./blocks/button/styles.ts";
+import { emailImageDefaults } from "./blocks/image/styles.ts";
+import { emailDividerDefaults } from "./blocks/divider/styles.ts";
+import { emailSpacerDefaults } from "./blocks/spacer/styles.ts";
+import { emailTableCellDefaults, emailTableDefaults, emailTableRowDefaults } from "./blocks/table/styles.ts";
 
 /*
  * @matthiaskrijgsman/mat-builder/email/render — server-safe export pipeline
@@ -22,7 +32,10 @@ import type { AnyEmailRenderer } from "./types.ts";
  * (both optional peers — only consumers of the email preset install them).
  */
 
-export type { EmailRenderer, AnyEmailRenderer } from "./types.ts";
+export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride } from "./types.ts";
+// Composed blocks: the spec vocabulary and its helpers (pure — docs/08).
+export { slot, isSlotRef, collectSlots, collectBindings } from "../core/compose.ts";
+export type { BlockSpec, ContainerSlotRef, BlockCompose, BlockContext } from "../core/types.ts";
 // Style-props vocabulary (value types + pure toCss converters) — server-safe,
 // re-exported so backend/custom-renderer code never touches the client entry.
 export * from "../style-props/index.ts";
@@ -62,10 +75,107 @@ export const emailRenderers: Record<string, AnyEmailRenderer> = {
     "table-cell": tableCellEmail,
 };
 
+/**
+ * Default props per preset block type — the server-side half of each block's
+ * `defaultProps`. A composed block's spec only names the props it wants to
+ * set, so the walk has to fill the rest in exactly as the editor does, or the
+ * canvas and the output would disagree about everything left unsaid.
+ *
+ * These come from each block's `styles.ts`, which imports nothing but
+ * `style-props` and the rich-text vocabulary — server-safe by construction.
+ */
+export const emailBlockDefaults = {
+    "email-root": emailRootDefaults,
+    container: emailContainerDefaults,
+    text: emailTextDefaults,
+    button: emailButtonDefaults,
+    image: emailImageDefaults,
+    divider: emailDividerDefaults,
+    spacer: emailSpacerDefaults,
+    table: emailTableDefaults,
+    "table-row": emailTableRowDefaults,
+    "table-cell": emailTableCellDefaults,
+    // Erased at the boundary: the props types differ per block and the walk
+    // only ever spreads them, exactly like `emailRenderers` above.
+} as unknown as Record<string, Record<string, unknown>>;
+
+/** Guards a definition cycle — a composite that composes itself. */
+const MAX_COMPOSE_DEPTH = 16;
+
+/** Everything the walk needs to resolve one block type, preset or host-supplied. */
+interface Resolver {
+    render(type: string): AnyEmailRenderer | undefined;
+    compose(type: string): EmailBlockOverride["compose"] | undefined;
+    defaults(type: string): Record<string, unknown>;
+}
+
+function makeResolver(blocks: readonly EmailBlockOverride[] = []): Resolver {
+    const byType = new Map(blocks.map((block) => [block.type, block]));
+    return {
+        // A host entry wins over the preset, so a consumer can replace a
+        // preset block's output as well as add their own.
+        render: (type) => byType.get(type)?.render ?? emailRenderers[type],
+        compose: (type) => byType.get(type)?.compose,
+        defaults: (type) => (byType.get(type)?.defaultProps as Record<string, unknown>) ?? emailBlockDefaults[type] ?? {},
+    };
+}
+
+/**
+ * Renders one node of a composed tree — docs/08 §4.
+ *
+ * The whole point: a composed block emits nothing of its own. Every element
+ * in the output came from a block that already knows how to be email, so a
+ * consumer cannot express markup that breaks in Outlook.
+ *
+ * `slotChildren` are the COMPOSITE's real container children, spliced in
+ * wherever the spec references a slot.
+ */
+function renderSpec(
+    spec: BlockSpec,
+    slotChildren: Record<string, ReactElement[]>,
+    ctx: BlockContext,
+    resolve: Resolver,
+    depth: number,
+): ReactElement | null {
+    if (depth > MAX_COMPOSE_DEPTH) return null;
+    const props = { ...resolve.defaults(spec.type), ...spec.props };
+
+    // A composed block may compose another — recurse before looking for a
+    // renderer it does not have.
+    const compose = resolve.compose(spec.type);
+    if (compose) return renderSpec(compose(props, ctx), slotChildren, ctx, resolve, depth + 1);
+
+    const renderer = resolve.render(spec.type);
+    if (!renderer) return null;
+
+    const children: Record<string, ReactElement[]> = {};
+    for (const [container, value] of Object.entries(spec.children ?? {})) {
+        children[container] = isSlotRef(value)
+            ? (slotChildren[value.__slot] ?? [])
+            : value.map((child, index) =>
+                  createElement(Fragment, { key: index }, renderSpec(child, slotChildren, ctx, resolve, depth + 1)),
+              );
+    }
+    return renderer(props, children, ctx);
+}
+
 export interface BuildEmailTreeOptions {
     /** Merge-tag values, keyed by literal token, that conditional blocks are
      * resolved against (core/visibility.ts). Omit and every block renders. */
     values?: MergeTagValues;
+    /**
+     * Host block definitions this document uses — composed blocks (`compose`)
+     * and custom primitives (`render`), plus their `defaultProps` (docs/08 §4).
+     *
+     * `compose` lives on a block definition, and this entry may never import
+     * the editor, so a host puts its `compose` and `defaultProps` in a
+     * server-safe module and spreads them into `defineBlock` on the client.
+     * That is natural rather than awkward: `compose` returns data, not JSX.
+     *
+     * An entry whose `type` matches a preset block REPLACES it, same rule as
+     * `mergeBlockDefinitions` on the editor side.
+     */
+    blocks?: readonly EmailBlockOverride[];
 }
 
 /**
@@ -103,8 +213,10 @@ export function buildEmailTree(
 ): ReactElement | null {
     const node = document.blocks[id];
     if (!node) return null;
-    const renderer = emailRenderers[node.type];
-    if (!renderer) return null;
+    const resolve = makeResolver(options.blocks);
+    const compose = resolve.compose(node.type);
+    const renderer = compose ? undefined : resolve.render(node.type);
+    if (!compose && !renderer) return null;
     // Child lists are pre-filtered below, so this only fires for a hidden
     // block the caller asked for directly (including the root).
     if (!isBlockVisible(node, options.values)) return null;
@@ -124,7 +236,19 @@ export function buildEmailTree(
     const siblingCount = location
         ? (visibleChildIds(document, location.parentId, location.container, options.values).length || 1)
         : 1;
-    return renderer(node.props, children, { document, location, siblingCount });
+    const ctx: BlockContext = { document, location, siblingCount };
+    // Defaults under the stored props, for both paths alike. `materializeBlock`
+    // makes props complete at creation, so this is normally a no-op — it earns
+    // its keep on documents saved before a block gained a prop, and it must
+    // match what the canvas does or the two surfaces drift (docs/08 §4).
+    const props = { ...resolve.defaults(node.type), ...node.props };
+
+    if (compose) {
+        // Composed: the node's children are its SLOT children, spliced into
+        // the tree wherever the spec references them.
+        return renderSpec(compose(props, ctx), children, ctx, resolve, 0);
+    }
+    return renderer!(props, children, ctx);
 }
 
 export interface RenderedEmail {

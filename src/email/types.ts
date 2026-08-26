@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { BlockContext } from "../core/types.ts";
+import type { BlockContext, BlockSpec } from "../core/types.ts";
 
 /*
  * Shared email-preset types — server-safe (imported by both the client
@@ -24,3 +24,24 @@ export type EmailRenderer<P = Record<string, unknown>> = (
 // Renderers with different P coexist in the registry map — P is erased there.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyEmailRenderer = EmailRenderer<any>;
+
+/**
+ * A host block the output pipeline needs to know about — docs/08 §4.
+ *
+ * Exactly one of `compose` / `render` is meaningful per entry:
+ *
+ * - `compose` — a composed block. Nothing to write per surface: the walk
+ *   renders the tree from blocks that already handle email.
+ * - `render` — a custom primitive, or a replacement for a preset block's
+ *   output. The escape hatch for markup composition cannot express (docs/08 §8).
+ *
+ * `defaultProps` fills in what a spec or a stored node leaves unsaid, exactly
+ * as the editor's `defineBlock` does. Without it the two surfaces would
+ * disagree about every prop nobody set explicitly.
+ */
+export interface EmailBlockOverride<P = any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+    type: string;
+    defaultProps?: P;
+    compose?: (props: P, ctx: BlockContext) => BlockSpec;
+    render?: EmailRenderer<P>;
+}

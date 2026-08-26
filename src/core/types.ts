@@ -101,8 +101,9 @@ export interface ContainerDef {
      */
     getLayout?: (props: Record<string, unknown>) => "vertical" | "horizontal" | "grid" | undefined;
     grid?: { columns: number };
-    /** Allowed child block types; omit = accept all */
-    accepts?: string[] | ((childType: string, ctx: AcceptCtx) => boolean);
+    /** Allowed child block types; omit = accept all. `readonly` so a shared
+     * list or an `as const` literal is accepted — it is only ever read. */
+    accepts?: readonly string[] | ((childType: string, ctx: AcceptCtx) => boolean);
     maxChildren?: number;
     /** Empty-container hint text */
     placeholder?: string;
@@ -153,12 +154,37 @@ export interface InspectorProps<P = Record<string, unknown>> {
     update: (patch: Partial<P>) => void;
 }
 
-/** Declarative spec for a block to create — used by `onCreate` to self-populate children. */
+/** Declarative spec for a block to create — used by `onCreate` to self-populate
+ * children, by `insertBlock` to place a whole subtree, and by patterns (docs/08 §7). */
 export interface NewBlockSpec {
     type: string;
     props?: Record<string, unknown>;
     /** Container name → child specs */
     children?: Record<string, NewBlockSpec[]>;
+    /** Conditional visibility for the created node — a node field, not a prop,
+     * so it has to be carried separately for a spec to round-trip a subtree. */
+    visibility?: BlockVisibility;
+}
+
+/**
+ * A palette entry that expands into ordinary blocks on insert — docs/08 §7.
+ *
+ * Deliberately not a `BlockDefinition`: a pattern has no type of its own, so
+ * it never enters the registry and nothing downstream (validation, drop
+ * rules, the renderers) has to know it exists.
+ */
+export interface BlockPattern {
+    /** Unique among patterns; never a block type */
+    id: string;
+    label: string;
+    /** Palette glyph — same contract as a definition's `icon` */
+    icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
+    /** Palette grouping; falls back to "Patterns" */
+    category?: string;
+    /** Palette search terms */
+    keywords?: string[];
+    /** The subtree this stamps out. Its root type is what drop rules gate on. */
+    spec: NewBlockSpec;
 }
 
 export interface OnCreateCtx {
@@ -167,7 +193,50 @@ export interface OnCreateCtx {
     location: BlockLocation | null;
 }
 
-export interface BlockDefinition<P = Record<string, unknown>> {
+/* ─────────────────────────────────────────────────────────────
+ * Composed blocks — see docs/08-composed-blocks.md
+ * ───────────────────────────────────────────────────────────── */
+
+/**
+ * A reference to one of the COMPOSITE's own containers, standing in for a
+ * child list inside a composed tree. Build one with `slot()`.
+ *
+ * Where a spec node's children are a slot, the real document nodes in that
+ * container are rendered there — so a composite's scaffolding is derived
+ * while its slots hold ordinary, selectable, draggable blocks.
+ */
+export interface ContainerSlotRef {
+    readonly __slot: string;
+}
+
+/**
+ * A node in a composed block's render tree — docs/08 §2.
+ *
+ * Data only, and never materialized into the document: `compose` is called
+ * fresh on every render, so the composite's props stay the single source of
+ * truth. That is what keeps the inspector an ordinary form over P, lets a
+ * definition change reach every existing instance, and makes the tree
+ * renderable by the server without importing any editor code.
+ */
+export interface BlockSpec {
+    type: string;
+    /** Merged over the target block type's `defaultProps` */
+    props?: Record<string, unknown>;
+    /** Container name → nested specs, or `slot(name)` to host real children */
+    children?: Record<string, BlockSpec[] | ContainerSlotRef>;
+    /**
+     * Routes an INLINE on-canvas edit back to the composite's props:
+     * `{ <the composed block's prop>: <key of the composite's P> }`.
+     * Props with no entry render read-only and are edited in the inspector.
+     * Both sides must hold the same shape — there is no codec (docs/08 §3).
+     */
+    bind?: Record<string, string>;
+}
+
+/** Builds a composed block's render tree from its props. Must be PURE. */
+export type BlockCompose<P> = (props: P, ctx: BlockContext) => BlockSpec;
+
+interface BlockDefinitionBase<P> {
     /* identity & palette */
     type: string;
     label: string;
@@ -198,7 +267,6 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     getWrapperProps?: (props: P, ctx: BlockContext) => WrapperProps;
 
     /* rendering & inspecting */
-    editRender: ComponentType<EditRenderProps<P>>;
     inspector?: ComponentType<InspectorProps<P>>;
     /**
      * Style merged onto the Artboard frame when this block is the document
@@ -235,6 +303,24 @@ export interface BlockDefinition<P = Record<string, unknown>> {
     /** Nicer layers-panel labels, e.g. first words of a text block */
     getDisplayName?: (props: P) => string | undefined;
 }
+
+/**
+ * A block is EITHER a primitive that draws itself, or composed from other
+ * blocks — never both (docs/08).
+ *
+ * - `editRender` — a primitive. Draws its own canvas output, and needs a
+ *   matching output renderer (the email preset's `email.tsx` per block).
+ *   The escape hatch for anything composition cannot express: Outlook VML,
+ *   `<style>` media queries, markup the preset blocks do not emit.
+ * - `compose` — built from registered blocks. No canvas render and no output
+ *   renderer to write, and no way to emit email-unsafe markup, because every
+ *   byte of the output comes from blocks that already handle it.
+ */
+export type BlockDefinition<P = Record<string, unknown>> = BlockDefinitionBase<P> &
+    (
+        | { editRender: ComponentType<EditRenderProps<P>>; compose?: never }
+        | { compose: BlockCompose<P>; editRender?: never }
+    );
 
 /* ─────────────────────────────────────────────────────────────
  * Validation & history — see docs/03-architecture.md §1 and §3

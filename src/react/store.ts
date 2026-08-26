@@ -16,7 +16,14 @@ import {
     updateProps,
 } from "../core/index.ts";
 import type { BlockRegistry } from "../core/registry.ts";
-import type { BlockId, BlockLocation, BuilderDocument, HistoryState } from "../core/types.ts";
+import type {
+    BlockId,
+    BlockLocation,
+    BlockPattern,
+    BuilderDocument,
+    HistoryState,
+    NewBlockSpec,
+} from "../core/types.ts";
 import type { BlockVisibility, MergeTagValues } from "../core/visibility.ts";
 import type { MergeTag } from "./merge-tags.ts";
 
@@ -38,7 +45,9 @@ export interface EditorCallbacks {
 
 /** Live during a drag (source only — drop targets keep their own edge state). */
 export type DragState =
-    | { kind: "new-block"; blockType: string }
+    /** `blockType` is the type that will land — for a pattern, its spec's ROOT
+     * type, so every drop rule keeps gating on a real registered type. */
+    | { kind: "new-block"; blockType: string; spec?: NewBlockSpec }
     | { kind: "move-block"; blockId: BlockId };
 
 /** An inline text editing session: one editable field of one block. */
@@ -69,8 +78,12 @@ export interface EditorActions {
     toggleExpanded(id: BlockId): void;
     /** Expands all ancestors so the block's layers row is visible */
     revealBlock(id: BlockId): void;
-    /** Inserts a new block and selects it; null when the location is invalid */
-    insertBlock(type: string, at: BlockLocation): BlockId | null;
+    /**
+     * Inserts a new block and selects it; null when the location is invalid.
+     * A bare type string is sugar for `{ type }`; a full spec stamps out a
+     * whole subtree in one command and one history entry (docs/08 §7).
+     */
+    insertBlock(spec: string | NewBlockSpec, at: BlockLocation): BlockId | null;
     moveBlock(id: BlockId, to: BlockLocation): boolean;
     /** Shallow-merges a patch; history-coalesced so a typing burst is one undo step */
     updateProps(id: BlockId, patch: Record<string, unknown>): void;
@@ -106,6 +119,10 @@ export interface EditorState {
      * all merge-tag UI. Editor configuration, not document state — never in
      * history snapshots. */
     mergeTags: MergeTag[];
+    /** Palette patterns (provider prop) — editor configuration like
+     * `mergeTags`: never document state, never in history. They are not
+     * registered block types, so nothing but the Palette reads them. */
+    patterns: BlockPattern[];
     /** Stand-in merge-tag values the preview renders with, keyed by literal
      * token (docs/06 §Preview data). Editor state, never document state: they
      * are the viewer's scratch data, so they stay out of history and out of
@@ -126,6 +143,7 @@ export interface CreateEditorStoreOptions {
     document: BuilderDocument;
     /** Consumer-provided personalization tokens (see merge-tags.ts) */
     mergeTags?: MergeTag[];
+    patterns?: BlockPattern[];
     /** Starting stand-in values for preview mode, keyed by literal token */
     previewValues?: MergeTagValues;
     /** Mutable — the provider reassigns its fields every render so callbacks never go stale */
@@ -176,6 +194,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             expanded: new Set<BlockId>(Object.keys(options.document.blocks)),
             drag: null,
             mergeTags: options.mergeTags ?? [],
+            patterns: options.patterns ?? [],
             previewValues: options.previewValues ?? {},
             artboardSize: null,
             history: createHistory(),
@@ -221,11 +240,12 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                     set({ expanded: new Set([...get().expanded, ...ancestors]) });
                 },
 
-                insertBlock: (type, at) => {
+                insertBlock: (spec, at) => {
                     const state = get();
+                    const { type, ...rest } = typeof spec === "string" ? { type: spec } : spec;
                     if (!registry.has(type) || !canDropAt(state.document, registry, type, at)) return null;
                     const history = recordHistory(state.history, snapshot(), { timestamp: now() });
-                    const { document, blockId } = insertBlock(state.document, { type, at }, registry);
+                    const { document, blockId } = insertBlock(state.document, { ...rest, type, at }, registry);
                     commitDocument(document, history);
                     set({ expanded: new Set([...get().expanded, blockId]) }); // new parents start expanded
                     select(blockId);

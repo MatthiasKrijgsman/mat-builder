@@ -4,6 +4,7 @@ import type { BuilderDocument } from "@matthiaskrijgsman/mat-builder";
 import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 import { Button, Spinner } from "@matthiaskrijgsman/mat-ui";
 import { useRef } from "react";
+import { heroPattern, productCardBlock } from "./custom";
 import { TemplateActions, useTemplateLibrary } from "./templates";
 
 /*
@@ -13,6 +14,10 @@ import { TemplateActions, useTemplateLibrary } from "./templates";
  * (./templates), the picker and menu that manage it (./templates §actions),
  * and the sample documents a new template can start from (./samples).
  */
+
+// Stable arrays — the provider treats both as fixed configuration.
+const CUSTOM_BLOCKS = [productCardBlock];
+const PATTERNS = [heroPattern];
 
 export default function EmailBuilderPage() {
     const library = useTemplateLibrary();
@@ -59,6 +64,11 @@ export default function EmailBuilderPage() {
             key={open.id}
             className="h-screen"
             defaultValue={open.document}
+            // A consuming project's own extensions (docs/08): a composed
+            // block that stays one thing, and a pattern that expands into
+            // ordinary blocks on drop. Neither ships an email renderer.
+            blocks={CUSTOM_BLOCKS}
+            patterns={PATTERNS}
             mergeTags={open.mergeTags}
             documentName={open.name}
             actions={

@@ -30,7 +30,7 @@ export function useDndMonitor(instance: BuilderContextValue): void {
                 if (data.kind === "move-block") actions.select(data.blockId);
                 actions.setDrag(
                     data.kind === "new-block"
-                        ? { kind: "new-block", blockType: data.blockType }
+                        ? { kind: "new-block", blockType: data.blockType, spec: data.spec }
                         : { kind: "move-block", blockId: data.blockId },
                 );
             },
@@ -48,7 +48,9 @@ export function useDndMonitor(instance: BuilderContextValue): void {
 
                 let landedId: BlockId | null = null;
                 if (data.kind === "new-block") {
-                    landedId = actions.insertBlock(data.blockType, to);
+                    // A pattern carries the subtree to stamp out; a plain
+                    // block drag carries only its type.
+                    landedId = actions.insertBlock(data.spec ?? data.blockType, to);
                 } else if (actions.moveBlock(data.blockId, to)) {
                     landedId = data.blockId;
                 }

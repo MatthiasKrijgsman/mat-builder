@@ -7,7 +7,23 @@
      * custom property, so consuming projects retheme the editor
      * without forking components. Prefix: --mat-builder-*.
      *
-     * Placeholder set — grows with the components (phase 2+).
+     * TWO LAYERS, and which one a token belongs to decides whether it
+     * flips in dark mode:
+     *
+     *   CHROME  — the editor around the document: panels, canvas, selection,
+     *             palette. Follows the host's colour scheme.
+     *   CONTENT — drawn ON or IN the email being designed: the artboard
+     *             paper, merge-tag chips, empty-slot hints, the conditional
+     *             badge, the missing-block placeholder. These NEVER flip. The
+     *             email is the email whatever the editor looks like, and the
+     *             canvas has to keep showing what the recipient will get.
+     *
+     * Structural tokens (sizes, durations, easings) belong to neither and are
+     * defined once.
+     *
+     * Dark mode activates from a `.dark` ancestor (the Tailwind convention
+     * most hosts already drive), or explicitly per instance via the shell's
+     * `colorScheme` prop. See docs/guides/theming.md.
      * ───────────────────────────────────────────────────────────── */
 
     /* Selection & hover chrome (BlockFrame / ChromeOverlay) */
@@ -50,10 +66,16 @@
     --mat-builder-color-drop-blocked: #f59e0b;
     --mat-builder-drop-indicator-thickness: 2px;
 
-    /* Canvas */
+    /* Canvas — chrome */
     --mat-builder-color-canvas-bg: #f4f4f5;
     --mat-builder-color-canvas-dot: #ccccd1;
+    /* CONTENT: the paper the email is drawn on. Stays white in dark mode —
+       the email's own background paints over it (getArtboardStyle). */
     --mat-builder-color-artboard-bg: #ffffff;
+    /* The frame AROUND the paper is chrome, not content — a white page needs a
+       hairline to sit on a light canvas, and a different one on a dark canvas. */
+    --mat-builder-color-artboard-border: #e7e5e4;
+    --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(229 231 235 / 0.5), 0 4px 6px -4px rgb(229 231 235 / 0.5);
     --mat-builder-color-resize-handle: #d4d4d8;
     /* Resize bar under the cursor / mid-drag — reads as "this is the thing you
        are about to move", so it borrows the selection colour by default */
@@ -63,11 +85,11 @@
     /* Block chrome (name tag) */
     --mat-builder-color-chrome-tag-fg: #ffffff;
 
-    /* Empty-container placeholders */
+    /* Empty-container placeholders — CONTENT (drawn inside the email) */
     --mat-builder-color-placeholder-border: #d4d4d8;
     --mat-builder-color-placeholder-fg: #a1a1aa;
 
-    /* Merge-tag chips (inline personalization tokens on the canvas) */
+    /* Merge-tag chips — CONTENT (inline, inside the email's own text) */
     --mat-builder-color-merge-tag-bg: #ede9fe;
     --mat-builder-color-merge-tag-fg: #6d28d9;
 
@@ -79,7 +101,7 @@
     --mat-builder-color-rule-joiner-fg: #52525b;
     /* Add-rule affordance and the tag glyph — the editor's action colour */
     --mat-builder-color-rule-accent: var(--mat-builder-color-selection);
-    /* Canvas/layers marker on a block that only renders conditionally.
+    /* CONTENT. Canvas/layers marker on a block that only renders conditionally.
        The canvas badge sits ON the block's own content, so it carries its own
        fill and a ring that keeps it legible over any background. */
     --mat-builder-color-conditional-fg: #7c3aed;
@@ -90,7 +112,7 @@
        the pointer is near it. Set to 1 for a permanently solid mark. */
     --mat-builder-conditional-badge-opacity: 0.75;
 
-    /* Missing-block fallback (unknown types in old documents) */
+    /* Missing-block fallback — CONTENT (stands in for a block, in the flow) */
     --mat-builder-color-missing-border: #fca5a5;
     --mat-builder-color-missing-bg: #fef2f2;
     --mat-builder-color-missing-fg: #b91c1c;
@@ -121,31 +143,141 @@
     /* Palette category tints — assigned to categories in registry order,
        cycling. Each set is tile background / tile border / icon color.
        The set count must match PALETTE_TINT_COUNT in Palette.tsx. */
-    --mat-builder-palette-tint-1-bg: #f5f3ff;
-    --mat-builder-palette-tint-1-border: #ddd6fe;
     --mat-builder-palette-tint-1-fg: #7c3aed;
-
-    --mat-builder-palette-tint-2-bg: #eff6ff;
-    --mat-builder-palette-tint-2-border: #bfdbfe;
     --mat-builder-palette-tint-2-fg: #2563eb;
-
-    --mat-builder-palette-tint-3-bg: #f0f9ff;
-    --mat-builder-palette-tint-3-border: #bae6fd;
     --mat-builder-palette-tint-3-fg: #0284c7;
-
-    --mat-builder-palette-tint-4-bg: #ecfdf5;
-    --mat-builder-palette-tint-4-border: #a7f3d0;
     --mat-builder-palette-tint-4-fg: #059669;
-
-    --mat-builder-palette-tint-5-bg: #fffbeb;
-    --mat-builder-palette-tint-5-border: #fde68a;
     --mat-builder-palette-tint-5-fg: #d97706;
-
-    --mat-builder-palette-tint-6-bg: #eef2ff;
-    --mat-builder-palette-tint-6-border: #c7d2fe;
     --mat-builder-palette-tint-6-fg: #4f46e5;
-
-    --mat-builder-palette-tint-7-bg: #fff1f2;
-    --mat-builder-palette-tint-7-border: #fecdd3;
     --mat-builder-palette-tint-7-fg: #e11d48;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Dark chrome.
+ *
+ * CHROME TOKENS ONLY — the content layer above is deliberately absent, so
+ * the artboard, the merge-tag chips, the empty-slot hints, the conditional
+ * badge and the missing-block placeholder keep their light values. They sit
+ * on the email, which does not change because the editor did.
+ *
+ * Tokens derived with color-mix (hover, drop-parent, layer-row-hover-bg,
+ * rule-accent, drop-indicator, resize-handle-active, chrome-shadow-drag)
+ * are absent too: they resolve against whatever their source resolves to,
+ * so they follow for free. Overriding them here would be the bug.
+ *
+ * Three ways in, in cascade order:
+ *   .dark                                    host-driven (Tailwind's convention)
+ *   [data-mat-builder-color-scheme="dark"]   forced on one builder
+ *   [data-mat-builder-color-scheme="light"]  forced light inside a dark host
+ * The forced rules come last so they win the equal-specificity tie.
+ * ───────────────────────────────────────────────────────────── */
+
+.dark,
+[data-mat-builder-color-scheme="dark"] {
+    --mat-builder-color-artboard-border: #27272a;
+    --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    /* Selection reads washed out on a dark ground — one step brighter */
+    --mat-builder-color-selection: #60a5fa;
+    /* …which makes white text on the selected layer row too low-contrast */
+    --mat-builder-color-layer-row-selected-fg: #09090b;
+    --mat-builder-color-chrome-tag-fg: #09090b;
+    /* A 7% shadow is invisible on near-black */
+    --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.5);
+    --mat-builder-color-drop-blocked: #fbbf24;
+
+    --mat-builder-color-canvas-bg: #09090b;
+    --mat-builder-color-canvas-dot: #27272a;
+    --mat-builder-color-resize-handle: #3f3f46;
+    --mat-builder-color-resize-handle-hover: #71717a;
+
+    --mat-builder-color-panel-bg: #18181b;
+    --mat-builder-color-panel-fg: #e4e4e7;
+    --mat-builder-color-panel-muted-fg: #a1a1aa;
+    --mat-builder-color-panel-border: #27272a;
+    --mat-builder-color-input-label: #a8a29e;
+    --mat-builder-color-scrollbar-thumb: rgb(255 255 255 / 0.2);
+
+    --mat-builder-color-rule-bg: #27272a;
+    --mat-builder-color-rule-border: #3f3f46;
+    --mat-builder-color-rule-joiner-bg: #3f3f46;
+    --mat-builder-color-rule-joiner-fg: #d4d4d8;
+
+    --mat-builder-palette-tint-1-fg: #a78bfa;
+    --mat-builder-palette-tint-2-fg: #60a5fa;
+    --mat-builder-palette-tint-3-fg: #38bdf8;
+    --mat-builder-palette-tint-4-fg: #34d399;
+    --mat-builder-palette-tint-5-fg: #fbbf24;
+    --mat-builder-palette-tint-6-fg: #818cf8;
+    --mat-builder-palette-tint-7-fg: #fb7185;
+}
+
+/* Forced light — a light builder inside a dark host. Repeats the `:root`
+ * chrome values rather than indirecting through a second variable layer,
+ * which would triple the token surface for one uncommon case. Kept in step
+ * with `:root` by src/styles/tokens.test.ts. */
+[data-mat-builder-color-scheme="light"] {
+    --mat-builder-color-artboard-border: #e7e5e4;
+    --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(229 231 235 / 0.5), 0 4px 6px -4px rgb(229 231 235 / 0.5);
+    --mat-builder-color-selection: #3b82f6;
+    --mat-builder-color-layer-row-selected-fg: #ffffff;
+    --mat-builder-color-chrome-tag-fg: #ffffff;
+    --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.07);
+    --mat-builder-color-drop-blocked: #f59e0b;
+
+    --mat-builder-color-canvas-bg: #f4f4f5;
+    --mat-builder-color-canvas-dot: #ccccd1;
+    --mat-builder-color-resize-handle: #d4d4d8;
+    --mat-builder-color-resize-handle-hover: #a1a1aa;
+
+    --mat-builder-color-panel-bg: #ffffff;
+    --mat-builder-color-panel-fg: #3f3f46;
+    --mat-builder-color-panel-muted-fg: #71717a;
+    --mat-builder-color-panel-border: #e4e4e7;
+    --mat-builder-color-input-label: #78716c;
+    --mat-builder-color-scrollbar-thumb: rgb(0 0 0 / 0.2);
+
+    --mat-builder-color-rule-bg: #f4f4f5;
+    --mat-builder-color-rule-border: #e4e4e7;
+    --mat-builder-color-rule-joiner-bg: #e4e4e7;
+    --mat-builder-color-rule-joiner-fg: #52525b;
+
+    --mat-builder-palette-tint-1-fg: #7c3aed;
+    --mat-builder-palette-tint-2-fg: #2563eb;
+    --mat-builder-palette-tint-3-fg: #0284c7;
+    --mat-builder-palette-tint-4-fg: #059669;
+    --mat-builder-palette-tint-5-fg: #d97706;
+    --mat-builder-palette-tint-6-fg: #4f46e5;
+    --mat-builder-palette-tint-7-fg: #e11d48;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Derived tokens, re-declared on the shell.
+ *
+ * A `var()` inside a custom property is substituted where the property is
+ * DECLARED, not where it is read. With these living only on `:root`, they
+ * would already hold a resolved colour by the time the shell inherits them,
+ * so overriding a source token on the shell — which is exactly what the
+ * `theme` prop does — changed the source and nothing downstream.
+ *
+ * Re-declaring them here re-runs the substitution against whatever the shell
+ * resolves, so `theme={{ "color-selection": … }}` reaches all seven of that
+ * token's dependants. The `:root` copies above stay for UI that portals
+ * outside the shell.
+ *
+ * Keep this list in step with the derived tokens above — tokens.test.ts
+ * fails if one is missing.
+ * ───────────────────────────────────────────────────────────── */
+
+.mat-builder-shell {
+    --mat-builder-color-hover: color-mix(in srgb, var(--mat-builder-color-selection) 60%, transparent);
+    --mat-builder-chrome-shadow-drag:
+        0 30px 60px color-mix(in srgb, var(--mat-builder-color-selection) 32%, transparent),
+        0 0 0 1.5px color-mix(in srgb, var(--mat-builder-color-selection) 50%, transparent);
+    --mat-builder-color-drop-indicator: var(--mat-builder-color-selection);
+    --mat-builder-color-drop-parent: color-mix(in srgb, var(--mat-builder-color-drop-indicator) 40%, transparent);
+    --mat-builder-color-resize-handle-active: var(--mat-builder-color-selection);
+    --mat-builder-color-rule-accent: var(--mat-builder-color-selection);
+    --mat-builder-color-conditional-ring: color-mix(in srgb, var(--mat-builder-color-conditional-fg) 30%, transparent);
+    --mat-builder-color-layer-row-selected-bg: var(--mat-builder-color-selection);
+    --mat-builder-color-layer-row-hover-bg: color-mix(in srgb, var(--mat-builder-color-panel-fg) 6%, transparent);
 }

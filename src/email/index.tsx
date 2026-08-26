@@ -50,6 +50,9 @@ export type {
 export { emailBlocks, EMAIL_ROOT_TYPE } from "./preset.ts";
 
 export { EmailPreview, type EmailPreviewProps } from "./preview.tsx";
+// What email containers accept — the rule custom blocks are admitted by (docs/08 §6)
+export { acceptsEmailContent, EMAIL_STRUCTURAL_TYPES } from "./accepts.ts";
+export type { EmailBlockOverride } from "./types.ts";
 
 /** The whole email builder in one component — preset, layout, preview, saving */
 export {

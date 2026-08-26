@@ -1,0 +1,118 @@
+/*
+ * Scoped preflight — the replacement for Tailwind's global one (style.css).
+ *
+ * Tailwind's utilities assume preflight: `p-2` assumes no default padding,
+ * `border` sets only a width and relies on `border-style: solid` already
+ * being there, every sizing utility assumes `border-box`. Dropping preflight
+ * outright would mis-lay-out the editor inside a host with its own resets —
+ * so the rules the editor depends on are re-added here, applied ONLY to the
+ * builder's own roots instead of to every element on the page.
+ *
+ * This is deliberately a subset. Tailwind's preflight also normalises
+ * `::-webkit-datetime-edit-*`, `:-moz-ui-invalid`, `abbr[title]` and a dozen
+ * other things the editor never renders; carrying them would be copying a
+ * reset rather than owning one.
+ *
+ * SCOPE. `.mat-builder-shell` covers the assembled editor, but the panels are
+ * exported individually and a level-3 host composes them wherever it likes,
+ * so each root is listed too. `[data-floating-ui-portal]` is not optional:
+ * mat-ui's menus, tooltips and the inline text toolbar render through
+ * @floating-ui's portal into document.body, i.e. OUTSIDE the shell, and
+ * would otherwise be the one part of the editor with no reset at all.
+ *
+ * `:where()` keeps every selector at zero specificity, matching real
+ * preflight — a host, or our own component CSS, overrides these without a
+ * specificity fight. Layer order does the rest: this is @layer base, so
+ * every Tailwind utility still wins.
+ */
+
+@layer base {
+    /*
+     * 1. Tailwind's sizing utilities are all border-box.
+     * 2. Utilities assume zeroed defaults; `p-2` must not stack on a UA margin.
+     * 3. `border-2` sets width only — the style has to already be there.
+     */
+    :where(
+        .mat-builder-shell,
+        .mat-builder-palette,
+        .mat-builder-layers,
+        .mat-builder-inspector,
+        .mat-builder-topbar,
+        .mat-builder-toolbar,
+        .mat-builder-canvas,
+        [data-floating-ui-portal]
+    ),
+    :where(
+        .mat-builder-shell,
+        .mat-builder-palette,
+        .mat-builder-layers,
+        .mat-builder-inspector,
+        .mat-builder-topbar,
+        .mat-builder-toolbar,
+        .mat-builder-canvas,
+        [data-floating-ui-portal]
+    ) :where(*, ::before, ::after, ::backdrop) {
+        box-sizing: border-box; /* 1 */
+        margin: 0; /* 2 */
+        padding: 0; /* 2 */
+        border: 0 solid; /* 3 */
+    }
+
+    /* Form controls: inherit the panel's typography instead of the UA's, and
+     * drop the native chrome the inspector's own styling replaces. */
+    :where(
+        .mat-builder-shell,
+        .mat-builder-palette,
+        .mat-builder-layers,
+        .mat-builder-inspector,
+        .mat-builder-topbar,
+        .mat-builder-toolbar,
+        [data-floating-ui-portal]
+    ) :where(button, input, select, optgroup, textarea) {
+        font: inherit;
+        font-feature-settings: inherit;
+        font-variation-settings: inherit;
+        letter-spacing: inherit;
+        color: inherit;
+        border-radius: 0;
+        background-color: transparent;
+        opacity: 1;
+    }
+
+    /* Icons are laid out as blocks throughout the chrome. Deliberately NOT
+     * `img` — the canvas renders the email's images, which must stay inline
+     * exactly as a mail client would show them. */
+    :where(
+        .mat-builder-shell,
+        .mat-builder-palette,
+        .mat-builder-layers,
+        .mat-builder-inspector,
+        .mat-builder-topbar,
+        .mat-builder-toolbar,
+        [data-floating-ui-portal]
+    ) :where(svg) {
+        display: block;
+        vertical-align: middle;
+    }
+
+    /* Panel lists (the layers tree, menus) are unstyled; the canvas is
+     * excluded so the email's own lists keep their markers. */
+    :where(
+        .mat-builder-palette,
+        .mat-builder-layers,
+        .mat-builder-inspector,
+        .mat-builder-topbar,
+        .mat-builder-toolbar,
+        [data-floating-ui-portal]
+    ) :where(ol, ul, menu) {
+        list-style: none;
+    }
+
+    /* The placeholder colour utilities target this. */
+    :where(
+        .mat-builder-shell,
+        [data-floating-ui-portal]
+    ) ::placeholder {
+        opacity: 1;
+    }
+}

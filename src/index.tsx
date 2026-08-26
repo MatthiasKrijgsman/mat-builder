@@ -9,6 +9,10 @@ import "./style.css";
 
 // Core — document model, block definitions, traversal (server-safe; see docs/03 §4)
 export { defineBlock } from "./core/define-block.ts";
+// Patterns — palette entries that expand into ordinary blocks (docs/08 §7)
+export { definePattern, specFromSubtree } from "./core/patterns.ts";
+// Composed blocks — a block declared as a tree of other blocks (docs/08)
+export { slot, isSlotRef, collectBindings, collectSlots } from "./core/compose.ts";
 export { createRegistry, mergeBlockDefinitions } from "./core/registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./core/registry.ts";
 export { createDocument, migrateDocument, validateDocument } from "./core/document.ts";
@@ -36,10 +40,15 @@ export type {
 export type {
     BlockId,
     BlockNode,
+    BlockPattern,
     BuilderDocument,
     BlockLocation,
     BlockDefinition,
     ContainerDef,
+    BlockSpec,
+    BlockCompose,
+    BlockContext,
+    ContainerSlotRef,
     AcceptCtx,
     EditRenderProps,
     InspectorProps,
@@ -77,6 +86,9 @@ export { BuilderShell, type BuilderShellProps, type BuilderShellPanels } from ".
 export { ShellTopBar, SaveControls, type ShellTopBarProps } from "./components/shell/ShellTopBar.tsx";
 export { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./components/shell/labels.ts";
 export { dockedPanel, dottedSurface, transparentSurface } from "./components/shell/chrome.ts";
+// Theming — token overrides per instance, and the colour scheme (docs/guides/theming.md)
+export { themeToStyle, colorSchemeAttr } from "./react/theme.ts";
+export type { BuilderTheme, BuilderToken, BuilderColorScheme } from "./react/theme.ts";
 
 // UI components (each independent & restylable — docs/04)
 export { Canvas, type CanvasProps } from "./components/canvas/Canvas.tsx";

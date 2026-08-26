@@ -5,6 +5,8 @@
  */
 
 export { defineBlock } from "./define-block.ts";
+export { definePattern, specFromSubtree } from "./patterns.ts";
+export { slot, isSlotRef, collectBindings, collectSlots } from "./compose.ts";
 export { createRegistry, containerAccepts, mergeBlockDefinitions } from "./registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./registry.ts";
 export { createDocument, migrateDocument, validateDocument, DOCUMENT_VERSION } from "./document.ts";

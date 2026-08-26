@@ -13,6 +13,15 @@ Research and architecture design for `@matthiaskrijgsman/mat-builder`: a drag-an
 5. [Drag and drop](05-drag-and-drop.md) — Pragmatic drag and drop integration: palette → canvas, reordering, reparenting, tree panel
 6. [Email builder](06-email-builder.md) — the `./email` preset: block set, editor vs output rendering, export pipeline, merge tags & conditional visibility
 7. [Production readiness](07-production-readiness.md) — what's left before external consumers install it: publishing, packaging, the control seams, output QA
+8. [Composed blocks](08-composed-blocks.md) — custom blocks defined as trees of preset blocks (`compose`), inline bindings, patterns
+
+### Guides (written for consumers, not for us)
+
+- [Getting started](guides/getting-started.md) — install, the stylesheet, first builder, documents, saving, rendering to email, personalization
+- [Theming](guides/theming.md) — the chrome/content split, dark mode, token overrides and the `theme` prop, the token reference
+- [Custom blocks — a cookbook](guides/custom-blocks.md) — patterns, composed blocks and primitives end to end, the field/style-group/style-props toolkit, extending preset blocks, troubleshooting
+- [Server rendering](guides/server-rendering.md) — `renderEmail`, the two entry points, tokens vs substitution, conditional blocks, custom blocks on the server
+- [API reference](guides/api-reference.md) — every public export, organized by the control ladder
 
 ## Key decisions
 

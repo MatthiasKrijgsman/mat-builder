@@ -58,7 +58,9 @@ export function mergeBlockDefinitions(
 /** Evaluates a container's `accepts` rule (array or function form; omitted = accept all). */
 export function containerAccepts(container: ContainerDef, childType: string, ctx: AcceptCtx): boolean {
     if (!container.accepts) return true;
-    return Array.isArray(container.accepts)
-        ? container.accepts.includes(childType)
-        : container.accepts(childType, ctx);
+    // `typeof`, not `Array.isArray`: the latter narrows to `any[]`, which does
+    // not exclude a `readonly string[]` from the union.
+    return typeof container.accepts === "function"
+        ? container.accepts(childType, ctx)
+        : container.accepts.includes(childType);
 }

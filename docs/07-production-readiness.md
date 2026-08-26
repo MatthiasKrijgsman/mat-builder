@@ -13,13 +13,15 @@ The library is already architecturally right for both. What is missing is almost
 
 ## The control ladder
 
-Everything below is organized around this. It is the promise we make to consumers, and it is what the API reference should be structured by. Levels 0, 3 and 4 exist and work today; **levels 1 and 2 are the gap.**
+Everything below is organized around this. It is the promise we make to consumers, and it is what the API reference should be structured by. Levels 0, 3 and 4 exist and work today; **level 1 is the gap.**
+
+Level 2 was rated "works, undocumented" when this was written, which was too generous: registration worked, but a custom block was in no container's `accepts` list and had no seam for its output renderer, so it could be registered, shown in the palette, dropped nowhere, and — if forced into a document — vanish silently from the export. Both are fixed, composed blocks (`compose`) mean the common case needs no renderer at all, and the cookbook is written. See `08-composed-blocks.md` for the design and `guides/custom-blocks.md` for the consumer guide.
 
 | Level | Consumer writes | Controls | Status |
 |---|---|---|---|
 | 0 | `<EmailBuilder defaultValue onSave />` | nothing — batteries included | ✅ ships |
 | 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial |
-| 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works, undocumented |
+| 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works (see below) |
 | 3 | `<BuilderProvider>` + components | their own layout entirely | ✅ ships |
 | 4 | `./email/render`, `core` exports | server rendering, validation, migration, own pipeline | ✅ ships |
 
@@ -52,12 +54,13 @@ Tasks:
 - [ ] Move the playground to **Vercel/Cloudflare Pages with access protection** (recommended — it is also the fastest thing to show a prospective consumer), or accept a public demo of a private library, or drop the hosted demo and rely on `pnpm site`.
 - [ ] Fix the README link either way.
 
-### A3. No CI gate on the code
+### A3. No CI gate on the code — DONE (except release)
 
-The only workflow deploys the site. Tests, types and lint have never run in CI.
+The only workflow deployed the site. Tests, types and lint had never run in CI.
 
-- [ ] `ci.yml` on PR + push: `pnpm lint`, `pnpm test`, `tsc --noEmit`, `pnpm build`.
-- [ ] `release.yml` on tag: build → `npm publish`. Keep `prepublishOnly` as the local safety net.
+- [x] `.github/workflows/ci.yml`, two jobs in parallel. **check**: lint, test, `tsc --noEmit` over `tsconfig.json`, build, and a typecheck of the playground against `dist/` — which is what catches an API break the library's own build cannot see. **pack**: `pnpm test:pack`, the only job that sees packaging.
+- [x] Fixed the five pre-existing type errors that would have made CI red from its first run. Two were test-file casts; the third was real — `ContainerDef.accepts` is now `readonly string[]`, so a consumer passing a shared list or an `as const` literal is no longer rejected.
+- [ ] `release.yml` on tag: build → `npm publish`. Blocked on A1 (no registry chosen, nothing published).
 - [ ] Branch protection on `main` once external consumers exist.
 
 ### A4. Uncommitted work in the tree
@@ -68,7 +71,7 @@ The only workflow deploys the site. Tests, types and lint have never run in CI.
 - [ ] Then cut **0.1.0** (not 0.0.3 — first real release, and it signals "0.x, breaking changes allowed" rather than "prototype").
 - [ ] Start `CHANGELOG.md`. Manual `0.x` bumps are fine until two consumers are live; adopt changesets when three teams are waiting on releases.
 
-### A5. Tailwind preflight leaks into the host app 🔴
+### A5. Tailwind preflight leaks into the host app — FIXED
 
 The single worst adoption hazard. `dist/style.css` (38 kB) ships Tailwind v4's **full preflight**:
 
@@ -84,21 +87,24 @@ The single worst adoption hazard. `dist/style.css` (38 kB) ships Tailwind v4's *
 
 A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn't already Tailwind v4 gets their headings, links, lists and buttons reset globally. For an external company on Bootstrap/MUI/their own design system, that is "this library broke our app" on day one.
 
-- [ ] Build the editor stylesheet **without preflight** (Tailwind v4: import `theme.css` + `utilities.css` instead of the `tailwindcss` barrel), and re-add only the resets the builder needs, scoped to `.mat-builder-shell` and the panel roots.
-- [ ] Verify the editor still renders correctly in a *non-Tailwind* host — that is the actual test.
+- [x] Built without preflight — `theme.css` + `utilities.css` only. `src/styles/preflight.css` re-adds the needed resets scoped to the `.mat-builder-*` roots **and `[data-floating-ui-portal]`**: mat-ui renders menus, tooltips and the inline toolbar outside the shell, so a shell-only scope would have missed every one of them.
+- [x] `site/public/preflight-check.html` is that test: a plain-CSS page that must render identically with and without our stylesheet. Verified — 13 computed properties, zero differences. Editor, portals and dark mode re-checked after the change.
 - [ ] Consider a utility prefix so builder classes can never collide with a host's (Tailwind v4 `@import "tailwindcss" prefix(mb)`).
-- [ ] Document what `./style` does and does not touch.
+- [x] Documented in `guides/theming.md` §6 and `guides/getting-started.md` §2.2.
+- [x] **mat-ui had the same leak and is fixed the same way** (`fix/preflight-leak`, 0.0.67): theme + utilities only, plus a scoped reset over the 88 classes its components author, guarded by `pnpm check:css` in its build. Verified together — a non-Tailwind page importing BOTH stylesheets is untouched across 13 properties.
+- [ ] **Needs mat-ui 0.0.67 published.** The peer range here is already `^0.0.67`; until it is on npm, `pnpm install` cannot resolve it.
 
-### A6. The install is 15 packages, not one
+### A6. The install is 15 packages, not one — FIXED (mostly)
 
 `mat-builder` declares 11 peers; `mat-ui` declares 14 of its own and **zero dependencies**. A consumer therefore has to end up with react, react-dom, mat-ui, `@tabler/icons-react`, lexical + 5 `@lexical/*`, `@floating-ui/react`, `motion`, `react-dropzone`, `react-merge-refs`, and for email `react-email` + `@react-email/render`. `site/package.json` is the honest evidence — it lists all of them by hand.
 
 Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on strict installs, Yarn PnP, and monorepos with `auto-install-peers=false`.
 
-- [ ] Split the peer list by intent: **true singletons stay peers** (react, react-dom, mat-ui, lexical + `@lexical/*` — they share module-level state with mat-ui's editor), everything else that is merely "used internally" moves to `dependencies`.
-- [ ] Publish one copy-pasteable install command covering whatever remains a peer.
-- [ ] Fix the optionality lie: `react-email` and `@react-email/render` are marked `optional`, but `./email` needs them at runtime (`EmailBuilder → EmailPreview → render.ts`). Either drop the optional flag for the email entry's needs, or lazy-import the renderer inside `EmailPreview` so `.`-only consumers really can skip them.
-- [ ] **Clean-room consumer smoke test in CI** — the highest-value single task in this document. `npm pack`, install the tarball into a scratch Next.js app *and* a scratch Vite app, mount `<EmailBuilder>`, build, render an email server-side, assert on the HTML. Every packaging regression above is caught by this one job, forever.
+- [x] Split done here (`@tabler/icons-react` → `dependencies`) **and in mat-ui**, which was where the burden actually came from: it declared 14 peers and zero dependencies. It now keeps five internals as its own dependencies, so a consumer installs **12 packages instead of 17** — measured by the smoke test, not by reading manifests.
+- [x] One command in `guides/getting-started.md` §2.1 — now twelve packages — grouped by why each is needed and verified by installing it into an empty project (zero unmet peers).
+- [x] Lazy-imported in `EmailPreview`, so `./email` no longer statically pulls them and the flag is truthful: verified by walking the built chunk graph — only `./email/render` requires them now. A missing peer surfaces as a message naming the packages rather than a module-not-found.
+- [x] `scripts/smoke-test.mjs` (`pnpm test:pack`): packs, checks the tarball carries every entry in `exports`, installs into an empty project with only the declared peers, renders an email from plain node, typechecks a consumer's custom block + pattern + theme against the published types, and asserts the optional peers really are skippable. Confirmed it fails on a typo'd `exports` path that all 333 unit tests and the build pass.
+- [x] Wired into CI as the `pack` job.
 
 ---
 
@@ -149,13 +155,13 @@ Grepped across `src/components` and `src/email`: ~230 literal UI strings ("Dupli
 - [ ] `fonts={[{ name, stack, webfont?: { url, weights } }]}` merged into (or replacing) the built-in stacks.
 - [ ] Emit `@font-face`/`<link>` into `<Head>` for web fonts, with the fallback stack intact for Outlook.
 
-### B5. Theming is light-only
+### B5. Theming is light-only — DONE
 
 81 `--mat-builder-*` tokens, all defined once under `:root`, no dark variants — while `style.css` already declares a `dark` variant. Host apps with a dark backoffice will look broken.
 
-- [ ] Dark token set behind the existing `dark` variant.
-- [ ] A typed `theme` prop (or just documented token overrides — decide, then document; today it is neither).
-- [ ] Document the token list in the theming guide, grouped by surface.
+- [x] Dark token set — chrome only; the content layer deliberately stays put.
+- [x] Both, because they answer different questions: a stylesheet rule for a fixed look, the typed `theme` prop for per-instance values and values that come from data. Plus `colorScheme` for hosts not using the `.dark` convention.
+- [x] Token list documented, grouped by layer rather than by surface — which layer a token is on is what decides whether it flips.
 
 ### B6. A consumer block that throws kills the canvas
 
@@ -164,15 +170,15 @@ No error boundary anywhere in the tree. A `editRender` that throws on a malforme
 - [ ] Error boundary per block on the canvas, rendering the existing missing-block fallback treatment plus the error.
 - [ ] `onError?: (error, info) => void` on the provider/shell so hosts can wire Sentry.
 
-### B7. Documentation is design rationale, not an integration guide
+### B7. Documentation is design rationale, not an integration guide — GUIDES DONE
 
 `docs/01–06` explain *why* the library is shaped this way — excellent for us, wrong artifact for a consumer. The README's 10-line snippet is currently the entire integration documentation, and level 2 (custom blocks — arguably the biggest selling point) is undocumented outside the type comments.
 
-- [ ] **Getting started** — install, `.npmrc`, CSS import, first builder, saving, rendering server-side.
-- [ ] **API reference** — every export in `src/index.tsx`, generated or hand-written, organized by the control ladder.
-- [ ] **Custom blocks cookbook** — `defineBlock` end to end: props, `editRender`, inspector with the shared style groups, containers, the matching email renderer, registering it. Build it from a real second block set so the doc is executable.
-- [ ] **Theming guide** — the token table, the panel scopes, what `./style` touches.
-- [ ] **Server rendering guide** — `./email/render`, merge tags vs. `substituteTokens`, conditional visibility, why the entry is server-safe.
+- [x] **Getting started** — `guides/getting-started.md`. Every example typechecks against a tarball install in a clean scratch project, and the server-render, personalization and conditional-visibility claims were run there. It documents A5 (preflight) and A6 (peer list, the react-email optionality lie) as live hazards with workarounds — delete those callouts when the fixes land.
+- [x] **API reference** — `guides/api-reference.md`, organized by the control ladder. `guides/api-reference.test.ts` asserts every runtime export is documented, so it cannot silently fall behind.
+- [x] **Custom blocks cookbook** — `guides/custom-blocks.md`. Covers all three tiers (patterns, composed blocks, primitives), the field/style-group/style-props toolkit, containers and drop rules, extending preset blocks, and troubleshooting. Its examples typecheck against `dist` and run as `src/email/cookbook.test.tsx`; `site/app/custom/` is the executable block set.
+- [x] **Theming guide** — `guides/theming.md`. The chrome/content split, dark mode, both override routes, the full token reference, and what `./style` touches.
+- [x] **Server rendering guide** — `guides/server-rendering.md`. The three render modes were verified against a tarball install rather than described from the source.
 - [ ] **Upgrade notes per 0.x** — breaking changes are allowed on 0.x, but only if they're written down.
 - [ ] Publish these alongside the demo (same protected host), not just in-repo.
 

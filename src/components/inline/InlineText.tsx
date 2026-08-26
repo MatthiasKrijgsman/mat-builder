@@ -4,6 +4,7 @@ import { FloatingToolbarShell } from "@matthiaskrijgsman/mat-ui";
 import type { BlockId } from "../../core/types.ts";
 import { useBuilderState, useMergeTags } from "../../react/hooks.ts";
 import { MergeTagPlainItem } from "./MergeTagItems.tsx";
+import { useComposedField } from "./composed-field.tsx";
 import { focusCanvas } from "./focus.ts";
 import { useSelectionDrag } from "./use-selection-drag.ts";
 
@@ -40,7 +41,10 @@ const singleLine = (text: string): string => text.replace(/\s*[\r\n]+\s*/g, " ")
 
 export function InlineText({ id, field = "text", value, onChange, style, className, toolbar, toolbarSecondRow }: InlineTextProps) {
     const actions = useBuilderState((s) => s.actions);
-    const isEditing = useBuilderState((s) => s.editing?.blockId === id && s.editing.field === field);
+    // Inside a composed block these resolve to the COMPOSITE and the prop
+    // the binding names; outside one they are `id`/`field` unchanged.
+    const { id: editId, field: editField, editable } = useComposedField(id, field);
+    const isEditing = useBuilderState((s) => s.editing?.blockId === editId && s.editing.field === editField);
     const hasMergeTags = useMergeTags().length > 0;
     const ref = useRef<HTMLSpanElement>(null);
     const [anchor, setAnchor] = useState<HTMLElement | null>(null);
@@ -114,9 +118,12 @@ export function InlineText({ id, field = "text", value, onChange, style, classNa
                 style={style}
                 className={className}
                 onDoubleClick={(event) => {
+                    // An unbound prop inside a composed block has nowhere to
+                    // write, so it stays a plain span (docs/08 §3).
+                    if (!editable) return;
                     event.stopPropagation();
                     event.preventDefault();
-                    actions.startEditing(id, field);
+                    actions.startEditing(editId, editField);
                 }}
             >
                 {value}

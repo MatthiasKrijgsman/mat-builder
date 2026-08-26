@@ -1,8 +1,9 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
-import type { BlockId, BuilderDocument } from "../../core/types.ts";
+import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
 import { BuilderProvider } from "../../react/provider.tsx";
+import { colorSchemeAttr, themeToStyle, type BuilderColorScheme, type BuilderTheme } from "../../react/theme.ts";
 import { useDocumentSave, type SaveController, type UseDocumentSaveOptions } from "../../react/save.ts";
 import { Canvas } from "../canvas/Canvas.tsx";
 import { Inspector } from "../inspector/Inspector.tsx";
@@ -46,6 +47,9 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     onSelectionChange?: (id: BlockId | null) => void;
     /** Personalization tokens available in text surfaces; pass a stable array */
     mergeTags?: MergeTag[];
+    /** Palette entries that expand into ordinary blocks on insert (docs/08 §7);
+     * pass a stable array */
+    patterns?: BlockPattern[];
 
     /* ── Chrome ─────────────────────────────────────────────────────── */
     /** App name — the fixed first breadcrumb segment in the top bar */
@@ -75,6 +79,18 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     /** The shell fills its container: give it (or an ancestor) a height */
     className?: string;
     style?: CSSProperties;
+    /**
+     * Per-instance token overrides — keys are `--mat-builder-*` names without
+     * the prefix (docs/guides/theming.md). For a fixed look a stylesheet rule
+     * is simpler; use this when the values come from data, or when two
+     * builders on one page need to differ.
+     */
+    theme?: BuilderTheme;
+    /**
+     * Colour scheme for this instance. Defaults to `"inherit"`, which follows
+     * a `.dark` ancestor; `"light"`/`"dark"` pin it regardless of the page.
+     */
+    colorScheme?: BuilderColorScheme;
 }
 
 export function BuilderShell(props: BuilderShellProps) {
@@ -86,6 +102,7 @@ export function BuilderShell(props: BuilderShellProps) {
         onChange,
         onSelectionChange,
         mergeTags,
+        patterns,
         onSave,
         autoSaveMs,
         onError,
@@ -103,6 +120,8 @@ export function BuilderShell(props: BuilderShellProps) {
         inspector,
         className,
         style,
+        theme,
+        colorScheme,
     } = props;
 
     // Mount-time only, like the provider's own document handling: a blank
@@ -130,6 +149,7 @@ export function BuilderShell(props: BuilderShellProps) {
             onChange={handleChange}
             onSelectionChange={onSelectionChange}
             mergeTags={mergeTags}
+            patterns={patterns}
         >
             <BuilderShellLayout
                 save={save}
@@ -145,6 +165,8 @@ export function BuilderShell(props: BuilderShellProps) {
                 inspector={inspector}
                 className={className}
                 style={style}
+                theme={theme}
+                colorScheme={colorScheme}
             />
         </BuilderProvider>
     );
@@ -171,13 +193,15 @@ interface BuilderShellLayoutProps {
     inspector?: ReactNode;
     className?: string;
     style?: CSSProperties;
+    theme?: BuilderTheme;
+    colorScheme?: BuilderColorScheme;
 }
 
 /** The docked layout: one continuous dotted surface with the top bar and
  * panels floating over it. Separate component so it renders inside the
  * provider (the panels are all context consumers). */
 function BuilderShellLayout(props: BuilderShellLayoutProps) {
-    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style } = props;
+    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style, theme, colorScheme } = props;
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
@@ -191,7 +215,12 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
         `${property} var(--mat-builder-duration-panel-slide) var(--mat-builder-ease-panel-slide)`;
 
     return (
-        <div className={`mat-builder-shell relative h-full ${className ?? ""}`} style={{ ...dottedSurface, ...style }}>
+        <div
+            className={`mat-builder-shell relative h-full ${className ?? ""}`}
+            data-mat-builder-color-scheme={colorSchemeAttr(colorScheme)}
+            // Theme first, so an explicit `style` stays the last word.
+            style={{ ...dottedSurface, ...themeToStyle(theme), ...style }}
+        >
             <div className="absolute inset-0 flex flex-col">
                 {topBar === false ? null : topBar !== undefined ? (
                     topBar

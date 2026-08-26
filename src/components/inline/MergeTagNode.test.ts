@@ -36,7 +36,7 @@ describe("MergeTagNode", () => {
     it("round-trips token and label through parseEditorState/toJSON", () => {
         const serialized = { type: "merge-tag", version: 1, token: "{{first_name}}", label: "First name" };
         const parsed = editor().parseEditorState(JSON.stringify(state([paragraph([serialized])])));
-        const json = parsed.toJSON() as { root: { children: Array<{ children: unknown[] }> } };
+        const json = parsed.toJSON() as unknown as { root: { children: Array<{ children: unknown[] }> } };
         expect(json.root.children[0].children[0]).toMatchObject({
             type: "merge-tag",
             token: "{{first_name}}",
@@ -47,7 +47,7 @@ describe("MergeTagNode", () => {
     it("falls back to the token as label for older documents", () => {
         const serialized = { type: "merge-tag", version: 1, token: "*|FNAME|*" };
         const parsed = editor().parseEditorState(JSON.stringify(state([paragraph([serialized])])));
-        const json = parsed.toJSON() as { root: { children: Array<{ children: unknown[] }> } };
+        const json = parsed.toJSON() as unknown as { root: { children: Array<{ children: unknown[] }> } };
         expect(json.root.children[0].children[0]).toMatchObject({ token: "*|FNAME|*", label: "*|FNAME|*" });
     });
 
@@ -62,7 +62,7 @@ describe("MergeTagNode", () => {
         const styled = { type: "merge-tag", version: 1, token: "{{x}}", label: "X", style: "font-size: 24px" };
         const bare = { type: "merge-tag", version: 1, token: "{{y}}", label: "Y" };
         const parsed = editor().parseEditorState(JSON.stringify(state([paragraph([styled, bare])])));
-        const json = parsed.toJSON() as { root: { children: Array<{ children: Array<Record<string, unknown>> }> } };
+        const json = parsed.toJSON() as unknown as { root: { children: Array<{ children: Array<Record<string, unknown>> }> } };
         const [first, second] = json.root.children[0].children;
         expect(first).toMatchObject({ token: "{{x}}", style: "font-size: 24px" });
         expect(second).not.toHaveProperty("style");
