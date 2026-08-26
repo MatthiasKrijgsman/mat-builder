@@ -67,7 +67,7 @@
     "@lexical/rich-text": "^0.45.0",
     "@lexical/selection": "^0.45.0",
     "@lexical/utils": "^0.45.0",
-    "@matthiaskrijgsman/mat-ui": "^0.0.66",
+    "@matthiaskrijgsman/mat-ui": "^0.0.67",
     "@react-email/render": "^2.0.10",
     "lexical": "^0.45.0",
     "react": "^19.1.1",

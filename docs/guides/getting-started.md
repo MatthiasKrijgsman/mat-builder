@@ -44,24 +44,24 @@ Those two calls are the whole product surface. Everything else is refinement.
 
 ### 2.1 The dependencies
 
-Seventeen packages, and it is worth knowing why rather than just pasting:
+Twelve packages, and it is worth knowing why rather than just pasting:
 
 | Group | Count | Why it can't be bundled |
 |---|---|---|
 | React + the editor's UI layer | 3 | `react`, `react-dom`, `@matthiaskrijgsman/mat-ui` — one copy each, or hooks and context break |
-| Lexical | 5 | the inline text editor shares module-level state with mat-ui's; a second copy breaks editing |
-| mat-ui's own peers | 7 | mat-ui declares 14 peers and zero dependencies, so its needs land on you |
+| Lexical | 7 | the inline text editor shares module-level state with mat-ui's; a second copy breaks editing |
 | Email output | 2 | `react-email` + `@react-email/render` — **optional**, see below |
 
 ```bash
 npm install @matthiaskrijgsman/mat-builder \
   react react-dom @matthiaskrijgsman/mat-ui \
   lexical @lexical/react @lexical/rich-text @lexical/selection @lexical/utils @lexical/link @lexical/list \
-  @floating-ui/react @tabler/icons-react motion react-dropzone react-merge-refs \
   react-email @react-email/render
 ```
 
-Everything else the builder uses — drag and drop, immer, zustand, nanoid, the icon set it draws its own palette with — is a plain dependency and installs itself. You never see those.
+Everything else — drag and drop, immer, zustand, nanoid, icons, Floating UI, motion — is a plain dependency of ours or of mat-ui's, and installs itself. You never see those.
+
+> **On mat-ui ≤ 0.0.66 this list was seventeen.** That version declared fourteen peers and zero dependencies, so its internals landed on you. From `0.0.67` it keeps the five that are genuinely its own business (`@floating-ui/react`, `@tabler/icons-react`, `motion`, `react-dropzone`, `react-merge-refs`), which is why the peer range here is `^0.0.67`.
 
 npm and pnpm's default auto-install-peers hides most of this. It does **not** on strict installs, Yarn PnP, or a monorepo with `auto-install-peers=false`, so install them explicitly and you never find out the hard way.
 

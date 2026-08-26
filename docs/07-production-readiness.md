@@ -92,7 +92,7 @@ A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn
 - [ ] Consider a utility prefix so builder classes can never collide with a host's (Tailwind v4 `@import "tailwindcss" prefix(mb)`).
 - [x] Documented in `guides/theming.md` §6 and `guides/getting-started.md` §2.2.
 - [x] **mat-ui had the same leak and is fixed the same way** (`fix/preflight-leak`, 0.0.67): theme + utilities only, plus a scoped reset over the 88 classes its components author, guarded by `pnpm check:css` in its build. Verified together — a non-Tailwind page importing BOTH stylesheets is untouched across 13 properties.
-- [ ] Needs mat-ui 0.0.67 published, then bump the peer range here. Until then a consumer on 0.0.66 still gets the leak from mat-ui.
+- [ ] **Needs mat-ui 0.0.67 published.** The peer range here is already `^0.0.67`; until it is on npm, `pnpm install` cannot resolve it.
 
 ### A6. The install is 15 packages, not one — FIXED (mostly)
 
@@ -100,8 +100,8 @@ A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn
 
 Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on strict installs, Yarn PnP, and monorepos with `auto-install-peers=false`.
 
-- [x] Split done. `@tabler/icons-react` moved to `dependencies` — no module-level state, and the public API takes any `ComponentType`, so it was never the consumer's business. The rest of the peer list is true singletons only. **Net effect is small**, and that is the honest finding: mat-ui declares 14 peers and zero dependencies, so the consumer's burden is set there, not here.
-- [x] One command in `guides/getting-started.md` §2.1, grouped by why each package is needed, and verified by installing it verbatim into an empty project (zero unmet peers).
+- [x] Split done here (`@tabler/icons-react` → `dependencies`) **and in mat-ui**, which was where the burden actually came from: it declared 14 peers and zero dependencies. It now keeps five internals as its own dependencies, so a consumer installs **12 packages instead of 17** — measured by the smoke test, not by reading manifests.
+- [x] One command in `guides/getting-started.md` §2.1 — now twelve packages — grouped by why each is needed and verified by installing it into an empty project (zero unmet peers).
 - [x] Lazy-imported in `EmailPreview`, so `./email` no longer statically pulls them and the flag is truthful: verified by walking the built chunk graph — only `./email/render` requires them now. A missing peer surfaces as a message naming the packages rather than a module-not-found.
 - [x] `scripts/smoke-test.mjs` (`pnpm test:pack`): packs, checks the tarball carries every entry in `exports`, installs into an empty project with only the declared peers, renders an email from plain node, typechecks a consumer's custom block + pattern + theme against the published types, and asserts the optional peers really are skippable. Confirmed it fails on a typo'd `exports` path that all 333 unit tests and the build pass.
 - [x] Wired into CI as the `pack` job.
