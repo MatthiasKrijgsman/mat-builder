@@ -284,7 +284,7 @@ Nothing special: import the component, import the stylesheet, give it a height.
 |---|---|
 | The editor is invisible or 0px tall | The shell fills its container — give it a height (`className="h-screen"`). |
 | Changing `defaultValue` does nothing | It is read once at mount. Add `key={documentId}` to remount on switch — §4.2. |
-| Your app's headings and links lose their styling | Not us — `./style` is scoped (§2.2). Check whether you also import `@matthiaskrijgsman/mat-ui/style`, which still ships a global preflight. |
+| Your app's headings and links lose their styling | Not `./style`, which is scoped (§2.2). On mat-ui ≤ 0.0.66 the leak comes from `@matthiaskrijgsman/mat-ui/style`; upgrade to 0.0.67. |
 | Inline text editing misbehaves or throws | Two copies of `lexical` / `@lexical/*`. Dedupe to one. |
 | The preview says it needs `react-email` | The optional peers are not installed — §2.1. |
 | Server build fails on mat-ui or `"use client"` | Something imported `/email` instead of `/email/render` — §6. |

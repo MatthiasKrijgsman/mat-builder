@@ -20,6 +20,9 @@
 </style>
 <script>
   if (location.search.includes("builder=1")) {
+    // What a consumer actually imports: BOTH stylesheets. mat-ui ships its own,
+    // and a leak from either lands on the host all the same.
+    document.write('<link rel="stylesheet" href="/_mat-ui-style.css">');
     document.write('<link rel="stylesheet" href="/_mat-builder-style.css">');
   }
 </script>
@@ -57,7 +60,7 @@
 <script>
   document.getElementById("mode").textContent =
     location.search.includes("builder=1")
-      ? "WITH dist/style.css imported"
+      ? "WITH both mat-ui and mat-builder stylesheets imported"
       : "WITHOUT the builder stylesheet (baseline)";
   // Report the computed values that preflight would change.
   window.__probe = () => {

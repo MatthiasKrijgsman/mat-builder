@@ -212,7 +212,7 @@ Two constraints worth knowing: keep `chrome-handle-size` ≤ 2 × (`RING_SLACK` 
 
 `site/public/preflight-check.html` is the proof: a deliberately non-Tailwind page that renders identically with and without our stylesheet loaded. `src/styles/preflight.test.ts` fails if a selector ever loses its scope.
 
-> **Note:** `@matthiaskrijgsman/mat-ui/style` still ships its own full preflight. If you import that stylesheet too, the leak comes back from there — it needs the same fix in that package.
+> **Note:** `@matthiaskrijgsman/mat-ui` had the same leak. It is fixed in mat-ui `0.0.67`; **on `0.0.66` and earlier, importing `@matthiaskrijgsman/mat-ui/style` brings the global reset back with it.** If your headings are being restyled, check which version you are on.
 
 Beyond preflight, the stylesheet provides: the token definitions (§5), block chrome interaction states, slim scrollbars on builder surfaces, rich-text classes for the canvas (`.mat-builder-rt-*`), and the panel text colour.
 

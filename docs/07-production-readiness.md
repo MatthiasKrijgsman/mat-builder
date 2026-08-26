@@ -91,7 +91,8 @@ A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn
 - [x] `site/public/preflight-check.html` is that test: a plain-CSS page that must render identically with and without our stylesheet. Verified — 13 computed properties, zero differences. Editor, portals and dark mode re-checked after the change.
 - [ ] Consider a utility prefix so builder classes can never collide with a host's (Tailwind v4 `@import "tailwindcss" prefix(mb)`).
 - [x] Documented in `guides/theming.md` §6 and `guides/getting-started.md` §2.2.
-- [ ] **`@matthiaskrijgsman/mat-ui` still ships its own full preflight.** A consumer importing that stylesheet gets the same leak from there; the same fix is needed in that package.
+- [x] **mat-ui had the same leak and is fixed the same way** (`fix/preflight-leak`, 0.0.67): theme + utilities only, plus a scoped reset over the 88 classes its components author, guarded by `pnpm check:css` in its build. Verified together — a non-Tailwind page importing BOTH stylesheets is untouched across 13 properties.
+- [ ] Needs mat-ui 0.0.67 published, then bump the peer range here. Until then a consumer on 0.0.66 still gets the leak from mat-ui.
 
 ### A6. The install is 15 packages, not one — FIXED (mostly)
 
