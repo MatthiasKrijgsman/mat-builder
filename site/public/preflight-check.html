@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Preflight leak check</title>
+<!--
+  docs/07 §A5's "actual test": a host that is NOT on Tailwind.
+
+  Everything below is plain CSS. Load with ?builder=1 to also pull in
+  dist/style.css; anything that changes between the two loads is the
+  builder's stylesheet reaching outside itself.
+-->
+<meta name="color-scheme" content="light only">
+<style>
+  html { background: #fff; color-scheme: light; }
+  body { font-family: Georgia, serif; max-width: 46rem; margin: 2rem auto; color: #1a1a1a; line-height: 1.6; }
+  .swatch { width: 120px; height: 40px; background: #4338ca; display: inline-block; }
+  section { border-top: 1px solid #ddd; padding-top: .5rem; margin-top: 1.5rem; }
+  code { background: #f4f4f5; padding: .1rem .3rem; }
+</style>
+<script>
+  if (location.search.includes("builder=1")) {
+    document.write('<link rel="stylesheet" href="/_mat-builder-style.css">');
+  }
+</script>
+</head>
+<body>
+  <p id="mode"></p>
+
+  <section>
+    <h1>Heading level 1</h1>
+    <h2>Heading level 2</h2>
+    <h3>Heading level 3</h3>
+  </section>
+
+  <section>
+    <p>A paragraph with <a href="#">an inline link</a>, some <b>bold</b> and <em>italic</em> text,
+       and an <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='%23e11d48'/%3E%3C/svg%3E" alt=""> inline image.</p>
+  </section>
+
+  <section>
+    <ul><li>Unordered item one</li><li>Unordered item two</li></ul>
+    <ol><li>Ordered item one</li><li>Ordered item two</li></ol>
+  </section>
+
+  <section>
+    <button>A button</button>
+    <input type="text" value="An input">
+    <select><option>A select</option></select>
+  </section>
+
+  <section>
+    <table border="1"><tr><td>cell</td><td>cell</td></tr></table>
+    <div class="swatch"></div>
+  </section>
+
+<script>
+  document.getElementById("mode").textContent =
+    location.search.includes("builder=1")
+      ? "WITH dist/style.css imported"
+      : "WITHOUT the builder stylesheet (baseline)";
+  // Report the computed values that preflight would change.
+  window.__probe = () => {
+    const q = (s) => document.querySelector(s);
+    const cs = (el, p) => getComputedStyle(el).getPropertyValue(p);
+    return {
+      h1FontSize: cs(q("h1"), "font-size"),
+      h1FontWeight: cs(q("h1"), "font-weight"),
+      linkColor: cs(q("a"), "color"),
+      linkDecoration: cs(q("a"), "text-decoration-line"),
+      ulListStyle: cs(q("ul"), "list-style-type"),
+      olListStyle: cs(q("ol"), "list-style-type"),
+      imgDisplay: cs(q("img"), "display"),
+      buttonFont: cs(q("button"), "font-family").slice(0, 24),
+      buttonBg: cs(q("button"), "background-color"),
+      bodyMargin: cs(document.body, "margin-top"),
+      tableBorderCollapse: cs(q("table"), "border-collapse"),
+    };
+  };
+</script>
+</body>
+</html>

@@ -65,13 +65,7 @@ import "@matthiaskrijgsman/mat-builder/style";
 
 Import it once, anywhere your bundler processes CSS — your root layout is the usual place.
 
-> ### ⚠️ This stylesheet currently resets global elements
->
-> `dist/style.css` ships Tailwind v4's full preflight, which restyles `h1`–`h6`, `a`, `button`, `img`, `ul`/`ol` and `html` **across your whole app**, not just inside the builder.
->
-> If your app is already on Tailwind v4 this changes nothing. If it is not, expect your headings and links to lose their styling on the page where you import it.
->
-> Until this is fixed (`docs/07` §A5), the reliable workaround is to **load the builder on its own route** and import the stylesheet only there, so the blast radius is one page rather than your app. Route-level CSS imports work in Next.js App Router and in any bundler that scopes CSS per entry.
+It does **not** touch anything outside the builder. Tailwind's preflight — which would restyle your headings, links, lists and form controls app-wide — is deliberately not shipped; the resets the editor needs are scoped to its own roots instead. Import it wherever you like.
 
 ---
 
@@ -280,7 +274,7 @@ Nothing special: import the component, import the stylesheet, give it a height.
 |---|---|
 | The editor is invisible or 0px tall | The shell fills its container — give it a height (`className="h-screen"`). |
 | Changing `defaultValue` does nothing | It is read once at mount. Add `key={documentId}` to remount on switch — §4.2. |
-| Your app's headings and links lose their styling | The stylesheet's global preflight — §2.2. Scope the import to the builder's route. |
+| Your app's headings and links lose their styling | Not us — `./style` is scoped (§2.2). Check whether you also import `@matthiaskrijgsman/mat-ui/style`, which still ships a global preflight. |
 | Inline text editing misbehaves or throws | Two copies of `lexical` / `@lexical/*`. Dedupe to one. |
 | `Cannot find module '@react-email/render'` | Marked an optional peer but required by `/email`. Install it — §2.1. |
 | Server build fails on mat-ui or `"use client"` | Something imported `/email` instead of `/email/render` — §6. |

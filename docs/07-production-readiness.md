@@ -70,7 +70,7 @@ The only workflow deploys the site. Tests, types and lint have never run in CI.
 - [ ] Then cut **0.1.0** (not 0.0.3 — first real release, and it signals "0.x, breaking changes allowed" rather than "prototype").
 - [ ] Start `CHANGELOG.md`. Manual `0.x` bumps are fine until two consumers are live; adopt changesets when three teams are waiting on releases.
 
-### A5. Tailwind preflight leaks into the host app 🔴
+### A5. Tailwind preflight leaks into the host app — FIXED
 
 The single worst adoption hazard. `dist/style.css` (38 kB) ships Tailwind v4's **full preflight**:
 
@@ -86,10 +86,11 @@ The single worst adoption hazard. `dist/style.css` (38 kB) ships Tailwind v4's *
 
 A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn't already Tailwind v4 gets their headings, links, lists and buttons reset globally. For an external company on Bootstrap/MUI/their own design system, that is "this library broke our app" on day one.
 
-- [ ] Build the editor stylesheet **without preflight** (Tailwind v4: import `theme.css` + `utilities.css` instead of the `tailwindcss` barrel), and re-add only the resets the builder needs, scoped to `.mat-builder-shell` and the panel roots.
-- [ ] Verify the editor still renders correctly in a *non-Tailwind* host — that is the actual test.
+- [x] Built without preflight — `theme.css` + `utilities.css` only. `src/styles/preflight.css` re-adds the needed resets scoped to the `.mat-builder-*` roots **and `[data-floating-ui-portal]`**: mat-ui renders menus, tooltips and the inline toolbar outside the shell, so a shell-only scope would have missed every one of them.
+- [x] `site/public/preflight-check.html` is that test: a plain-CSS page that must render identically with and without our stylesheet. Verified — 13 computed properties, zero differences. Editor, portals and dark mode re-checked after the change.
 - [ ] Consider a utility prefix so builder classes can never collide with a host's (Tailwind v4 `@import "tailwindcss" prefix(mb)`).
-- [ ] Document what `./style` does and does not touch.
+- [x] Documented in `guides/theming.md` §6 and `guides/getting-started.md` §2.2.
+- [ ] **`@matthiaskrijgsman/mat-ui` still ships its own full preflight.** A consumer importing that stylesheet gets the same leak from there; the same fix is needed in that package.
 
 ### A6. The install is 15 packages, not one
 

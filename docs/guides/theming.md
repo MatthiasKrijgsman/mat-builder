@@ -208,13 +208,11 @@ Two constraints worth knowing: keep `chrome-handle-size` ≤ 2 × (`RING_SLACK` 
 
 ## 6. What `./style` touches, and what it breaks
 
-> ### ⚠️ It currently resets global elements
->
-> `@matthiaskrijgsman/mat-builder/style` ships Tailwind v4's full preflight, which restyles `h1`–`h6`, `a`, `button`, `img`, `ul`/`ol` and `html` **across your whole app**, not just inside the builder.
->
-> If your app is already on Tailwind v4, nothing changes. If it is not, expect your headings and links to lose their styling wherever you import it.
->
-> Until this is fixed (`docs/07` §A5), **import it only on the builder's own route** so the blast radius is one page.
+`./style` is scoped to the builder. Tailwind's preflight — 4.6 kB of unscoped element selectors that would restyle `h1`–`h6`, `a`, `img`, `ul`/`ol` and form controls across your whole app — is **not** shipped. In its place, `src/styles/preflight.css` re-adds only the resets the editor depends on, anchored to `.mat-builder-*` roots and `[data-floating-ui-portal]` (mat-ui's menus and toolbars render outside the shell, so they need it too).
+
+`site/public/preflight-check.html` is the proof: a deliberately non-Tailwind page that renders identically with and without our stylesheet loaded. `src/styles/preflight.test.ts` fails if a selector ever loses its scope.
+
+> **Note:** `@matthiaskrijgsman/mat-ui/style` still ships its own full preflight. If you import that stylesheet too, the leak comes back from there — it needs the same fix in that package.
 
 Beyond preflight, the stylesheet provides: the token definitions (§5), block chrome interaction states, slim scrollbars on builder surfaces, rich-text classes for the canvas (`.mat-builder-rt-*`), and the panel text colour.
 
@@ -241,7 +239,7 @@ Fonts inside the *editor* come from mat-ui's tokens (`--font-family-base`), not 
 | Panel labels are invisible | You are on a build before panel colour was scoped, or you overrode `color-panel-fg` to something near the panel background. |
 | The email went dark | It should not. If the artboard flipped, something overrode `color-artboard-bg` in a dark rule — the built-in dark set never touches it. |
 | Selection colour changed but drop lines did not | You overrode `color-drop-indicator` directly and severed it from `color-selection` — §4. |
-| Your app's headings lost their styling | The stylesheet's global preflight — §6. |
+| Your app's headings lost their styling | Not `./style`, which is scoped — see the mat-ui note in §6. |
 | Two builders on one page look identical when they should not | A `:root` rule themes both; use the `theme` prop per instance — §3.2. |
 | A token in an old snippet does nothing | `palette-tint-N-bg` and `-border` were removed — nothing read them. Only `-fg` exists. |
 
