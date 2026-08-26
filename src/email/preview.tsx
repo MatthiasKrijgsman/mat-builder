@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Artboard } from "../components/canvas/Artboard.tsx";
 import { useBuilderContext } from "../react/context.ts";
 import { useBuilderState } from "../react/hooks.ts";
-import { renderEmail } from "./render.ts";
 import type { EmailBlockOverride } from "./types.ts";
 
 /*
@@ -28,6 +27,23 @@ function withPreviewScrollbar(html: string): string {
             .trim() || "rgb(0 0 0 / 0.2)";
     const style = `<style>html{scrollbar-width:thin;scrollbar-color:${thumb} transparent}</style>`;
     return html.includes("</head>") ? html.replace("</head>", `${style}</head>`) : style + html;
+}
+
+/**
+ * Imports the output pipeline lazily, turning the module-not-found a missing
+ * optional peer would otherwise produce into something that says what to do.
+ */
+async function renderOnDemand(): Promise<typeof import("./render.ts")["renderEmail"]> {
+    try {
+        return (await import("./render.ts")).renderEmail;
+    } catch (cause) {
+        throw new Error(
+            "mat-builder: the email preview needs `react-email` and `@react-email/render`. " +
+                "They are optional peer dependencies — required by `/email` and `/email/render`, " +
+                "skippable only if you use the core editor alone. Install them to enable the preview.",
+            { cause },
+        );
+    }
 }
 
 export interface EmailPreviewProps {
@@ -95,7 +111,12 @@ export function EmailPreview({
     useEffect(() => {
         let cancelled = false;
         const timer = setTimeout(() => {
-            renderEmail(document, { values, substituteTokens: true, blocks: renderBlocks })
+            // Loaded on demand, so `react-email` and `@react-email/render` —
+            // optional peers — are only needed once someone opens the preview.
+            // Without this, importing `./email` at all would pull them in and
+            // the "optional" flag would be a lie for every consumer.
+            renderOnDemand()
+                .then((renderEmail) => renderEmail(document, { values, substituteTokens: true, blocks: renderBlocks }))
                 .then((result) => {
                     if (!cancelled) setHtml(withPreviewScrollbar(result.html));
                 })

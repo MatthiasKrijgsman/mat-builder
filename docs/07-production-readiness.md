@@ -92,16 +92,17 @@ A consumer importing `@matthiaskrijgsman/mat-builder/style` into an app that isn
 - [x] Documented in `guides/theming.md` §6 and `guides/getting-started.md` §2.2.
 - [ ] **`@matthiaskrijgsman/mat-ui` still ships its own full preflight.** A consumer importing that stylesheet gets the same leak from there; the same fix is needed in that package.
 
-### A6. The install is 15 packages, not one
+### A6. The install is 15 packages, not one — FIXED (mostly)
 
 `mat-builder` declares 11 peers; `mat-ui` declares 14 of its own and **zero dependencies**. A consumer therefore has to end up with react, react-dom, mat-ui, `@tabler/icons-react`, lexical + 5 `@lexical/*`, `@floating-ui/react`, `motion`, `react-dropzone`, `react-merge-refs`, and for email `react-email` + `@react-email/render`. `site/package.json` is the honest evidence — it lists all of them by hand.
 
 Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on strict installs, Yarn PnP, and monorepos with `auto-install-peers=false`.
 
-- [ ] Split the peer list by intent: **true singletons stay peers** (react, react-dom, mat-ui, lexical + `@lexical/*` — they share module-level state with mat-ui's editor), everything else that is merely "used internally" moves to `dependencies`.
-- [ ] Publish one copy-pasteable install command covering whatever remains a peer.
-- [ ] Fix the optionality lie: `react-email` and `@react-email/render` are marked `optional`, but `./email` needs them at runtime (`EmailBuilder → EmailPreview → render.ts`). Either drop the optional flag for the email entry's needs, or lazy-import the renderer inside `EmailPreview` so `.`-only consumers really can skip them.
-- [ ] **Clean-room consumer smoke test in CI** — the highest-value single task in this document. `npm pack`, install the tarball into a scratch Next.js app *and* a scratch Vite app, mount `<EmailBuilder>`, build, render an email server-side, assert on the HTML. Every packaging regression above is caught by this one job, forever.
+- [x] Split done. `@tabler/icons-react` moved to `dependencies` — no module-level state, and the public API takes any `ComponentType`, so it was never the consumer's business. The rest of the peer list is true singletons only. **Net effect is small**, and that is the honest finding: mat-ui declares 14 peers and zero dependencies, so the consumer's burden is set there, not here.
+- [x] One command in `guides/getting-started.md` §2.1, grouped by why each package is needed, and verified by installing it verbatim into an empty project (zero unmet peers).
+- [x] Lazy-imported in `EmailPreview`, so `./email` no longer statically pulls them and the flag is truthful: verified by walking the built chunk graph — only `./email/render` requires them now. A missing peer surfaces as a message naming the packages rather than a module-not-found.
+- [x] `scripts/smoke-test.mjs` (`pnpm test:pack`): packs, checks the tarball carries every entry in `exports`, installs into an empty project with only the declared peers, renders an email from plain node, typechecks a consumer's custom block + pattern + theme against the published types, and asserts the optional peers really are skippable. Confirmed it fails on a typo'd `exports` path that all 333 unit tests and the build pass.
+- [ ] Still needs wiring into CI — blocked on A3 (there is no CI workflow yet).
 
 ---
 

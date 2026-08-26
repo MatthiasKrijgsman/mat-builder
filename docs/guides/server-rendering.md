@@ -223,7 +223,7 @@ it("renders the welcome template", async () => {
 | Tokens appear literally in the sent email | Expected unless `substituteTokens` is set — the ESP was meant to do it — §4 |
 | Conditional blocks all render | No `values` passed, so nothing is evaluated — §5 |
 | A custom block renders but its props are defaults | The `blocks` entry has no `defaultProps`, or the stored node predates them — §6 |
-| `Cannot find module '@react-email/render'` | Marked an optional peer but required here. Install it |
+| `Cannot find module '@react-email/render'` | Optional peer, but required by this entry. Install it |
 | Layout differs from the canvas | A composed block whose spec set a partial nested style value — see the [cookbook](custom-blocks.md#42-the-pure-half) |
 
 ---

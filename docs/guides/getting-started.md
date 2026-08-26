@@ -44,18 +44,28 @@ Those two calls are the whole product surface. Everything else is refinement.
 
 ### 2.1 The dependencies
 
-`mat-builder` and `mat-ui` between them declare a lot of peers, and `mat-ui` is the reason for most of them. One command covers it:
+Seventeen packages, and it is worth knowing why rather than just pasting:
+
+| Group | Count | Why it can't be bundled |
+|---|---|---|
+| React + the editor's UI layer | 3 | `react`, `react-dom`, `@matthiaskrijgsman/mat-ui` — one copy each, or hooks and context break |
+| Lexical | 5 | the inline text editor shares module-level state with mat-ui's; a second copy breaks editing |
+| mat-ui's own peers | 7 | mat-ui declares 14 peers and zero dependencies, so its needs land on you |
+| Email output | 2 | `react-email` + `@react-email/render` — **optional**, see below |
 
 ```bash
-npm install @matthiaskrijgsman/mat-ui react react-dom @tabler/icons-react lexical @lexical/react @lexical/rich-text @lexical/selection @lexical/utils @lexical/link @lexical/list @floating-ui/react motion react-dropzone react-merge-refs react-email @react-email/render
+npm install @matthiaskrijgsman/mat-builder \
+  react react-dom @matthiaskrijgsman/mat-ui \
+  lexical @lexical/react @lexical/rich-text @lexical/selection @lexical/utils @lexical/link @lexical/list \
+  @floating-ui/react @tabler/icons-react motion react-dropzone react-merge-refs \
+  react-email @react-email/render
 ```
 
-npm and pnpm's default auto-install-peers hides most of this. It does **not** on strict installs, Yarn PnP, or a monorepo with `auto-install-peers=false` — so install them explicitly and you never find out the hard way.
+Everything else the builder uses — drag and drop, immer, zustand, nanoid, the icon set it draws its own palette with — is a plain dependency and installs itself. You never see those.
 
-Two notes:
+npm and pnpm's default auto-install-peers hides most of this. It does **not** on strict installs, Yarn PnP, or a monorepo with `auto-install-peers=false`, so install them explicitly and you never find out the hard way.
 
-- **`react-email` and `@react-email/render` are marked optional peers, but the `/email` entry needs them at runtime.** The optional flag is there for consumers who use only the core editor. If you are building an email builder — you are — install them.
-- **`lexical` and the `@lexical/*` packages must be a single copy.** They keep module-level state shared with mat-ui's editor; duplicates break inline text editing.
+**The last two are genuinely optional.** They are needed by `/email/render`, and loaded on demand by the preview — so if you are using the core editor with your own block set and never render email, you can drop them. Everyone building an *email* builder wants them; leave them out and the preview fails with a message telling you so.
 
 ### 2.2 The stylesheet
 
@@ -276,7 +286,7 @@ Nothing special: import the component, import the stylesheet, give it a height.
 | Changing `defaultValue` does nothing | It is read once at mount. Add `key={documentId}` to remount on switch — §4.2. |
 | Your app's headings and links lose their styling | Not us — `./style` is scoped (§2.2). Check whether you also import `@matthiaskrijgsman/mat-ui/style`, which still ships a global preflight. |
 | Inline text editing misbehaves or throws | Two copies of `lexical` / `@lexical/*`. Dedupe to one. |
-| `Cannot find module '@react-email/render'` | Marked an optional peer but required by `/email`. Install it — §2.1. |
+| The preview says it needs `react-email` | The optional peers are not installed — §2.1. |
 | Server build fails on mat-ui or `"use client"` | Something imported `/email` instead of `/email/render` — §6. |
 | Save button does nothing | No `onSave`. The whole save apparatus is gated on it. |
 | Saves silently do not persist | `onSave` swallowed its error. Throw or reject so the shell can show it. |

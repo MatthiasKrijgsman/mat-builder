@@ -21,7 +21,20 @@ import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 />;
 ```
 
+Installing it is more than one package — the peer list and why each entry is on it are in
+[Getting started](docs/guides/getting-started.md#21-the-dependencies).
+
 Need a different layout? Every part it is built from — `BuilderProvider`, `Canvas`, `Palette`, `Inspector`, `LayersPanel`, `useDocumentSave` — is exported separately (see [docs/04](docs/04-components-and-interactions.md)).
+
+## Guides
+
+| Guide | For |
+|---|---|
+| [Getting started](docs/guides/getting-started.md) | install → first builder → saving → rendering |
+| [Custom blocks](docs/guides/custom-blocks.md) | your own blocks, patterns and composed blocks |
+| [Server rendering](docs/guides/server-rendering.md) | `renderEmail`, personalization, conditional blocks |
+| [Theming](docs/guides/theming.md) | tokens, dark mode, the `theme` prop |
+| [API reference](docs/guides/api-reference.md) | every export, by level of control |
 
 ## Status
 
@@ -34,6 +47,7 @@ pnpm install
 pnpm dev:watch   # rebuild the library on change
 pnpm site        # playground on http://localhost:6007 (separate terminal)
 pnpm test        # vitest
+pnpm test:pack   # clean-room consumer smoke test (packs, installs, renders, typechecks)
 pnpm build       # library build + type declarations
 ```
 
