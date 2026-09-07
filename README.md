@@ -1,62 +1,90 @@
-# mat-builder
+<h1 align="center">mat-builder</h1>
 
-**[Live demo →](https://matthiaskrijgsman.github.io/mat-builder/)** — the email builder playground, deployed from `main`.
+<p align="center">
+  A headless-first React block builder — the engine behind visual email builders.
+</p>
 
-`@matthiaskrijgsman/mat-builder` — a headless-first React drag-and-drop block builder library. The engine behind visual builders (email builder, form builder, …): consumers define blocks (rendering + config form + nested containers), mat-builder provides the document model, undo/redo, drag and drop, and composable editor UI (canvas, palette, inspector, layers panel).
+<p align="center">
+  <a href="https://www.npmjs.com/package/@matthiaskrijgsman/mat-builder"><img alt="npm" src="https://img.shields.io/npm/v/%40matthiaskrijgsman%2Fmat-builder"></a>
+  <a href="https://github.com/MatthiasKrijgsman/mat-builder/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/MatthiasKrijgsman/mat-builder/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/MatthiasKrijgsman/mat-builder/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/npm/l/%40matthiaskrijgsman%2Fmat-builder"></a>
+</p>
 
-Built with React 19, Tailwind CSS v4, [Pragmatic drag and drop](https://atlassian.design/components/pragmatic-drag-and-drop/), and [mat-ui](https://github.com/matthiaskrijgsman/mat-ui) for UI primitives. Emails render via [react-email](https://react.email) through the server-safe `./email/render` entry.
+<p align="center">
+  <a href="https://matthiaskrijgsman.github.io/mat-builder/">Live demo</a> ·
+  <a href="https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md">Getting started</a> ·
+  <a href="https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/api-reference.md">API reference</a>
+</p>
 
-Headless-first does not mean assembly-required: the whole email builder is one component.
+---
+
+You define blocks; mat-builder provides the document model, undo/redo, drag and drop, and the editor UI around them.
+
+- **One component to start.** `<EmailBuilder>` is a complete editor: canvas, palette, inspector, layers panel, undo/redo, saving, and a live preview.
+- **Headless underneath.** Every part is exported. Bring your own blocks with `defineBlock` or `compose`, or your own layout with `BuilderProvider`.
+- **Email that ships.** A server-safe `renderEmail` produces table-based HTML through [react-email](https://react.email), with merge tags, conditional blocks, and every URL and style value sanitized.
+
+Built with React 19, Tailwind CSS v4, [Pragmatic drag and drop](https://atlassian.design/components/pragmatic-drag-and-drop/), and [mat-ui](https://github.com/matthiaskrijgsman/mat-ui).
+
+## Install
+
+```bash
+npm install @matthiaskrijgsman/mat-builder \
+  react react-dom @matthiaskrijgsman/mat-ui \
+  lexical @lexical/react @lexical/rich-text @lexical/selection @lexical/utils @lexical/link @lexical/list \
+  react-email @react-email/render
+```
+
+The last two are optional: only `/email/render` and the preview need them. Why each package is a peer is explained in [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md#21-the-dependencies).
+
+## Quick start
 
 ```tsx
-import "@matthiaskrijgsman/mat-ui/style";      // the UI kit's stylesheet (peer dependency)
-import "@matthiaskrijgsman/mat-builder/style"; // editor styles — scoped to the builder, no global reset
+import "@matthiaskrijgsman/mat-ui/style";
+import "@matthiaskrijgsman/mat-builder/style";
 import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 
 <EmailBuilder
   className="h-screen"
   defaultValue={template}                    // omit to start a blank email
-  onSave={(document) => api.save(document)}  // Save button + ⌘S; autoSaveMs to autosave
+  onSave={(document) => api.save(document)}  // Save button + ⌘S; add autoSaveMs to autosave
   blocks={[myCustomBlock]}                   // optional, merged into the email preset
-  topBarSlots={{ trailing: <HelpMenu /> }}   // add to, replace or hide parts of the top bar
-  documentName="Aura One launch"
 />;
 ```
 
-Installing it is more than one package — the peer list and why each entry is on it are in
-[Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md#21-the-dependencies).
+Render it on the server, or anywhere without a bundler:
 
-Need a different layout? Every part it is built from — `BuilderProvider`, `Canvas`, `Palette`, `Inspector`, `LayersPanel`, `useDocumentSave` — is exported separately (see [docs/04](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/04-components-and-interactions.md)).
+```ts
+import { renderEmail } from "@matthiaskrijgsman/mat-builder/email/render";
 
-## Guides
+const { html, text } = await renderEmail(document, { values, substituteTokens: true });
+```
 
-| Guide | For |
+## Documentation
+
+| Guide | Covers |
 |---|---|
-| [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md) | install → first builder → saving → rendering |
-| [Custom blocks](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/custom-blocks.md) | your own blocks, patterns and composed blocks |
+| [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md) | install, the stylesheets, first builder, saving, rendering |
+| [Custom blocks](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/custom-blocks.md) | primitives, composed blocks, patterns |
 | [Server rendering](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/server-rendering.md) | `renderEmail`, personalization, conditional blocks |
 | [Theming](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/theming.md) | tokens, dark mode, the `theme` prop |
 | [API reference](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/api-reference.md) | every export, by level of control |
 
-## Status
-
-Early development — see [docs/README.md](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/README.md) for the architecture plan, agreed decisions, and build order.
+The architecture and its rationale live in [docs/](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/README.md). The package is on `0.x`; breaking changes are listed in the [changelog](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/CHANGELOG.md).
 
 ## Development
 
 ```bash
 pnpm install
 pnpm dev:watch   # rebuild the library on change
-pnpm site        # playground on http://localhost:6007 (separate terminal)
-pnpm test        # vitest
-pnpm test:pack   # clean-room consumer smoke test (packs, installs, renders, typechecks)
-                 # all of the above run on every push and PR — .github/workflows/ci.yml
+pnpm site        # playground on http://localhost:6007
+pnpm test        # unit tests
+pnpm test:pack   # clean-room consumer smoke test
 pnpm build       # library build + type declarations
 ```
 
-## Packages
+`site/` is the Next.js playground and the live demo; it consumes `dist/` through the workspace. CI runs everything above on every push.
 
-| Path | Package | Purpose |
-|---|---|---|
-| `.` | `@matthiaskrijgsman/mat-builder` | the published library |
-| `site/` | `@matthiaskrijgsman/mat-builder-site` | Next.js playground (private) |
+## License
+
+[MIT](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/LICENSE) © Matthias Krijgsman
