@@ -4,7 +4,7 @@ The email builder is `@matthiaskrijgsman/mat-builder/email`: a set of block defi
 
 ## react-email status (verified July 2026)
 
-- Current version: **`react-email` 6.x** — v6 unified the components into the single `react-email` package (`@react-email/components` is legacy). **Correction (verified against 6.6.6 while implementing):** the root package exports only the components — `render`/`pretty` still come from **`@react-email/render`**, which is therefore a second optional peer dependency alongside `react-email`.
+- Current version: **`react-email` 6.x** — v6 unified the components into the single `react-email` package (`@react-email/components` is legacy). **Correction (verified against 6.6.6 while implementing):** the root package exports only the components — `render`/`pretty` still come from **`@react-email/render`**. Both stay **optional peers**: `./email/render` needs them, and the preview loads the pipeline on demand (`renderOnDemand` in `preview.tsx`) so `./email` never imports them statically — `scripts/smoke-test.mjs` asserts a core-only consumer can skip them. The granular `@react-email/*` component packages are deprecated upstream, so `react-email` (CLI included) is the only maintained source; bundlers tree-shake the CLI away.
 - `render()` is **async**, returns the HTML string; `{ plainText: true }` produces the text variant. Runs in Next.js server code (route handlers, server actions).
 - Layout is table-based: `Container` (centered, classic 600 px wrapper) → `Section` → `Row` → `Column` (`<td>`). This survives Outlook's Word rendering engine.
 - The `Tailwind` component compiles `className` utilities into **inline styles at render time**; use `pixelBasedPreset` (rem → px). Media-query utilities need `<Head>`; complex selectors don't inline.
@@ -258,3 +258,11 @@ The whole email builder as a single component: `<BuilderShell>` (04 §Shell) + t
 ## Form builder (sanity check, not designed here)
 
 The same core handles it without changes: root `form`, containers `fieldset`/`grid` blocks, leaves `text-input`/`select`/`checkbox`; the "output renderer" is a live React form component instead of an HTML string; inspector forms configure name/validation/options. Nothing in core knows about email — that's the test it passes.
+
+## Output safety
+
+Rendered on 2026-09-07 against the audit in [07](07-production-readiness.md#c4-preview-iframe-is-unsandboxed). A document is not a trusted source, so the output pipeline treats every stored string as data:
+
+- **URLs** — every `href`/`src` the preset emits (button, image + its link, rich-text links) goes through `safeUrl` (`src/core/safe-url.ts`): no scheme, or `http(s)`/`mailto`/`tel`/`sms`, else the attribute is dropped (an image with a refused `src` renders nothing). Custom renderers get the same function from `./email/render`. Because merge-tag substitution runs *after* React escaped the tree, `renderEmail` re-checks every URL-bearing attribute of the final HTML (`sanitizeUrlAttributes`) — a value like `{"{{link}}": "javascript:…"}` ends as `href=""`.
+- **Styles** — the output serializes style objects into `style="…"` strings, so a color of `#fff;background-image:url(…)` would smuggle a second declaration. Every converter in `src/style-props/` runs stored strings through `sanitize.ts` (`cssColor`, `cssFontFamily`, `cssUrl`, `cssLength`, `cssNumber`, `cssKeyword`); the rich-text style whitelist applies the same guards per property. A refused value emits nothing for that property.
+- **Preview** — `<EmailPreview>`'s iframe is fully sandboxed (`sandbox=""`): a `srcDoc` document otherwise inherits the host's origin. Render errors are shown by React, never spliced into the srcDoc.

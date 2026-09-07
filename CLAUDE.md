@@ -33,8 +33,9 @@ The docs are living documents: when an implementation decision deviates from the
 
 - All `dependencies` and `peerDependencies` (including subpaths) are externalized — never bundle them. Pragmatic drag and drop keeps module-level registries; duplicating it breaks drags.
 - `./email/render` is **server-safe** — it must never import editor code, mat-ui, or anything client-only, and the build omits its `"use client"` banner.
-- `./style` must be imported by consumers for editor styles.
-- `react-email` is an **optional peer dependency** — only consumers using the email preset install it. Core (`.`) must never import it.
+- `./style` must be imported by consumers for editor styles, next to `@matthiaskrijgsman/mat-ui/style` (mat-ui's components carry their own classes; neither stylesheet includes the other). It ships Tailwind's theme + utilities and a reset **scoped to the builder's own roots** (`src/styles/preflight.css`) — never the global preflight, which would restyle the host app.
+- `react-email` and `@react-email/render` are **optional peer dependencies** — required by `./email/render`, lazy-loaded by the preview so `./email` never imports them statically; only consumers using the email preset install them (`scripts/smoke-test.mjs` asserts they are skippable). Core (`.`) must never import them.
+- The pragmatic-drag-and-drop addon packages require core `^3.1.0`; keep the five `@atlaskit/pragmatic-drag-and-drop*` ranges aligned or a fresh consumer install gets two core copies and auto-scroll registers in the wrong one.
 
 ### Source organization (follows docs/03 §5)
 
@@ -48,6 +49,7 @@ The docs are living documents: when an implementation decision deviates from the
 ### Key design invariants
 
 - The document is a **flat id-keyed map**; children grouped per named container (`children: { left: [...], right: [...] }`). Never introduce nested-tree state.
+- A stored document is untrusted input: it goes through `loadDocument` (migrate → `repairDocument` → validate) on the way in and reports repairs via `onDocumentIssues`; every href/src goes through `safeUrl` and every stored style string through `src/style-props/sanitize.ts` on the way out. A consumer block that throws is caught per block (`BlockErrorBoundary`, reported via `onBlockError`).
 - Blocks are defined by consumers via `defineBlock({ type, label, icon, defaultProps, containers, editRender, inspector })` — the library never hardcodes block types (the email preset is just a consumer that ships in-repo).
 - Undo/redo = snapshot history over the immutable document; `updateProps` coalesces (~800 ms) so typing is one undo step.
 - One `monitorForElements` per provider performs all DnD mutations; drop targets only render indicators. All drag data is branded with a per-instance `instanceId` symbol.

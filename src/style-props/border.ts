@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cssColor, cssKeyword, cssNumber } from "./sanitize.ts";
 import { uniformSides, type SideValues } from "./spacing.ts";
 
 /*
@@ -9,6 +10,8 @@ import { uniformSides, type SideValues } from "./spacing.ts";
  */
 
 export type BorderStyle = "solid" | "dashed" | "dotted";
+
+export const BORDER_STYLES: readonly BorderStyle[] = ["solid", "dashed", "dotted"];
 
 export interface CornerValues {
     topLeft: number;
@@ -48,24 +51,35 @@ export const normalizeBorderRadius = (radius: BorderValue["radius"] | undefined)
 
 /** Collapsing CSS shorthand: "8px" or "8px 0px 8px 0px" — keeps email HTML small. */
 export const cornerShorthand = (c: CornerValues): string => {
-    if (c.topLeft === c.topRight && c.topRight === c.bottomRight && c.bottomRight === c.bottomLeft) {
-        return `${c.topLeft}px`;
-    }
-    return `${c.topLeft}px ${c.topRight}px ${c.bottomRight}px ${c.bottomLeft}px`;
+    const [tl, tr, br, bl] = [c.topLeft, c.topRight, c.bottomRight, c.bottomLeft].map((n) => cssNumber(n));
+    if (tl === tr && tr === br && br === bl) return `${tl}px`;
+    return `${tl}px ${tr}px ${br}px ${bl}px`;
+};
+
+/** The stroke a border value describes, or `undefined` when its color is not
+ * one — shared with the table's per-cell border frame. */
+export const borderStroke = (v: Pick<BorderValue, "style" | "color">): ((px: number) => string) | undefined => {
+    const color = cssColor(v.color);
+    if (!color) return undefined;
+    const style = cssKeyword(v.style, BORDER_STYLES, "solid");
+    return (px: number) => `${px}px ${style} ${color}`;
 };
 
 export const borderToCss = (v?: BorderValue): CSSProperties => {
     if (!v) return {};
     const css: CSSProperties = {};
     const width = normalizeBorderWidth(v.width);
-    const stroke = (px: number) => `${px}px ${v.style} ${v.color}`;
-    if (width.top === width.right && width.right === width.bottom && width.bottom === width.left) {
-        if (width.top > 0) css.border = stroke(width.top);
-    } else {
-        if (width.top > 0) css.borderTop = stroke(width.top);
-        if (width.right > 0) css.borderRight = stroke(width.right);
-        if (width.bottom > 0) css.borderBottom = stroke(width.bottom);
-        if (width.left > 0) css.borderLeft = stroke(width.left);
+    const stroke = borderStroke(v);
+    if (stroke) {
+        const [top, right, bottom, left] = [width.top, width.right, width.bottom, width.left].map((n) => cssNumber(n));
+        if (top === right && right === bottom && bottom === left) {
+            if (top > 0) css.border = stroke(top);
+        } else {
+            if (top > 0) css.borderTop = stroke(top);
+            if (right > 0) css.borderRight = stroke(right);
+            if (bottom > 0) css.borderBottom = stroke(bottom);
+            if (left > 0) css.borderLeft = stroke(left);
+        }
     }
     const radius = normalizeBorderRadius(v.radius);
     if (radius.topLeft > 0 || radius.topRight > 0 || radius.bottomRight > 0 || radius.bottomLeft > 0) {

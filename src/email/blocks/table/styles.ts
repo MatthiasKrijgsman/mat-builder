@@ -3,7 +3,12 @@ import type { BlockContext } from "../../../core/types.ts";
 import { findLocation } from "../../../core/traversal.ts";
 import {
     backgroundToCss,
+    borderStroke,
     cornerShorthand,
+    cssColor,
+    cssKeyword,
+    cssLength,
+    cssNumber,
     defaultBackground,
     defaultBorder,
     defaultEffects,
@@ -130,7 +135,7 @@ export const tableStyles = (props: EmailTableProps): CSSProperties => ({
     width: "100%",
     borderCollapse: "separate",
     borderSpacing: 0,
-    tableLayout: props.tableLayout,
+    tableLayout: cssKeyword(props.tableLayout, ["auto", "fixed"] as const, "auto"),
     ...(hasRadius(props.border)
         ? { borderRadius: cornerShorthand(normalizeBorderRadius(props.border.radius)) }
         : {}),
@@ -145,13 +150,14 @@ export const tableRowStyles = (props: EmailTableRowProps): CSSProperties => {
     const fill = rowFill(props);
     return {
         ...(fill ? { backgroundColor: fill } : {}),
-        ...(props.minHeight > 0 ? { height: props.minHeight } : {}),
+        ...(cssNumber(props.minHeight) > 0 ? { height: cssNumber(props.minHeight) } : {}),
     };
 };
 
-/** The row's own fill, or its variant default — "" when it inherits. */
+/** The row's own fill, or its variant default — "" when it inherits (or when
+ * the stored fill is not a color). */
 export const rowFill = (props: EmailTableRowProps): string =>
-    props.background || ROW_VARIANT_FILL[props.variant] || "";
+    cssColor(props.background) || ROW_VARIANT_FILL[props.variant] || "";
 
 /** What a cell needs from its surroundings — see `resolveCellContext`. */
 export interface CellContext {
@@ -218,18 +224,19 @@ export const tableCellStyles = (cell: EmailTableCellProps, context: CellContext)
 
     // Fill precedence: cell → row (incl. header/footer variant) → stripe → none
     const stripe =
-        table?.stripe.enabled && row?.variant === "body" && bodyIndex % 2 === 1 ? table.stripe.color : "";
-    const fill = cell.background || (row ? rowFill(row) : "") || stripe;
+        table?.stripe?.enabled && row?.variant === "body" && bodyIndex % 2 === 1 ? (cssColor(table.stripe.color) ?? "") : "";
+    const fill = cssColor(cell.background) || (row ? rowFill(row) : "") || stripe;
+    const width = cssLength(cell.width);
 
     return {
         ...cellBorderStyles(table, rowIndex, columnIndex, rowCount, columnCount),
         // Collapsing shorthand, like every other spacing prop — a table emits
         // this once per cell, so the saving is worth the most in email HTML.
         padding: sideShorthand(padding),
-        textAlign: cell.align,
-        verticalAlign: cell.verticalAlign,
+        textAlign: cssKeyword(cell.align, ["left", "center", "right"] as const, "left"),
+        verticalAlign: cssKeyword(cell.verticalAlign, ["top", "middle", "bottom"] as const, "top"),
         ...(fill ? { backgroundColor: fill } : {}),
-        ...(cell.width ? { width: cell.width } : {}),
+        ...(width && width !== "auto" ? { width } : {}),
         ...(row?.variant === "header" ? { fontWeight: 600 } : {}),
     };
 };
@@ -246,10 +253,11 @@ const cellBorderStyles = (
     rowCount: number,
     columnCount: number,
 ): CSSProperties => {
-    if (!table || table.borderMode === "none") return {};
+    if (!table || !table.border || table.borderMode === "none") return {};
+    const stroke = borderStroke(table.border);
+    if (!stroke) return {};
     const width = normalizeBorderWidth(table.border.width);
     const radius = normalizeBorderRadius(table.border.radius);
-    const stroke = (px: number) => `${px}px ${table.border.style} ${table.border.color}`;
     const firstRow = row === 0;
     const firstColumn = column === 0;
     const lastRow = row === rowCount - 1;
@@ -258,16 +266,17 @@ const cellBorderStyles = (
     const mode = table.borderMode;
     // "outer" only paints the table's perimeter; "horizontal"/"vertical" keep
     // the rules on one axis (plus that axis's outer edges).
-    const top = firstRow && width.top > 0 && mode !== "vertical";
-    const left = firstColumn && width.left > 0 && mode !== "horizontal";
-    const bottom = width.bottom > 0 && mode !== "vertical" && (mode !== "outer" || lastRow);
-    const right = width.right > 0 && mode !== "horizontal" && (mode !== "outer" || lastColumn);
+    const [wTop, wRight, wBottom, wLeft] = [width.top, width.right, width.bottom, width.left].map((n) => cssNumber(n));
+    const top = firstRow && wTop > 0 && mode !== "vertical";
+    const left = firstColumn && wLeft > 0 && mode !== "horizontal";
+    const bottom = wBottom > 0 && mode !== "vertical" && (mode !== "outer" || lastRow);
+    const right = wRight > 0 && mode !== "horizontal" && (mode !== "outer" || lastColumn);
 
     return {
-        ...(top ? { borderTop: stroke(width.top) } : {}),
-        ...(left ? { borderLeft: stroke(width.left) } : {}),
-        ...(bottom ? { borderBottom: stroke(width.bottom) } : {}),
-        ...(right ? { borderRight: stroke(width.right) } : {}),
+        ...(top ? { borderTop: stroke(wTop) } : {}),
+        ...(left ? { borderLeft: stroke(wLeft) } : {}),
+        ...(bottom ? { borderBottom: stroke(wBottom) } : {}),
+        ...(right ? { borderRight: stroke(wRight) } : {}),
         ...(firstRow && firstColumn && radius.topLeft > 0 ? { borderTopLeftRadius: radius.topLeft } : {}),
         ...(firstRow && lastColumn && radius.topRight > 0 ? { borderTopRightRadius: radius.topRight } : {}),
         ...(lastRow && firstColumn && radius.bottomLeft > 0 ? { borderBottomLeftRadius: radius.bottomLeft } : {}),

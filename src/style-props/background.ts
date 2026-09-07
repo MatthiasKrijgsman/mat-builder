@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cssColor, cssKeyword, cssNumber, cssUrl } from "./sanitize.ts";
 
 /*
  * Background — none / solid / gradient / image, discriminated by `type`.
@@ -11,6 +12,9 @@ export type BackgroundType = "none" | "solid" | "gradient" | "image";
 
 export type BackgroundImageSize = "cover" | "contain" | "auto";
 export type BackgroundImagePosition = "center" | "top" | "bottom" | "left" | "right";
+
+const IMAGE_SIZES: readonly BackgroundImageSize[] = ["cover", "contain", "auto"];
+const IMAGE_POSITIONS: readonly BackgroundImagePosition[] = ["center", "top", "bottom", "left", "right"];
 
 export interface BackgroundImageValue {
     url: string;
@@ -42,23 +46,36 @@ export const defaultBackground: BackgroundValue = {
     image: defaultBackgroundImage,
 };
 
+/* Every stored string goes through a sanitize.ts guard before it reaches a
+ * style string — see the note there. A value the guard refuses emits
+ * nothing for that property rather than something approximate. */
 export const backgroundToCss = (v?: BackgroundValue): CSSProperties => {
     if (!v || v.type === "none") return {};
-    if (v.type === "solid") return { backgroundColor: v.color };
+    if (v.type === "solid") {
+        const color = cssColor(v.color);
+        return color ? { backgroundColor: color } : {};
+    }
     if (v.type === "gradient") {
+        const from = cssColor(v.gradient?.from);
+        const to = cssColor(v.gradient?.to);
+        if (!from || !to) return from ? { backgroundColor: from } : {};
         return {
             // Solid fallback first — Outlook and older clients ignore backgroundImage
-            backgroundColor: v.gradient.from,
-            backgroundImage: `linear-gradient(${v.gradient.angle}deg, ${v.gradient.from}, ${v.gradient.to})`,
+            backgroundColor: from,
+            backgroundImage: `linear-gradient(${cssNumber(v.gradient.angle, 180)}deg, ${from}, ${to})`,
         };
     }
+    if (v.type !== "image") return {};
     const image = v.image ?? defaultBackgroundImage;
-    if (!image.url) return { backgroundColor: v.color };
+    const color = cssColor(v.color);
+    const fallback: CSSProperties = color ? { backgroundColor: color } : {};
+    const url = cssUrl(image.url);
+    if (!url) return fallback;
     return {
-        backgroundColor: v.color,
-        backgroundImage: `url(${image.url})`,
-        backgroundSize: image.size,
-        backgroundPosition: image.position,
+        ...fallback,
+        backgroundImage: url,
+        backgroundSize: cssKeyword(image.size, IMAGE_SIZES, "cover"),
+        backgroundPosition: cssKeyword(image.position, IMAGE_POSITIONS, "center"),
         backgroundRepeat: image.repeat ? "repeat" : "no-repeat",
     };
 };

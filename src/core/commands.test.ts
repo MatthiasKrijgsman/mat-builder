@@ -192,7 +192,7 @@ describe("updateProps", () => {
         expect(next.blocks.sec1.props).toEqual({ gap: 24 });
         const withMore = updateProps(next, { id: "sec1", patch: { align: "center" } });
         expect(withMore.blocks.sec1.props).toEqual({ gap: 24, align: "center" });
-        expect(doc.blocks.sec1.props).toEqual({});
+        expect(doc.blocks.sec1.props).toEqual({ gap: 16 });
     });
 
     it("throws for unknown blocks", () => {
@@ -262,11 +262,16 @@ describe("setDocument", () => {
         expect(setDocument(doc, testRegistry)).toBe(doc);
     });
 
-    it("throws on integrity errors and unbridgeable versions", () => {
+    it("repairs integrity errors instead of refusing the document", () => {
         const orphaned = exampleDoc();
         orphaned.blocks.stray = block({ id: "stray", type: "text" });
-        expect(() => setDocument(orphaned, testRegistry)).toThrow(/failed validation/);
+        const loaded = setDocument(orphaned, testRegistry);
+        expect(loaded.blocks.stray).toBeUndefined();
+        expect(validateDocument(loaded, testRegistry)).toEqual([]);
+    });
 
+    it("throws on unbridgeable versions and on a missing root", () => {
         expect(() => setDocument({ ...exampleDoc(), version: 99 }, testRegistry)).toThrow(/newer/);
+        expect(() => setDocument({ ...exampleDoc(), rootId: "ghost" }, testRegistry)).toThrow(/cannot be loaded/);
     });
 });

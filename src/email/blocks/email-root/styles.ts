@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import {
+    cssColor,
+    cssNumber,
     defaultTypography,
     paddingToCss,
     type SizeMode,
@@ -49,7 +51,7 @@ export const emailRootBodyStyles = (props: EmailRootProps): CSSProperties => {
     // Alignment stays per-block; the root only sets the base text style
     const { textAlign: _textAlign, ...baseTypography } = typographyToCss(props.typography);
     return {
-        backgroundColor: props.backgroundColor,
+        backgroundColor: cssColor(props.backgroundColor),
         margin: 0,
         ...paddingToCss(props.spacing),
         ...baseTypography,
@@ -59,5 +61,5 @@ export const emailRootBodyStyles = (props: EmailRootProps): CSSProperties => {
 export const emailRootContainerStyles = (props: EmailRootProps): CSSProperties => ({
     // Full bleed still goes through maxWidth: react-email's <Container> ships a
     // 37.5em default that a plain `width` would not override.
-    maxWidth: props.contentWidthMode === "full" ? "100%" : props.contentWidth,
+    maxWidth: props.contentWidthMode === "full" ? "100%" : cssNumber(props.contentWidth, emailRootDefaults.contentWidth),
 });

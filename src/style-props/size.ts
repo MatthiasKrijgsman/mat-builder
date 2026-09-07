@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cssKeyword, cssNumber } from "./sanitize.ts";
 
 /*
  * Size — the block's own width/height: full (100%), fixed (px), percent
@@ -8,6 +9,8 @@ import type { CSSProperties } from "react";
  */
 
 export type SizeMode = "full" | "fixed" | "percent" | "hug";
+
+export const SIZE_MODES: readonly SizeMode[] = ["full", "fixed", "percent", "hug"];
 
 export interface SizeValue {
     width: SizeMode;
@@ -44,13 +47,14 @@ const modeToCss = (mode: SizeMode, px: number, pct: number): CSSProperties["widt
  */
 export const sizeToCss = (v?: SizeValue, margins?: { left: number; right: number }): CSSProperties => {
     if (!v) return {};
-    const horizontal = (margins?.left ?? 0) + (margins?.right ?? 0);
+    const horizontal = cssNumber(margins?.left) + cssNumber(margins?.right);
+    const width = cssKeyword(v.width, SIZE_MODES, "hug");
     return {
         width:
-            v.width === "full" && horizontal > 0
+            width === "full" && horizontal > 0
                 ? `calc(100% - ${horizontal}px)`
-                : modeToCss(v.width, v.widthPx, v.widthPct ?? DEFAULT_WIDTH_PCT),
+                : modeToCss(width, cssNumber(v.widthPx, defaultSize.widthPx), cssNumber(v.widthPct, DEFAULT_WIDTH_PCT)),
         // "full"/"percent" heights have no meaning in email flow — treated as auto
-        height: v.height === "fixed" ? v.heightPx : "auto",
+        height: v.height === "fixed" ? cssNumber(v.heightPx, defaultSize.heightPx) : "auto",
     };
 };

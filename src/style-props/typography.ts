@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { hexToRgba } from "./color.ts";
+import { cssColor, cssFontFamily, cssKeyword, cssNumber } from "./sanitize.ts";
 
 /*
  * Typography — the full text set. lineHeight is a multiplier and is emitted
@@ -33,6 +34,10 @@ export const EMAIL_FONT_STACKS: { name: string; stack: string }[] = [
     { name: "Courier New", stack: "'Courier New', Courier, monospace" },
 ];
 
+export type TextAlign = "left" | "center" | "right";
+
+const TEXT_ALIGNS: readonly TextAlign[] = ["left", "center", "right"];
+
 export interface TypographyValue {
     /** Empty string = inherit from the parent chain */
     fontFamily: string;
@@ -44,7 +49,7 @@ export interface TypographyValue {
     color: string;
     /** 0–100, folded into color via rgba when < 100 */
     opacity: number;
-    align: "left" | "center" | "right";
+    align: TextAlign;
 }
 
 export const defaultTypography: TypographyValue = {
@@ -60,12 +65,15 @@ export const defaultTypography: TypographyValue = {
 export const typographyToCss = (v?: TypographyValue): CSSProperties => {
     if (!v) return {};
     const css: CSSProperties = {
-        fontSize: v.fontSize,
-        lineHeight: v.lineHeight,
-        color: hexToRgba(v.color, v.opacity),
-        textAlign: v.align,
+        fontSize: cssNumber(v.fontSize, defaultTypography.fontSize),
+        lineHeight: cssNumber(v.lineHeight, defaultTypography.lineHeight),
+        textAlign: cssKeyword(v.align, TEXT_ALIGNS, "left"),
     };
-    if (v.fontFamily) css.fontFamily = v.fontFamily;
-    if (v.letterSpacing !== 0) css.letterSpacing = v.letterSpacing;
+    const color = cssColor(v.color);
+    if (color) css.color = hexToRgba(color, cssNumber(v.opacity, 100));
+    const fontFamily = cssFontFamily(v.fontFamily);
+    if (fontFamily) css.fontFamily = fontFamily;
+    const letterSpacing = cssNumber(v.letterSpacing);
+    if (letterSpacing !== 0) css.letterSpacing = letterSpacing;
     return css;
 };

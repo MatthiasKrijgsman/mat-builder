@@ -16,6 +16,7 @@ import { dragBlockType } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
 import { pressStartedInInlineEditor } from "../inline/focus.ts";
+import { BlockErrorBoundary, errorMessage } from "./BlockErrorBoundary.tsx";
 import { ComposedView } from "./ComposedView.tsx";
 import { ContainerSlot } from "./ContainerSlot.tsx";
 
@@ -50,7 +51,7 @@ export interface BlockViewProps {
 }
 
 export function BlockView({ id, location, layout = "vertical", group }: BlockViewProps) {
-    const { store, registry, instanceId } = useBuilderContext();
+    const { store, registry, instanceId, callbacks } = useBuilderContext();
     const node = useBlockNode(id);
     const actions = useBuilderState((s) => s.actions);
     const isSelected = useBuilderState((s) => s.selectedId === id);
@@ -208,34 +209,44 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
         >
             {!definition ? (
                 <MissingBlock type={node.type} />
-            ) : definition.compose ? (
-                // Composed: no editRender of its own — walk the tree it
-                // declares and render it from the registered blocks (docs/08).
-                // `containers` are still the real slots, so anything the user
-                // dropped into one behaves exactly as it does anywhere else.
-                <ComposedView
-                    // Defaults under the stored props — the output walk does
-                    // the same, and `compose` must see one shape on both.
-                    spec={definition.compose(
-                        { ...definition.defaultProps, ...node.props },
-                        blockContext,
-                    )}
-                    compositeId={id}
-                    slots={containers}
-                    isSelected={isSelected}
-                    isEditing={isEditing}
-                    update={update}
-                    context={blockContext}
-                />
             ) : (
-                <definition.editRender
-                    id={id}
-                    props={node.props}
-                    containers={containers}
-                    isSelected={isSelected}
-                    isEditing={isEditing}
-                    update={update}
-                />
+                // A throwing render costs this block, not the editor (BlockErrorBoundary)
+                <BlockErrorBoundary
+                    context={{ id, type: node.type, surface: "canvas" }}
+                    onError={callbacks.onBlockError}
+                    resetKey={node.props}
+                    fallback={(error) => <BrokenBlock label={label} message={errorMessage(error)} />}
+                >
+                    {definition.compose ? (
+                    // Composed: no editRender of its own — walk the tree it
+                    // declares and render it from the registered blocks (docs/08).
+                    // `containers` are still the real slots, so anything the user
+                    // dropped into one behaves exactly as it does anywhere else.
+                    <ComposedView
+                        // Defaults under the stored props — the output walk does
+                        // the same, and `compose` must see one shape on both.
+                        spec={definition.compose(
+                            { ...definition.defaultProps, ...node.props },
+                            blockContext,
+                        )}
+                        compositeId={id}
+                        slots={containers}
+                        isSelected={isSelected}
+                        isEditing={isEditing}
+                        update={update}
+                        context={blockContext}
+                    />
+                ) : (
+                    <definition.editRender
+                        id={id}
+                        props={node.props}
+                        containers={containers}
+                        isSelected={isSelected}
+                        isEditing={isEditing}
+                        update={update}
+                    />
+                    )}
+                </BlockErrorBoundary>
             )}
             {closestEdge && canHostOverlay && <EdgeIndicator edge={closestEdge} />}
         </Wrapper>
@@ -274,18 +285,28 @@ function EdgeIndicator({ edge }: { edge: Edge }) {
     );
 }
 
+const MISSING_STYLE = {
+    borderColor: "var(--mat-builder-color-missing-border)",
+    backgroundColor: "var(--mat-builder-color-missing-bg)",
+    color: "var(--mat-builder-color-missing-fg)",
+};
+
 /** Unknown block types render this instead of crashing (docs/03 §2). */
 function MissingBlock({ type }: { type: string }) {
     return (
-        <div
-            className="rounded border border-dashed p-3 text-xs"
-            style={{
-                borderColor: "var(--mat-builder-color-missing-border)",
-                backgroundColor: "var(--mat-builder-color-missing-bg)",
-                color: "var(--mat-builder-color-missing-fg)",
-            }}
-        >
+        <div className="rounded border border-dashed p-3 text-xs" style={MISSING_STYLE}>
             Missing block type &ldquo;{type}&rdquo;
+        </div>
+    );
+}
+
+/** A block whose render threw — same treatment, plus the reason. The block
+ * stays selectable, so its inspector can fix the prop that broke it. */
+function BrokenBlock({ label, message }: { label: string; message: string }) {
+    return (
+        <div className="rounded border border-dashed p-3 text-xs" style={MISSING_STYLE}>
+            <div className="font-medium">{label} could not be rendered</div>
+            <div className="mt-1 break-words opacity-80">{message}</div>
         </div>
     );
 }

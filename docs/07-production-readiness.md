@@ -9,6 +9,12 @@ The brief is two-sided and both sides matter equally:
 
 The library is already architecturally right for both. What is missing is almost entirely *packaging, seams and proof* — not core engineering.
 
+**Landed 2026-09-07** from a second clean-room audit, alongside the A3/A5/A6/B5/B7 work below:
+
+- The pragmatic-drag-and-drop addons had moved to core `^3.1.0` while the library pinned `^2.0.1`, so a fresh install resolved **two core copies** and auto-scroll registered in the one the drags never touched. All five ranges are aligned on 3.x (A6).
+- A stored document with one dangling id threw at mount, a missing `version` skipped migrations, new `defaultProps` were never backfilled, and a throwing consumer block unmounted the whole editor. `loadDocument` now repairs and reports (`onDocumentIssues`), blocks render inside per-block error boundaries (`onBlockError`), the shell has its own (`onRenderError`) — 03 §1/§3 (B6).
+- The preview iframe was unsandboxed and hrefs, colours and font strings reached the output unchecked — 06 §Output safety (C4).
+
 ---
 
 ## The control ladder
@@ -105,6 +111,7 @@ Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on s
 - [x] Lazy-imported in `EmailPreview`, so `./email` no longer statically pulls them and the flag is truthful: verified by walking the built chunk graph — only `./email/render` requires them now. A missing peer surfaces as a message naming the packages rather than a module-not-found.
 - [x] `scripts/smoke-test.mjs` (`pnpm test:pack`): packs, checks the tarball carries every entry in `exports`, installs into an empty project with only the declared peers, renders an email from plain node, typechecks a consumer's custom block + pattern + theme against the published types, and asserts the optional peers really are skippable. Confirmed it fails on a typo'd `exports` path that all 333 unit tests and the build pass.
 - [x] Wired into CI as the `pack` job.
+- [x] The five `@atlaskit/pragmatic-drag-and-drop*` ranges on one core major (3.x) — the addons had moved ahead of the core pin, and a fresh install got two core copies.
 
 ---
 
@@ -167,8 +174,8 @@ Grepped across `src/components` and `src/email`: ~230 literal UI strings ("Dupli
 
 No error boundary anywhere in the tree. A `editRender` that throws on a malformed prop takes down the whole editor, and the host has no hook to report it.
 
-- [ ] Error boundary per block on the canvas, rendering the existing missing-block fallback treatment plus the error.
-- [ ] `onError?: (error, info) => void` on the provider/shell so hosts can wire Sentry.
+- [x] Error boundary per block on the canvas, rendering the existing missing-block fallback treatment plus the error. *(2026-09-07: `BlockErrorBoundary` around every block render — primitive or composed — and every inspector form, reset when the block's props change; `ShellErrorBoundary` around the shell.)*
+- [x] `onError?: (error, info) => void` on the provider/shell so hosts can wire Sentry. *(2026-09-07: `onBlockError` on the provider, `onRenderError` on the shell; `onDocumentIssues` for documents that needed repair on load.)*
 
 ### B7. Documentation is design rationale, not an integration guide — GUIDES DONE
 
@@ -213,8 +220,8 @@ Separate problem from B5: mail clients recolor emails on their own. Backgrounds 
 
 `EmailPreview` renders `<iframe srcDoc={html}>` with no `sandbox`. srcDoc inherits the parent origin, so anything script-ish in a document — a `javascript:` href a user typed, or a template imported from elsewhere — runs with the host app's origin. Low likelihood today (react-email escapes text), unacceptable once a consumer imports templates they didn't author.
 
-- [ ] `sandbox="allow-same-origin"` (or no allow-list at all) on the preview iframe; verify the scrollbar injection still works.
-- [ ] Sanitize `href` schemes in the button/image/rich-text renderers.
+- [x] `sandbox="allow-same-origin"` (or no allow-list at all) on the preview iframe; verify the scrollbar injection still works. *(2026-09-07: `sandbox=""`; the scrollbar CSS travels inside the srcDoc, so it still works.)*
+- [x] Sanitize `href` schemes in the button/image/rich-text renderers. *(2026-09-07: `safeUrl` at render, plus a post-substitution pass over every URL attribute, plus value guards on every style-prop converter — 06 §Output safety.)*
 
 ### C5. Features consumers will ask for in the first month
 

@@ -105,8 +105,8 @@ export function exampleDoc(): BuilderDocument {
         version: 1,
         rootId: "root",
         blocks: {
-            root: block({ id: "root", type: "root", children: { main: ["sec1"] } }),
-            sec1: block({ id: "sec1", type: "columns", children: { left: ["t1"], right: ["b1"] } }),
+            root: block({ id: "root", type: "root", props: { backgroundColor: "#ffffff" }, children: { main: ["sec1"] } }),
+            sec1: block({ id: "sec1", type: "columns", props: { gap: 16 }, children: { left: ["t1"], right: ["b1"] } }),
             t1: block({ id: "t1", type: "text", props: { text: "Hello" } }),
             b1: block({ id: "b1", type: "button", props: { label: "Buy" } }),
         },

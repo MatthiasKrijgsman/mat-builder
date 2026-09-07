@@ -1,6 +1,7 @@
 import { pretty, render } from "@react-email/render";
 import { createElement, Fragment, type ReactElement } from "react";
 import type { BlockId, BlockLocation, BuilderDocument } from "../core/types.ts";
+import { safeUrl } from "../core/safe-url.ts";
 import { isBlockVisible, type MergeTagValues } from "../core/visibility.ts";
 import { emailRootEmail } from "./blocks/email-root/email.tsx";
 import { containerEmail } from "./blocks/container/email.tsx";
@@ -43,6 +44,9 @@ export * from "../style-props/index.ts";
 // walks plain JSON, no lexical import; docs/06).
 export * from "./rich-text/index.ts";
 export { withVerticalGap } from "./gap.ts";
+// The URL allow-list the renderers apply to every href/src, for custom
+// renderers to apply to theirs.
+export { safeUrl } from "../core/safe-url.ts";
 // Conditional visibility: the rule vocabulary and its evaluator, so a backend
 // resolving conditions itself never has to reach into the client entry.
 export {
@@ -309,6 +313,36 @@ function substitute(output: string, values: MergeTagValues, escaped: boolean): s
     return output.replace(new RegExp(pattern, "g"), (match) => replacements.get(match) ?? match);
 }
 
+/*
+ * Substitution happens after React has escaped the tree, so a merge-tag value
+ * lands in an `href` with no scheme check at all — `{"{{link}}": "javascript:…"}`
+ * would otherwise become a live link in the preview and the sent email. This
+ * pass re-applies the allow-list to every URL-bearing attribute of the final
+ * HTML; a refused value becomes an empty attribute. React double-quotes
+ * attribute values and prettier may re-quote them with single quotes, so
+ * both spellings are matched; the value is entity-decoded before the check
+ * because `substitute` escaped it.
+ */
+const URL_ATTRIBUTE = /\b(href|src|background|action|formaction|poster)=(?:"([^"]*)"|'([^']*)')/gi;
+const ENTITY_DECODES: Record<string, string> = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#x27;": "'",
+    "&#39;": "'",
+};
+const decodeEntities = (value: string): string =>
+    value.replace(/&(?:amp|lt|gt|quot|#x27|#39);/g, (entity) => ENTITY_DECODES[entity] ?? entity);
+
+export function sanitizeUrlAttributes(html: string): string {
+    return html.replace(URL_ATTRIBUTE, (match, name: string, doubleQuoted?: string, singleQuoted?: string) => {
+        const raw = doubleQuoted ?? singleQuoted ?? "";
+        if (raw.trim() === "") return match;
+        return safeUrl(decodeEntities(raw)) === undefined ? `${name}=""` : match;
+    });
+}
+
 /**
  * Renders a document to email HTML and its plain-text variant.
  *
@@ -330,7 +364,7 @@ export async function renderEmail(
     const text = await render(tree, { plainText: true });
     const values = options.substituteTokens ? (options.values ?? {}) : null;
     return {
-        html: values ? substitute(html, values, true) : html,
+        html: sanitizeUrlAttributes(values ? substitute(html, values, true) : html),
         text: values ? substitute(text, values, false) : text,
     };
 }

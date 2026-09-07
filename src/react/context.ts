@@ -1,10 +1,13 @@
 import { createContext, useContext, type RefObject } from "react";
 import type { BlockRegistry } from "../core/registry.ts";
-import type { EditorStore } from "./store.ts";
+import type { EditorCallbacks, EditorStore } from "./store.ts";
 
 export interface BuilderContextValue {
     store: EditorStore;
     registry: BlockRegistry;
+    /** The provider's host callbacks, reassigned every render so they never
+     * go stale — read at call time, never captured. */
+    callbacks: EditorCallbacks;
     /** Brands all drag data for this builder instance — see docs/05 §1 */
     instanceId: symbol;
     /**

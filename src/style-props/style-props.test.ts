@@ -6,6 +6,7 @@ import { defaultEffects, effectsToCss } from "./effects.ts";
 import { horizontalToTextAlign, layoutToCss, verticalToVerticalAlign } from "./layout.ts";
 import { sizeToCss } from "./size.ts";
 import { marginToCss, paddingToCss, sideShorthand, spacingToCss, symmetricSides, uniformSides } from "./spacing.ts";
+import { cssColor, cssFontFamily, cssLength, cssNumber, cssUrl } from "./sanitize.ts";
 import { defaultTypography, typographyToCss } from "./typography.ts";
 
 describe("undefined tolerance", () => {
@@ -50,7 +51,7 @@ describe("background", () => {
             color: "#fafafa",
             image: { url: "https://example.com/bg.png", size: "cover", position: "center", repeat: false },
         });
-        expect(css.backgroundImage).toBe("url(https://example.com/bg.png)");
+        expect(css.backgroundImage).toBe('url("https://example.com/bg.png")');
         expect(css.backgroundColor).toBe("#fafafa");
         expect(css.backgroundSize).toBe("cover");
         expect(css.backgroundPosition).toBe("center");
@@ -253,5 +254,54 @@ describe("parseColorToHexOpacity", () => {
         expect(parseColorToHexOpacity("")).toBeNull();
         expect(parseColorToHexOpacity("red")).toBeNull();
         expect(parseColorToHexOpacity("var(--x)")).toBeNull();
+    });
+});
+
+describe("sanitize — stored strings never break out of a declaration", () => {
+    it("accepts real colors and refuses everything else", () => {
+        expect(cssColor("#fff")).toBe("#fff");
+        expect(cssColor("#18181bcc")).toBe("#18181bcc");
+        expect(cssColor("rgba(0, 0, 0, 0.5)")).toBe("rgba(0, 0, 0, 0.5)");
+        expect(cssColor("hsl(210 40% 50%)")).toBe("hsl(210 40% 50%)");
+        expect(cssColor("transparent")).toBe("transparent");
+        expect(cssColor("#fff;background-image:url(https://evil/px.gif)")).toBeUndefined();
+        expect(cssColor("red url(x)")).toBeUndefined();
+        expect(cssColor(42)).toBeUndefined();
+        expect(cssColor("")).toBeUndefined();
+    });
+
+    it("accepts font stacks and refuses declaration syntax", () => {
+        expect(cssFontFamily("'Trebuchet MS', Helvetica, sans-serif")).toBe("'Trebuchet MS', Helvetica, sans-serif");
+        expect(cssFontFamily("Arial; color: red")).toBeUndefined();
+        expect(cssFontFamily("Arial } body { display: none")).toBeUndefined();
+        expect(cssFontFamily("")).toBeUndefined();
+    });
+
+    it("quotes and encodes background image urls, and refuses bad schemes", () => {
+        expect(cssUrl("https://example.com/a b.png")).toBe('url("https://example.com/a%20b.png")');
+        expect(cssUrl('https://example.com/x")+url(https://evil/px.gif')).toBe(
+            'url("https://example.com/x%22%29+url%28https://evil/px.gif")',
+        );
+        expect(cssUrl("javascript:alert(1)")).toBeUndefined();
+        expect(cssUrl("")).toBeUndefined();
+    });
+
+    it("only lets lengths and finite numbers through", () => {
+        expect(cssLength("30%")).toBe("30%");
+        expect(cssLength("120px")).toBe("120px");
+        expect(cssLength(16)).toBe("16px");
+        expect(cssLength("120px; color: red")).toBeUndefined();
+        expect(cssNumber("12", 4)).toBe(4);
+        expect(cssNumber(Number.NaN, 4)).toBe(4);
+        expect(cssNumber(12)).toBe(12);
+    });
+
+    it("converters emit nothing for a refused value", () => {
+        const evil = "#fff;background-image:url(https://evil/px.gif)";
+        expect(backgroundToCss({ ...defaultBackground, type: "solid", color: evil })).toEqual({});
+        expect(borderToCss({ ...defaultBorder, width: uniformSides(1), color: evil })).toEqual({});
+        expect(typographyToCss({ ...defaultTypography, fontFamily: "Arial; color: red" }).fontFamily).toBeUndefined();
+        expect(typographyToCss({ ...defaultTypography, color: evil }).color).toBeUndefined();
+        expect(effectsToCss({ opacity: 100, shadow: { ...defaultEffects.shadow, type: "drop", color: evil } })).toEqual({});
     });
 });

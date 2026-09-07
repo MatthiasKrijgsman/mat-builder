@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cssColor, cssFontFamily, cssLength } from "../../style-props/sanitize.ts";
 
 /*
  * Per-element styles for rendered rich text. Everything is inlined so the
@@ -64,12 +65,15 @@ export const LINK_STYLES: CSSProperties = { color: "#067df7", textDecoration: "u
 export const CODE_FONT_FAMILY = "'Courier New', Courier, monospace";
 
 /** Text-node style properties honoured by the renderer. */
-const TEXT_STYLE_WHITELIST: Record<string, keyof CSSProperties> = {
-    "font-family": "fontFamily",
-    "font-size": "fontSize",
-    "font-weight": "fontWeight",
-    "letter-spacing": "letterSpacing",
-    "color": "color",
+/** Each whitelisted property with the guard its value has to pass — a stored
+ * `style` string is document data, and the output serializes it straight into
+ * `style="…"` (see style-props/sanitize.ts). */
+const TEXT_STYLE_WHITELIST: Record<string, [property: keyof CSSProperties, guard: (value: string) => string | undefined]> = {
+    "font-family": ["fontFamily", cssFontFamily],
+    "font-size": ["fontSize", cssLength],
+    "font-weight": ["fontWeight", (value) => (/^(?:[1-9]00|normal|bold|bolder|lighter)$/i.test(value) ? value : undefined)],
+    "letter-spacing": ["letterSpacing", cssLength],
+    "color": ["color", cssColor],
 };
 
 /**
@@ -85,8 +89,9 @@ export const parseTextStyle = (style: string | undefined): CSSProperties => {
         if (colon === -1) continue;
         const property = declaration.slice(0, colon).trim().toLowerCase();
         const value = declaration.slice(colon + 1).trim();
-        const key = TEXT_STYLE_WHITELIST[property];
-        if (key && value) css[key] = value;
+        const entry = TEXT_STYLE_WHITELIST[property];
+        const safe = entry && entry[1](value);
+        if (entry && safe) css[entry[0]] = safe;
     }
     return css as CSSProperties;
 };

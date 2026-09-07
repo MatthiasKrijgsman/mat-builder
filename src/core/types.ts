@@ -336,7 +336,11 @@ export type ValidationIssueCode =
     | "unknown-type"
     | "unknown-container"
     | "accepts-violation"
-    | "max-children-exceeded";
+    | "max-children-exceeded"
+    /** `version` missing or not a number — read as the current version (repair only) */
+    | "invalid-version"
+    /** A node missing `props`/`children`, or holding the wrong shape — normalized (repair only) */
+    | "invalid-node";
 
 export interface ValidationIssue {
     code: ValidationIssueCode;
@@ -344,6 +348,18 @@ export interface ValidationIssue {
     severity: "error" | "warning";
     blockId?: BlockId;
     message: string;
+}
+
+/**
+ * What `loadDocument`/`repairDocument` hand back: the document as loaded
+ * (migrated, repaired, validating clean) plus everything that was wrong with
+ * the input. Every issue listed WAS repaired — the severity says how broken
+ * the input was, not whether loading succeeded (it did; an unrepairable
+ * document throws instead).
+ */
+export interface LoadedDocument {
+    document: BuilderDocument;
+    issues: ValidationIssue[];
 }
 
 export interface HistoryEntry {

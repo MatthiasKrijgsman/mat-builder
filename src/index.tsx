@@ -15,7 +15,9 @@ export { definePattern, specFromSubtree } from "./core/patterns.ts";
 export { slot, isSlotRef, collectBindings, collectSlots } from "./core/compose.ts";
 export { createRegistry, mergeBlockDefinitions } from "./core/registry.ts";
 export type { BlockRegistry, AnyBlockDefinition } from "./core/registry.ts";
-export { createDocument, migrateDocument, validateDocument } from "./core/document.ts";
+export { createDocument, loadDocument, migrateDocument, repairDocument, validateDocument } from "./core/document.ts";
+// The URL allow-list the email output applies to every href/src (also under ./email/render)
+export { safeUrl } from "./core/safe-url.ts";
 export { walkDocument, findLocation, findAncestors, isDescendant } from "./core/traversal.ts";
 export type { WalkContext, WalkVisitor } from "./core/traversal.ts";
 export { canDropAt } from "./core/commands.ts";
@@ -56,6 +58,7 @@ export type {
     OnCreateCtx,
     ValidationIssue,
     ValidationIssueCode,
+    LoadedDocument,
     HistoryEntry,
 } from "./core/types.ts";
 // Commands and history stay internal — the store drives them (docs/03 §3).
@@ -78,7 +81,7 @@ export {
     SIZE_BOX_CLASS,
 } from "./react/hooks.ts";
 export type { UseEditorResult, SelectedBlock, RenderedSize } from "./react/hooks.ts";
-export type { EditorState, EditorActions, EditingTarget } from "./react/store.ts";
+export type { EditorState, EditorActions, EditingTarget, BlockErrorContext } from "./react/store.ts";
 
 // The assembled editor: provider + docked layout + panels + saving (docs/04 §Shell).
 // Block-set agnostic — the email builder is <EmailBuilder> in ./email.

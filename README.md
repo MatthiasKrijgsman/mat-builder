@@ -9,7 +9,8 @@ Built with React 19, Tailwind CSS v4, [Pragmatic drag and drop](https://atlassia
 Headless-first does not mean assembly-required: the whole email builder is one component.
 
 ```tsx
-import "@matthiaskrijgsman/mat-builder/style";
+import "@matthiaskrijgsman/mat-ui/style";      // the UI kit's stylesheet (peer dependency)
+import "@matthiaskrijgsman/mat-builder/style"; // editor styles — scoped to the builder, no global reset
 import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 
 <EmailBuilder

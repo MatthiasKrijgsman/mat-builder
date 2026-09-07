@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import {
+    cssColor,
+    cssNumber,
     marginToCss,
     symmetricSides,
     uniformSides,
@@ -21,7 +23,7 @@ export const emailDividerDefaults: EmailDividerProps = {
 
 export const emailDividerStyles = (props: EmailDividerProps): CSSProperties => ({
     border: "none",
-    borderTop: `${props.thickness}px solid ${props.color}`,
+    borderTop: `${cssNumber(props.thickness, emailDividerDefaults.thickness)}px solid ${cssColor(props.color) ?? emailDividerDefaults.color}`,
     margin: 0,
     ...marginToCss(props.spacing),
     width: "100%",

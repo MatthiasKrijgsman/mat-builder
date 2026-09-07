@@ -68,6 +68,7 @@ Notes:
 - **Integrity invariants** (enforced by the command layer, checked by a `validateDocument()` dev helper): every non-root block appears in exactly one parent's child list; every referenced id exists; every container name exists on the parent's definition; `accepts` rules hold.
 - **`visibility` is a node field, not a prop** — every block gets conditional visibility whether or not its definition asked for it, so it can neither collide with a consumer's prop names nor be missing from a block that shipped before the feature. Absent means "always visible", so documents only carry it where the author set something, and older documents load unchanged (no migration needed). The rule vocabulary and its evaluator live in `src/core/visibility.ts`; the semantics are in [06 §Conditional visibility](06-email-builder.md#conditional-visibility).
 - **Versioning**: `version` + a `migrate(doc)` chain in core, run on load. Cheap now, indispensable in a year.
+- **Loading is repair, not rejection** (`repairDocument`, since 2026-09-07): a stored document is untrusted input — a row from an older release, hand-edited, half-migrated. On load, dangling ids, orphans, second parents and a root inside a child list are dropped; containers a known type does not have go with their children, containers it does have are added empty; `props`/`children` of the wrong shape are normalized; and known types get `defaultProps` backfilled (a prop added in a later release exists on every old document, the same merge a new block gets). Every change is a `ValidationIssue` in the result, surfaced by the provider as `onDocumentIssues` — worth logging on the host. Unknown block types stay (they render as missing blocks). Only a document with no usable root refuses to load, and that throws — `<BuilderShell>` catches it in its own boundary; bare `<BuilderProvider>` users bring theirs.
 
 ## 2. Block definitions & registry
 
@@ -227,7 +228,7 @@ All mutations go through a small command layer — the only code allowed to touc
 | `setVisibility(id, visibility?)` | replaces the node's conditional rules (`undefined` clears); refuses the root; **history-coalesced** per block |
 | `removeBlock(id)` | removes subtree; selection falls back to parent |
 | `duplicateBlock(id)` | deep-clone subtree with fresh ids, insert after source |
-| `setDocument(doc)` | load/replace (runs `migrate` + validation) |
+| `loadDocument(doc)` | load/replace: outer shape check → `version` normalized → `migrate` → **`repairDocument`** → validation. Returns `{ document, issues }`; throws only when nothing can be rebuilt (not a document, newer version, missing/malformed root). `setDocument` is the same without the report |
 
 Implementation notes (src/core/commands.ts): `duplicateBlock` rebuilds nodes field by field rather than spreading them, so **every new BlockNode field has to be added there** or clones silently lose it (`visibility` was exactly this trap); commands that need definitions take the registry as a final argument; `insertBlock` and `duplicateBlock` return `{ document, blockId }` — callers (store, DnD) need the new id to select it. The shared drop-validity predicate `canDropAt(doc, registry, childType, at, movingId?)` (accepts + maxChildren + container-exists + root/canDrag/cycle rules) is what the DnD layer uses to gate drop targets before a command ever runs.
 
@@ -253,6 +254,8 @@ Snapshot history — immer's structural sharing makes snapshots cheap (unchanged
   {/* host app arranges the UI components freely — see 04 */}
 </BuilderProvider>
 ```
+
+Two more host callbacks, both optional: `onDocumentIssues(issues)` — the document handed in needed repairs on the way in (above); `onBlockError(error, { id, type, surface })` — a block's `editRender` or inspector threw. Each block renders inside its own error boundary (`BlockErrorBoundary`, reset when the block's props change), so a consumer block that throws on an unexpected prop costs that one block, not the editor and its unsaved document. `<BuilderShell>` adds `onRenderError` for anything outside a block.
 
 `onChange` fires for committed **user commands** only. An external `value` replacement syncs the store without it (`syncExternalDocument`), which is what lets the shell's save controller treat `onChange` as the dirty signal (04 §Shell): a document handed in from the outside is already saved. Saving itself is host state and stays out of the store — `useDocumentSave` owns it.
 

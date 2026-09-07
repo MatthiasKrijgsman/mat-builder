@@ -11,6 +11,8 @@
  */
 
 export * from "./background.ts";
+// Value guards every converter runs stored strings through (see the note there)
+export * from "./sanitize.ts";
 export * from "./border.ts";
 export * from "./color.ts";
 export * from "./effects.ts";

@@ -3,6 +3,7 @@ import { IconClick, IconCopy, IconTrash } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { useBuilderContext } from "../../react/context.ts";
 import { useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
+import { BlockErrorBoundary, errorMessage } from "../canvas/BlockErrorBoundary.tsx";
 import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 import { VisibilityGroup } from "./VisibilityGroup.tsx";
 
@@ -18,7 +19,7 @@ export interface InspectorPanelProps {
 }
 
 export function Inspector({ className }: InspectorPanelProps) {
-  const { registry } = useBuilderContext();
+  const { registry, callbacks } = useBuilderContext();
   const selected = useSelectedBlock();
   const actions = useBuilderState((s) => s.actions);
   const document = useBuilderState((s) => s.document);
@@ -87,12 +88,24 @@ export function Inspector({ className }: InspectorPanelProps) {
            anything (docs/06 §Conditional visibility). */ }
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
         { InspectorForm ? (
-          <InspectorForm
+          // A throwing form costs the form, not the panel (BlockErrorBoundary)
+          <BlockErrorBoundary
             key={ id }
-            id={ id }
-            props={ node.props }
-            update={ (patch) => actions.updateProps(id, patch as Record<string, unknown>) }
-          />
+            context={ { id, type: node.type, surface: "inspector" } }
+            onError={ callbacks.onBlockError }
+            resetKey={ node.props }
+            fallback={ (error) => (
+              <p className="px-3 py-2 text-xs" style={ { color: "var(--mat-builder-color-missing-fg)" } }>
+                The settings for this block could not be rendered: { errorMessage(error) }
+              </p>
+            ) }
+          >
+            <InspectorForm
+              id={ id }
+              props={ node.props }
+              update={ (patch) => actions.updateProps(id, patch as Record<string, unknown>) }
+            />
+          </BlockErrorBoundary>
         ) : (
           <p className="px-3 py-2 text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
             This block has no settings.

@@ -5,7 +5,7 @@ import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
 import type { BlockVisibility } from "../core/visibility.ts";
 import { emailBlocks } from "./index.tsx";
-import { buildEmailTree, renderEmail } from "./render.ts";
+import { buildEmailTree, renderEmail, sanitizeUrlAttributes } from "./render.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
 const registry = createRegistry(emailBlocks);
@@ -294,7 +294,8 @@ describe("renderEmail", () => {
         });
 
         const { html } = await renderEmail(document);
-        expect(html).toContain("url(https://example.com/bg.png)");
+        // Quoted (sanitize.ts cssUrl); prettier re-quotes the attribute around the raw double quotes
+        expect(html).toContain('url("https://example.com/bg.png")');
         expect(html).toMatch(/background-color:\s*#fafafa/i);
         expect(html).toContain("background-size:cover");
         expect(html).toContain("background-repeat:no-repeat");
@@ -595,5 +596,110 @@ describe("token substitution", () => {
         });
         // The first name renders as the literal text it was given
         expect(html).toContain("{{invoice_id}}");
+    });
+});
+
+describe("output safety", () => {
+    /** A link with `url` inside one paragraph, as lexical stores it. */
+    const richTextLink = (url: string, text = "link"): string =>
+        JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    {
+                        type: "paragraph",
+                        children: [{ type: "link", url, target: "_blank", children: [{ type: "text", text, format: 0 }] }],
+                    },
+                ],
+            },
+        });
+
+    function buildLinkedEmail(patches: { button?: Record<string, unknown>; image?: Record<string, unknown>; text?: Record<string, unknown> }) {
+        let document = createDocument(registry, "email-root");
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const at = (index: number) => ({ parentId: containerId, container: "content", index });
+        const button = insertBlock(document, { type: "button", at: at(0) }, registry);
+        document = updateProps(button.document, { id: button.blockId, patch: { label: "Go", ...patches.button } });
+        const image = insertBlock(document, { type: "image", at: at(1) }, registry);
+        document = updateProps(image.document, { id: image.blockId, patch: { src: "https://example.com/a.png", ...patches.image } });
+        const text = insertBlock(document, { type: "text", at: at(2) }, registry);
+        document = updateProps(text.document, { id: text.blockId, patch: patches.text ?? {} });
+        return { document, containerId };
+    }
+
+    it("drops javascript:/data: URLs from buttons, images and rich-text links", async () => {
+        const { document } = buildLinkedEmail({
+            button: { href: "javascript:alert(1)" },
+            image: { href: "data:text/html,<script>alert(1)</script>" },
+            text: { content: richTextLink("JaVaScRiPt:alert(1)") },
+        });
+        const { html } = await renderEmail(document);
+        expect(html).not.toMatch(/javascript:/i);
+        expect(html).not.toContain("data:text/html");
+        // The image itself survives — only the refused link around it goes
+        expect(html).toContain('src="https://example.com/a.png"');
+    });
+
+    it("keeps http(s), mailto, tel and token URLs", async () => {
+        const { document } = buildLinkedEmail({
+            button: { href: "{{unsubscribe_url}}" },
+            image: { href: "mailto:hi@example.com" },
+            text: { content: richTextLink("https://example.com/x?a=1&b=2") },
+        });
+        const { html } = await renderEmail(document);
+        expect(html).toContain('href="{{unsubscribe_url}}"');
+        expect(html).toContain('href="mailto:hi@example.com"');
+        expect(html).toContain('href="https://example.com/x?a=1&amp;b=2"');
+    });
+
+    it("re-checks URLs after merge-tag substitution", async () => {
+        const { document } = buildLinkedEmail({ button: { href: "{{link}}" } });
+        const evil = await renderEmail(document, { values: { "{{link}}": "javascript:alert(1)" }, substituteTokens: true });
+        expect(evil.html).not.toMatch(/javascript:/i);
+        expect(evil.html).toContain('href=""');
+        const fine = await renderEmail(document, { values: { "{{link}}": "https://example.com/x?a=1&b=2" }, substituteTokens: true });
+        expect(fine.html).toContain('href="https://example.com/x?a=1&amp;b=2"');
+    });
+
+    it("refuses an image whose src is not an acceptable URL", async () => {
+        const { document } = buildLinkedEmail({ image: { src: "javascript:alert(1)" } });
+        const { html } = await renderEmail(document);
+        expect(html).not.toContain("<img");
+    });
+
+    it("keeps stored colors and fonts from smuggling extra declarations", async () => {
+        const { document, containerId } = buildLinkedEmail({
+            button: {
+                background: { type: "solid", color: "#fff;background-image:url(https://evil/px.gif)" },
+                typography: { fontFamily: "Arial; color: red }", fontSize: 14, lineHeight: 1.5, letterSpacing: 0, color: "#000", opacity: 100, align: "left" },
+            },
+        });
+        const withBackground = updateProps(document, {
+            id: containerId,
+            patch: {
+                background: {
+                    type: "image",
+                    color: "#ffffff",
+                    gradient: { from: "#fff", to: "#000", angle: 90 },
+                    image: { url: 'https://example.com/bg.png")+url(https://evil/px.gif', size: "cover", position: "center", repeat: false },
+                },
+            },
+        });
+        const { html } = await renderEmail(withBackground);
+        // The breakout characters are percent-encoded inside one quoted url(); no second url() exists
+        expect(html).toContain('url("https://example.com/bg.png%22%29+url%28https://evil/px.gif")');
+        expect(html).not.toContain("url(https://evil");
+        expect(html).not.toContain("evil/px.gif)");
+        expect(html).not.toContain("color: red");
+        expect(html).not.toContain("Arial;");
+    });
+
+    it("sanitizeUrlAttributes blanks refused values in either quoting style and decodes entities first", () => {
+        expect(sanitizeUrlAttributes('<a href="javascript:alert(1)">x</a>')).toBe('<a href="">x</a>');
+        expect(sanitizeUrlAttributes("<img src='data:text/html,x' alt='y'>")).toBe("<img src=\"\" alt='y'>");
+        expect(sanitizeUrlAttributes('<td background="vbscript:x">')).toBe('<td background="">');
+        expect(sanitizeUrlAttributes('<a href="https://example.com/?a=1&amp;b=2">')).toBe('<a href="https://example.com/?a=1&amp;b=2">');
+        expect(sanitizeUrlAttributes('<a href="">')).toBe('<a href="">');
+        expect(sanitizeUrlAttributes('<p>href="javascript:x" as text</p>')).toBe('<p>href="" as text</p>');
     });
 });

@@ -1,8 +1,8 @@
-import { useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
+import { Component, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
-import { BuilderProvider } from "../../react/provider.tsx";
+import { BuilderProvider, type BuilderProviderProps } from "../../react/provider.tsx";
 import { colorSchemeAttr, themeToStyle, type BuilderColorScheme, type BuilderTheme } from "../../react/theme.ts";
 import { useDocumentSave, type SaveController, type UseDocumentSaveOptions } from "../../react/save.ts";
 import { Canvas } from "../canvas/Canvas.tsx";
@@ -45,6 +45,17 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
      * document elsewhere. Saving does not need it (see `onSave`). */
     onChange?: (document: BuilderDocument) => void;
     onSelectionChange?: (id: BlockId | null) => void;
+    /** The loaded document needed repairs — see `BuilderProviderProps` */
+    onDocumentIssues?: BuilderProviderProps["onDocumentIssues"];
+    /** A block's editRender/inspector threw — see `BuilderProviderProps` */
+    onBlockError?: BuilderProviderProps["onBlockError"];
+    /**
+     * Something outside a single block threw — a document that could not be
+     * loaded at all, or a panel crashing. The shell replaces itself with a
+     * message instead of taking the host page down; this is where the host
+     * reports it.
+     */
+    onRenderError?: (error: unknown, info: { componentStack?: string }) => void;
     /** Personalization tokens available in text surfaces; pass a stable array */
     mergeTags?: MergeTag[];
     /** Palette entries that expand into ordinary blocks on insert (docs/08 §7);
@@ -101,6 +112,9 @@ export function BuilderShell(props: BuilderShellProps) {
         rootType,
         onChange,
         onSelectionChange,
+        onDocumentIssues,
+        onBlockError,
+        onRenderError,
         mergeTags,
         patterns,
         onSave,
@@ -142,34 +156,92 @@ export function BuilderShell(props: BuilderShellProps) {
     };
 
     return (
-        <BuilderProvider
-            blocks={blocks}
-            value={value}
-            defaultValue={defaultValue ?? initialDocument}
-            onChange={handleChange}
-            onSelectionChange={onSelectionChange}
-            mergeTags={mergeTags}
-            patterns={patterns}
-        >
-            <BuilderShellLayout
-                save={save}
-                title={title}
-                icon={icon}
-                documentName={documentName}
-                actions={actions}
-                topBar={topBar}
-                saveLabels={saveLabels}
-                panels={panels}
-                collapseLeftPanel={collapseLeftPanel}
-                canvas={canvas}
-                inspector={inspector}
-                className={className}
-                style={style}
-                theme={theme}
-                colorScheme={colorScheme}
-            />
-        </BuilderProvider>
+        <ShellErrorBoundary onError={onRenderError} className={className} style={style}>
+            <BuilderProvider
+                blocks={blocks}
+                value={value}
+                defaultValue={defaultValue ?? initialDocument}
+                onChange={handleChange}
+                onSelectionChange={onSelectionChange}
+                mergeTags={mergeTags}
+                patterns={patterns}
+                onDocumentIssues={onDocumentIssues}
+                onBlockError={onBlockError}
+            >
+                <BuilderShellLayout
+                    save={save}
+                    title={title}
+                    icon={icon}
+                    documentName={documentName}
+                    actions={actions}
+                    topBar={topBar}
+                    saveLabels={saveLabels}
+                    panels={panels}
+                    collapseLeftPanel={collapseLeftPanel}
+                    canvas={canvas}
+                    inspector={inspector}
+                    className={className}
+                    style={style}
+                    theme={theme}
+                    colorScheme={colorScheme}
+                />
+            </BuilderProvider>
+        </ShellErrorBoundary>
     );
+}
+
+interface ShellErrorBoundaryProps {
+    onError?: (error: unknown, info: { componentStack?: string }) => void;
+    className?: string;
+    style?: CSSProperties;
+    children: ReactNode;
+}
+
+/**
+ * The shell's own boundary: a document that refuses to load (the provider
+ * throws for a missing root) or a panel crashing shows a message in the
+ * shell's box instead of unmounting the host's page. Per-block failures
+ * never reach this — BlockErrorBoundary catches those on the canvas and in
+ * the inspector.
+ */
+class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, { error: unknown; failed: boolean }> {
+    state = { error: null as unknown, failed: false };
+
+    static getDerivedStateFromError(error: unknown) {
+        return { error, failed: true };
+    }
+
+    componentDidCatch(error: unknown, info: ErrorInfo): void {
+        this.props.onError?.(error, { componentStack: info.componentStack ?? undefined });
+    }
+
+    render(): ReactNode {
+        if (!this.state.failed) return this.props.children;
+        const { error } = this.state;
+        const message = error instanceof Error ? error.message : String(error);
+        return (
+            <div
+                className={`mat-builder-shell relative h-full ${this.props.className ?? ""}`}
+                style={{ ...dottedSurface, ...this.props.style }}
+            >
+                <div className="absolute inset-0 grid place-items-center p-6">
+                    <div
+                        role="alert"
+                        className="max-w-lg rounded-lg border p-4 text-sm"
+                        style={{ ...dockedPanel, color: "var(--mat-builder-color-panel-fg)" }}
+                    >
+                        <div className="font-semibold">The editor could not be shown</div>
+                        <pre
+                            className="mt-2 whitespace-pre-wrap break-words text-xs"
+                            style={{ color: "var(--mat-builder-color-missing-fg)" }}
+                        >
+                            {message}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 }
 
 /** Hairline between two panels stacked in the same docked column */

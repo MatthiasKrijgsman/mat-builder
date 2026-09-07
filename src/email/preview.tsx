@@ -97,6 +97,9 @@ export function EmailPreview({
         return [...composed, ...(blocks ?? [])];
     }, [registry, blocks]);
     const [html, setHtml] = useState<string>("");
+    // A render failure is shown by React, never spliced into the srcDoc — the
+    // message carries document strings (a root type name, say).
+    const [error, setError] = useState<string | null>(null);
     // Mount-time read — a size the user dragged on the Canvas carries over
     const [persistedSize] = useState(() => store.getState().artboardSize);
 
@@ -118,10 +121,12 @@ export function EmailPreview({
             renderOnDemand()
                 .then((renderEmail) => renderEmail(document, { values, substituteTokens: true, blocks: renderBlocks }))
                 .then((result) => {
-                    if (!cancelled) setHtml(withPreviewScrollbar(result.html));
+                    if (cancelled) return;
+                    setHtml(withPreviewScrollbar(result.html));
+                    setError(null);
                 })
-                .catch((error: unknown) => {
-                    if (!cancelled) setHtml(`<pre style="padding:16px;color:#b91c1c">${String(error)}</pre>`);
+                .catch((reason: unknown) => {
+                    if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason));
                 });
         }, debounceMs);
         return () => {
@@ -142,7 +147,21 @@ export function EmailPreview({
             // this the frame's own paper shows in the scrollbar's gutter.
             frameStyle={rootNode && registry.getDefinition(rootNode.type)?.getArtboardStyle?.(rootNode.props)}
         >
-            <iframe title="Email preview" srcDoc={html} className="h-full w-full border-0" />
+            {error ? (
+                <pre
+                    className="h-full w-full overflow-auto whitespace-pre-wrap p-4 text-xs"
+                    style={{ color: "var(--mat-builder-color-missing-fg)" }}
+                >
+                    {error}
+                </pre>
+            ) : (
+                // Fully sandboxed: a srcDoc document inherits the HOST's origin
+                // unless sandboxed, so anything script-shaped that reaches the
+                // HTML would run as the app. The empty allow-list blocks
+                // scripts, forms and top navigation; the preview needs none of
+                // them (the scrollbar styling above travels inside the srcDoc).
+                <iframe title="Email preview" srcDoc={html} sandbox="" className="h-full w-full border-0" />
+            )}
         </Artboard>
     );
 }

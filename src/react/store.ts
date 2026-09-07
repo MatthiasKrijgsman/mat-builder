@@ -7,10 +7,10 @@ import {
     findLocation,
     insertBlock,
     moveBlock,
+    loadDocument,
     recordHistory,
     redo,
     removeBlock,
-    setDocument,
     setVisibility,
     undo,
     updateProps,
@@ -23,6 +23,7 @@ import type {
     BuilderDocument,
     HistoryState,
     NewBlockSpec,
+    ValidationIssue,
 } from "../core/types.ts";
 import type { BlockVisibility, MergeTagValues } from "../core/visibility.ts";
 import type { MergeTag } from "./merge-tags.ts";
@@ -38,9 +39,22 @@ import type { MergeTag } from "./merge-tags.ts";
  * that return null/false — UI wiring should never throw.
  */
 
+/** Where a consumer block threw — handed to `onBlockError`. */
+export interface BlockErrorContext {
+    id: BlockId;
+    type: string;
+    /** Which of the block's renders threw */
+    surface: "canvas" | "inspector";
+    componentStack?: string;
+}
+
 export interface EditorCallbacks {
     onChange?: (document: BuilderDocument) => void;
     onSelectionChange?: (id: BlockId | null) => void;
+    /** A loaded document needed repairs (core/document.ts `loadDocument`) */
+    onDocumentIssues?: (issues: ValidationIssue[]) => void;
+    /** A block's editRender/inspector threw; the block shows a fallback */
+    onBlockError?: (error: unknown, context: BlockErrorContext) => void;
 }
 
 /** Live during a drag (source only — drop targets keep their own edge state). */
@@ -98,7 +112,9 @@ export interface EditorActions {
     removeBlock(id: BlockId): boolean;
     /** Clones the block after itself and selects the clone; null when refused */
     duplicateBlock(id: BlockId): BlockId | null;
-    /** Load/replace as a user action: migrates, validates (throws on errors), records history */
+    /** Load/replace as a user action: migrates, repairs (reporting through
+     * `onDocumentIssues`), validates (throws when nothing can be rebuilt),
+     * records history */
     loadDocument(document: BuilderDocument): void;
     undo(): void;
     redo(): void;
@@ -333,7 +349,8 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
                 },
 
                 loadDocument: (next) => {
-                    const document = setDocument(next, registry);
+                    const { document, issues } = loadDocument(next, registry);
+                    if (issues.length > 0) callbacks.onDocumentIssues?.(issues);
                     const history = recordHistory(get().history, snapshot(), { timestamp: now() });
                     commitDocument(document, history);
                     set({ expanded: new Set(Object.keys(document.blocks)), editing: null });
@@ -355,8 +372,12 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
  * firing onChange, clears history (entries from another document lineage
  * would restore unrelated states) and drops a now-dangling selection.
  */
-export function syncExternalDocument(store: EditorStore, next: BuilderDocument, registry: BlockRegistry): void {
-    const document = setDocument(next, registry);
+export function syncExternalDocument(
+    store: EditorStore,
+    next: BuilderDocument,
+    registry: BlockRegistry,
+): ValidationIssue[] {
+    const { document, issues } = loadDocument(next, registry);
     const { selectedId } = store.getState();
     store.setState({
         document,
@@ -366,4 +387,5 @@ export function syncExternalDocument(store: EditorStore, next: BuilderDocument, 
         editing: null,
         expanded: new Set(Object.keys(document.blocks)),
     });
+    return issues;
 }

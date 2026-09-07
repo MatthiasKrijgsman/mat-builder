@@ -51,11 +51,11 @@
     "test:pack": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
-    "@atlaskit/pragmatic-drag-and-drop": "^2.0.1",
-    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^3.0.0",
-    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^2.0.0",
-    "@atlaskit/pragmatic-drag-and-drop-live-region": "^2.0.0",
-    "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^4.1.0",
+    "@atlaskit/pragmatic-drag-and-drop": "^3.1.0",
+    "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^3.2.0",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^2.2.0",
+    "@atlaskit/pragmatic-drag-and-drop-live-region": "^2.1.0",
+    "@atlaskit/pragmatic-drag-and-drop-react-drop-indicator": "^4.2.0",
     "@tabler/icons-react": "^3.34.1",
     "immer": "^10.1.1",
     "motion": "^12.23.12",
@@ -83,7 +83,7 @@
     }
   },
   "devDependencies": {
-    "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.0.0",
+    "@atlaskit/pragmatic-drag-and-drop-unit-testing": "^2.1.0",
     "@eslint/js": "^9.33.0",
     "@lexical/react": "0.45.0",
     "@lexical/rich-text": "0.45.0",

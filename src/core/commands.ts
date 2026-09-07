@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import { nanoid } from "nanoid";
-import { migrateDocument, validateDocument } from "./document.ts";
+import { loadDocument } from "./document.ts";
 import { materializeBlock } from "./materialize.ts";
 import { containerAccepts, type BlockRegistry } from "./registry.ts";
 import { findAncestors, findLocation, isDescendant } from "./traversal.ts";
@@ -275,16 +275,10 @@ export function duplicateBlock(
     return { document: next, blockId: cloneId(payload.id) };
 }
 
-/** Load/replace: runs the migration chain, then rejects documents with integrity errors. */
+/** Load/replace: `loadDocument` (migrate + repair + validate) without the
+ * issue report — for callers that only want the document. */
 export function setDocument(next: BuilderDocument, registry: BlockRegistry): BuilderDocument {
-    const migrated = migrateDocument(next);
-    const errors = validateDocument(migrated, registry).filter((issue) => issue.severity === "error");
-    if (errors.length > 0) {
-        throw new Error(
-            `setDocument: document failed validation:\n${errors.map((issue) => `- ${issue.message}`).join("\n")}`,
-        );
-    }
-    return migrated;
+    return loadDocument(next, registry).document;
 }
 
 function collectSubtreeIds(document: BuilderDocument, id: BlockId): BlockId[] {

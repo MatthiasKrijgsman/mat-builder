@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { hexToRgba } from "./color.ts";
+import { cssColor, cssNumber } from "./sanitize.ts";
 
 /*
  * Effects — paint effects: overall opacity plus one drop/inner shadow.
@@ -30,13 +31,22 @@ export const defaultEffects: EffectsValue = {
     shadow: { type: "none", x: 0, y: 2, blur: 8, spread: 0, color: "#000000", opacity: 15 },
 };
 
-export const shadowToCss = (s: ShadowValue): string =>
-    `${s.type === "inner" ? "inset " : ""}${s.x}px ${s.y}px ${s.blur}px ${s.spread}px ${hexToRgba(s.color, s.opacity)}`;
+/** The box-shadow string, or `undefined` when the shadow's color is not one. */
+export const shadowToCss = (s: ShadowValue): string | undefined => {
+    const color = cssColor(s.color);
+    if (!color) return undefined;
+    const [x, y, blur, spread] = [s.x, s.y, s.blur, s.spread].map((n) => cssNumber(n));
+    return `${s.type === "inner" ? "inset " : ""}${x}px ${y}px ${blur}px ${spread}px ${hexToRgba(color, cssNumber(s.opacity, 100))}`;
+};
 
 export const effectsToCss = (v?: EffectsValue): CSSProperties => {
     if (!v) return {};
     const css: CSSProperties = {};
-    if (v.opacity < 100) css.opacity = v.opacity / 100;
-    if (v.shadow.type !== "none") css.boxShadow = shadowToCss(v.shadow);
+    const opacity = cssNumber(v.opacity, 100);
+    if (opacity < 100) css.opacity = opacity / 100;
+    if (v.shadow && v.shadow.type !== "none") {
+        const shadow = shadowToCss(v.shadow);
+        if (shadow) css.boxShadow = shadow;
+    }
     return css;
 };

@@ -1,10 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { createRegistry, setDocument, type AnyBlockDefinition } from "../core/index.ts";
-import type { BlockId, BlockPattern, BuilderDocument } from "../core/types.ts";
+import { createRegistry, loadDocument, type AnyBlockDefinition } from "../core/index.ts";
+import type { BlockId, BlockPattern, BuilderDocument, ValidationIssue } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
 import type { MergeTag } from "./merge-tags.ts";
-import { createEditorStore, syncExternalDocument, type EditorCallbacks } from "./store.ts";
+import {
+    createEditorStore,
+    syncExternalDocument,
+    type BlockErrorContext,
+    type EditorCallbacks,
+} from "./store.ts";
 
 /*
  * <BuilderProvider> — see docs/03-architecture.md §3 (controlled component
@@ -22,6 +27,24 @@ export interface BuilderProviderProps {
     /** Called after every committed command (debounce upstream for saving) */
     onChange?: (document: BuilderDocument) => void;
     onSelectionChange?: (id: BlockId | null) => void;
+    /**
+     * The document handed in (`value`/`defaultValue`, or a later external
+     * `value`) needed repairs on the way in — dangling ids dropped, missing
+     * containers added, defaults backfilled (core/document.ts `loadDocument`).
+     * The editor opens either way; wire this to your logging, because it
+     * means a stored document was not what this release expected. Fires
+     * after mount. Only a document with no usable root refuses to load, and
+     * that throws — render the provider inside an error boundary (the shell
+     * brings its own).
+     */
+    onDocumentIssues?: (issues: ValidationIssue[]) => void;
+    /**
+     * A block's `editRender` or inspector threw. The block shows a fallback
+     * in its place and the rest of the editor keeps working (an unsaved
+     * document must survive one bad block); this is where the host reports
+     * it.
+     */
+    onBlockError?: (error: unknown, context: BlockErrorContext) => void;
     /** Personalization tokens available in text surfaces (see merge-tags.ts);
      * omit or pass empty to hide all merge-tag UI. Pass a stable array. */
     mergeTags?: MergeTag[];
@@ -35,19 +58,36 @@ export interface BuilderProviderProps {
 const NO_MERGE_TAGS: MergeTag[] = [];
 const NO_PATTERNS: BlockPattern[] = [];
 
-export function BuilderProvider(props: BuilderProviderProps) {
-    const { blocks, value, defaultValue, onChange, onSelectionChange, mergeTags, patterns, children } = props;
+interface Instance extends BuilderContextValue {
+    /** Issues from the mount-time load, reported once the host can receive them */
+    loadIssues: ValidationIssue[];
+}
 
-    const [instance] = useState<BuilderContextValue & { callbacks: EditorCallbacks }>(() => {
+export function BuilderProvider(props: BuilderProviderProps) {
+    const {
+        blocks,
+        value,
+        defaultValue,
+        onChange,
+        onSelectionChange,
+        onDocumentIssues,
+        onBlockError,
+        mergeTags,
+        patterns,
+        children,
+    } = props;
+
+    const [instance] = useState<Instance>(() => {
         const registry = createRegistry(blocks);
         const initial = value ?? defaultValue;
         if (!initial) {
             throw new Error("BuilderProvider requires a `value` or `defaultValue` document");
         }
         const callbacks: EditorCallbacks = {};
+        const loaded = loadDocument(initial, registry);
         const store = createEditorStore({
             registry,
-            document: setDocument(initial, registry),
+            document: loaded.document,
             mergeTags,
             patterns,
             callbacks,
@@ -59,12 +99,23 @@ export function BuilderProvider(props: BuilderProviderProps) {
             instanceId: Symbol("mat-builder-instance"),
             // Filled in by <Canvas> on mount (see context.ts)
             canvasRef: { current: null },
+            loadIssues: loaded.issues,
         };
     });
 
     // Reassigned every render so store actions always call the latest handlers
     instance.callbacks.onChange = onChange;
     instance.callbacks.onSelectionChange = onSelectionChange;
+    instance.callbacks.onDocumentIssues = onDocumentIssues;
+    instance.callbacks.onBlockError = onBlockError;
+
+    // The mount-time load ran inside the state initializer, where a host
+    // callback must not fire — report its issues once, after mount.
+    useEffect(() => {
+        const issues = instance.loadIssues;
+        instance.loadIssues = [];
+        if (issues.length > 0) instance.callbacks.onDocumentIssues?.(issues);
+    }, [instance]);
 
     // One monitor per provider performs all DnD mutations (docs/05 §4)
     useDndMonitor(instance);
@@ -73,7 +124,8 @@ export function BuilderProvider(props: BuilderProviderProps) {
     // (Values passed back from onChange are reference-equal and skipped.)
     useEffect(() => {
         if (value && value !== instance.store.getState().document) {
-            syncExternalDocument(instance.store, value, instance.registry);
+            const issues = syncExternalDocument(instance.store, value, instance.registry);
+            if (issues.length > 0) instance.callbacks.onDocumentIssues?.(issues);
         }
     }, [value, instance]);
 

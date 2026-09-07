@@ -89,6 +89,9 @@ Throw or reject from `onSave` to signal failure: status goes to `error` and the 
 |---|---|
 | `title`, `icon` | `ReactNode`, `ComponentType<{ className?, style? }>` |
 | `documentName` | `ReactNode` |
+| `onDocumentIssues` | `(issues: ValidationIssue[]) => void` — the document handed in needed repairs on load (see `loadDocument`) |
+| `onBlockError` | `(error, context: BlockErrorContext) => void` — a block's `editRender` or inspector threw; the block shows a fallback, the editor keeps working |
+| `onRenderError` | `(error, info) => void` — something outside a block threw; the shell shows a message instead of unmounting the page |
 | `actions` | `ReactNode` — top-bar controls left of undo/redo |
 | `topBar` | `ReactNode \| false` |
 | `saveLabels` | `Partial<ShellSaveLabels>` |
@@ -270,14 +273,19 @@ Types: `InlineTextProps`, `InlineRichTextProps`, `BlockTypographyItemsProps`, `M
 | Export | Signature |
 |---|---|
 | `createDocument(registry, rootType, rootProps?)` | `BuilderDocument` |
+| `loadDocument(document, registry)` | `LoadedDocument` — shape check → `version` normalized → migrate → repair → validate; what the provider runs on every document it is handed. Throws only when nothing can be rebuilt (not a document, a newer version, a missing root) |
+| `repairDocument(document, registry)` | `LoadedDocument` — drops dangling ids, orphans and second parents, adds missing containers, backfills `defaultProps`, normalizes malformed nodes; every change is an issue in the result |
 | `migrateDocument(document)` | upgrades an older `version` |
 | `validateDocument(document, registry)` | `ValidationIssue[]` |
+| `safeUrl(value)` | `string \| undefined` — the URL when its scheme is allowed (`http`, `https`, `mailto`, `tel`, `sms`, or none), else `undefined`. What the email output applies to every `href`/`src` |
 
 `BuilderDocument` = `{ version, rootId, blocks: Record<BlockId, BlockNode> }`.
 `BlockNode` = `{ id, type, props, children: Record<string, BlockId[]>, visibility? }`.
 `BlockLocation` = `{ parentId, container, index }`.
 
 `ValidationIssue` = `{ code: ValidationIssueCode, severity: "error" | "warning", blockId?, message }`. Unknown block types are a **warning** — they render a placeholder rather than failing.
+`LoadedDocument` = `{ document, issues }` — every issue listed was repaired; the severity says how broken the input was, not whether loading succeeded.
+`BlockErrorContext` = `{ id, type, surface: "canvas" | "inspector", componentStack? }`.
 
 ### Traversal
 
@@ -310,6 +318,8 @@ From `/email/render` — see the [server-rendering guide](server-rendering.md).
 | `emailRenderers` | preset renderers by type |
 | `emailBlockDefaults` | preset default props by type |
 | `withVerticalGap(children, gap)` | table-safe vertical gap |
+| `safeUrl(value)` | the URL scheme allow-list the preset renderers apply — use it in your own |
+| `sanitizeUrlAttributes(html)` | blanks every `href`/`src`/`background` attribute whose value fails `safeUrl`; `renderEmail` runs it after merge-tag substitution |
 
 `RenderEmailOptions` = `BuildEmailTreeOptions` + `substituteTokens?`.
 `BuildEmailTreeOptions` = `{ values?, blocks? }`.
@@ -353,16 +363,18 @@ Value types, defaults and pure `toCss` converters — exported from the root **a
 | Value | Default | Converters |
 |---|---|---|
 | `BackgroundValue` | `defaultBackground` (+ `defaultBackgroundImage`) | `backgroundToCss` |
-| `BorderValue` | `defaultBorder` | `borderToCss`, `uniformCorners`, `cornerShorthand`, `normalizeBorderWidth`, `normalizeBorderRadius` |
+| `BorderValue` | `defaultBorder` | `borderToCss`, `borderStroke`, `uniformCorners`, `cornerShorthand`, `normalizeBorderWidth`, `normalizeBorderRadius`, `BORDER_STYLES` |
 | `EffectsValue` | `defaultEffects` | `effectsToCss`, `shadowToCss` |
 | `LayoutValue` | `defaultLayout` | `layoutToCss`, `horizontalToTextAlign`, `verticalToVerticalAlign`, `verticalAlignToCss` |
-| `SizeValue` | `defaultSize` | `sizeToCss`, `DEFAULT_WIDTH_PCT` |
+| `SizeValue` | `defaultSize` | `sizeToCss`, `DEFAULT_WIDTH_PCT`, `SIZE_MODES` |
 | `SpacingValue` | `defaultSpacing` | `paddingToCss`, `marginToCss`, `spacingToCss`, `uniformSides`, `symmetricSides`, `sideShorthand` |
 | `TypographyValue` | `defaultTypography` | `typographyToCss`, `EMAIL_FONT_STACKS`, `SYSTEM_FONT_STACK` |
 
 Also `parseColorToHexOpacity`, `hexToRgba`. Supporting types: `SideValues`, `CornerValues`, `ShadowValue`, `BackgroundImageValue`, and the unions `SizeMode`, `BackgroundType`, `BackgroundImageSize`, `BackgroundImagePosition`, `BorderStyle`, `HorizontalAlign`, `VerticalAlign`, `ShadowType`.
 
 Every converter accepts `undefined` and returns `{}`, so documents saved before a block gained a group degrade instead of crashing.
+
+**Value guards** — `cssColor`, `cssFontFamily`, `cssLength`, `cssNumber`, `cssKeyword`, `cssUrl`. Every converter runs a stored string through one of these before it reaches an inline style, so a colour of `#fff;background-image:url(…)` emits nothing rather than a second declaration in the email output. Use them in your own `styles.ts`; each returns `undefined` (or the fallback you pass) for anything it does not recognise.
 
 ### Rich text
 

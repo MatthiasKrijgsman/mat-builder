@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { safeUrl } from "../../core/safe-url.ts";
 import type {
     RichElementNode,
     RichHeadingNode,
@@ -182,12 +183,14 @@ const renderNode = (node: RichNode, key: number, options: RenderOptions, isLast 
         case "link":
         case "autolink": {
             const element = node as RichLinkNode;
+            // Stored link attributes are document data: the URL goes through
+            // the scheme allow-list, target/rel through a fixed vocabulary.
             return (
                 <a
                     key={key}
-                    href={element.url}
-                    target={element.target ?? undefined}
-                    rel={element.rel ?? undefined}
+                    href={safeUrl(element.url)}
+                    target={element.target === "_blank" ? "_blank" : undefined}
+                    rel={typeof element.rel === "string" && /^[a-z ]+$/i.test(element.rel) ? element.rel : undefined}
                     style={LINK_STYLES}
                 >
                     {renderChildren(element, options)}

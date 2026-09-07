@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { cssNumber } from "./sanitize.ts";
 
 /*
  * Spacing — per-side padding and margin. One box-model value per block;
@@ -26,11 +27,13 @@ export const defaultSpacing: SpacingValue = {
     margin: uniformSides(0),
 };
 
-/** Collapsing CSS shorthand: "24px", "24px 12px", "1px 2px 3px 4px" — keeps email HTML small. */
-export const sideShorthand = (s: SideValues): string => {
-    if (s.top === s.right && s.right === s.bottom && s.bottom === s.left) return `${s.top}px`;
-    if (s.top === s.bottom && s.left === s.right) return `${s.top}px ${s.right}px`;
-    return `${s.top}px ${s.right}px ${s.bottom}px ${s.left}px`;
+/** Collapsing CSS shorthand: "24px", "24px 12px", "1px 2px 3px 4px" — keeps
+ * email HTML small. Sides that are not numbers read as 0. */
+export const sideShorthand = (s: SideValues | null | undefined): string => {
+    const [top, right, bottom, left] = [s?.top, s?.right, s?.bottom, s?.left].map((n) => cssNumber(n));
+    if (top === right && right === bottom && bottom === left) return `${top}px`;
+    if (top === bottom && left === right) return `${top}px ${right}px`;
+    return `${top}px ${right}px ${bottom}px ${left}px`;
 };
 
 export const paddingToCss = (v?: SpacingValue): CSSProperties => (v ? { padding: sideShorthand(v.padding) } : {});
