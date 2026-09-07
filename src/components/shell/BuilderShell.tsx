@@ -1,4 +1,4 @@
-import { Component, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
+import { Component, useMemo, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
@@ -10,8 +10,9 @@ import { Inspector } from "../inspector/Inspector.tsx";
 import { LayersPanel } from "../layers/LayersPanel.tsx";
 import { Palette } from "../palette/Palette.tsx";
 import { dockedPanel, dottedSurface, transparentSurface } from "./chrome.ts";
+import { ShellContext, type ShellContextValue } from "./context.ts";
 import type { ShellSaveLabels } from "./labels.ts";
-import { ShellTopBar } from "./ShellTopBar.tsx";
+import { ShellTopBar, type ShellTopBarSlots } from "./ShellTopBar.tsx";
 
 /*
  * <BuilderShell> — the batteries-included editor (docs/04 §Shell): provider,
@@ -68,10 +69,16 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
     /** The open document's name — the trailing breadcrumb segment */
     documentName?: ReactNode;
-    /** Host controls in the top bar, left of undo/redo */
+    /** Host controls in the top bar, left of undo/redo (shorthand for
+     * `topBarSlots.actions`) */
     actions?: ReactNode;
+    /** Add to, replace or hide parts of the built-in top bar — see
+     * `ShellTopBarSlots` (docs/04 §Top bar). Ignored when `topBar` is set. */
+    topBarSlots?: ShellTopBarSlots;
     /** Replace the built-in top bar, or pass `false` to drop it (a host that
-     * brings its own header still gets the panels and canvas) */
+     * brings its own header still gets the panels and canvas). A replacement
+     * bar rendered here can use `useShellSave()`, `<UndoRedoButtons>` and
+     * `<SaveControls>` to keep the built-in wiring. */
     topBar?: ReactNode | false;
     saveLabels?: Partial<ShellSaveLabels>;
     /** Which side panels to dock; all shown by default */
@@ -126,6 +133,7 @@ export function BuilderShell(props: BuilderShellProps) {
         icon,
         documentName,
         actions,
+        topBarSlots,
         topBar,
         saveLabels,
         panels,
@@ -149,6 +157,9 @@ export function BuilderShell(props: BuilderShellProps) {
     });
 
     const save = useDocumentSave({ onSave, autoSaveMs, onError, warnOnUnload, saveShortcut });
+    // Shared with everything inside the shell — slot content, a replacement
+    // bar, a custom inspector — through useShellSave() (context.ts)
+    const shellContext = useMemo<ShellContextValue>(() => ({ save }), [save]);
 
     const handleChange = (document: BuilderDocument) => {
         save.onDocumentChange(document);
@@ -168,23 +179,26 @@ export function BuilderShell(props: BuilderShellProps) {
                 onDocumentIssues={onDocumentIssues}
                 onBlockError={onBlockError}
             >
-                <BuilderShellLayout
-                    save={save}
-                    title={title}
-                    icon={icon}
-                    documentName={documentName}
-                    actions={actions}
-                    topBar={topBar}
-                    saveLabels={saveLabels}
-                    panels={panels}
-                    collapseLeftPanel={collapseLeftPanel}
-                    canvas={canvas}
-                    inspector={inspector}
-                    className={className}
-                    style={style}
-                    theme={theme}
-                    colorScheme={colorScheme}
-                />
+                <ShellContext.Provider value={shellContext}>
+                    <BuilderShellLayout
+                        save={save}
+                        title={title}
+                        icon={icon}
+                        documentName={documentName}
+                        actions={actions}
+                        topBarSlots={topBarSlots}
+                        topBar={topBar}
+                        saveLabels={saveLabels}
+                        panels={panels}
+                        collapseLeftPanel={collapseLeftPanel}
+                        canvas={canvas}
+                        inspector={inspector}
+                        className={className}
+                        style={style}
+                        theme={theme}
+                        colorScheme={colorScheme}
+                    />
+                </ShellContext.Provider>
             </BuilderProvider>
         </ShellErrorBoundary>
     );
@@ -257,6 +271,7 @@ interface BuilderShellLayoutProps {
     icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
     documentName?: ReactNode;
     actions?: ReactNode;
+    topBarSlots?: ShellTopBarSlots;
     topBar?: ReactNode | false;
     saveLabels?: Partial<ShellSaveLabels>;
     panels?: BuilderShellPanels;
@@ -273,7 +288,7 @@ interface BuilderShellLayoutProps {
  * panels floating over it. Separate component so it renders inside the
  * provider (the panels are all context consumers). */
 function BuilderShellLayout(props: BuilderShellLayoutProps) {
-    const { save, title, icon, documentName, actions, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style, theme, colorScheme } = props;
+    const { save, title, icon, documentName, actions, topBarSlots, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style, theme, colorScheme } = props;
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
@@ -302,6 +317,7 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                         icon={icon}
                         documentName={documentName}
                         actions={actions}
+                        slots={topBarSlots}
                         save={save}
                         saveLabels={saveLabels}
                     />

@@ -60,6 +60,7 @@ export function EmailBuilder(props: EmailBuilderProps) {
         previewDebounceMs,
         renderBlocks,
         actions,
+        topBarSlots,
         title = "Email builder",
         icon = IconMail,
         ...shellProps
@@ -76,6 +77,30 @@ export function EmailBuilder(props: EmailBuilderProps) {
 
     const labels = { ...DEFAULT_MODE_LABELS, ...modeLabels };
 
+    // The Edit/Preview toggle leads the actions slot, ahead of whatever the
+    // host put there — through `actions` or `topBarSlots.actions` alike. A
+    // host placing the toggle elsewhere drives `mode` itself and passes
+    // `showModeToggle={false}`.
+    const hostActions = topBarSlots?.actions !== undefined ? topBarSlots.actions : actions;
+    const slots = {
+        ...topBarSlots,
+        actions: (
+            <>
+                {showModeToggle && (
+                    <TabButtons
+                        size="sm"
+                        tabs={(["edit", "preview"] as const).map((value) => ({
+                            label: labels[value],
+                            active: mode === value,
+                            onClick: () => setMode(value),
+                        }))}
+                    />
+                )}
+                {hostActions}
+            </>
+        ),
+    };
+
     return (
         <BuilderShell
             {...shellProps}
@@ -83,21 +108,7 @@ export function EmailBuilder(props: EmailBuilderProps) {
             rootType={EMAIL_ROOT_TYPE}
             title={title}
             icon={icon}
-            actions={
-                <>
-                    {showModeToggle && (
-                        <TabButtons
-                            size="sm"
-                            tabs={(["edit", "preview"] as const).map((value) => ({
-                                label: labels[value],
-                                active: mode === value,
-                                onClick: () => setMode(value),
-                            }))}
-                        />
-                    )}
-                    {actions}
-                </>
-            }
+            topBarSlots={slots}
             // Preview has nothing to drag in and no tree to walk — the left
             // column slides away and the preview gets the width.
             collapseLeftPanel={mode === "preview"}

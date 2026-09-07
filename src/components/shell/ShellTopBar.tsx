@@ -1,8 +1,9 @@
 import { Button } from "@matthiaskrijgsman/mat-ui";
-import type { ComponentType, CSSProperties, ReactNode } from "react";
+import { useContext, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import type { SaveController } from "../../react/save.ts";
 import { UndoRedoButtons } from "../toolbar/Toolbar.tsx";
 import { dockedPanel } from "./chrome.ts";
+import { ShellContext } from "./context.ts";
 import { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./labels.ts";
 
 /*
@@ -16,7 +17,32 @@ import { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./labels.ts";
  * document. Geometry mirrors the inspector's block header (`pl-4` to line the
  * chip up with the panel icons below it, semibold label at the inherited
  * size) so the bar reads as the same chrome.
+ *
+ * The bar is a fixed sequence of named slots (docs/04 §Top bar):
+ *
+ *     identity · leading ··············· actions · undoRedo · save · trailing
+ *
+ * Each slot renders its default when omitted, nothing when `false`/`null`,
+ * and whatever node a host passes otherwise — so a host adds a button,
+ * swaps the Save button for its own Publish flow, or drops undo/redo
+ * without touching the rest. A host that needs a different order brings its
+ * own bar (`<BuilderShell topBar>`), built from the same exports plus
+ * `useShellSave()`.
  */
+
+export interface ShellTopBarSlots {
+    /** The app chip + breadcrumb built from `title`/`icon`/`documentName` */
+    identity?: ReactNode;
+    /** Left side, after the identity — empty by default */
+    leading?: ReactNode;
+    /** Right side, before undo/redo — the `actions` prop is shorthand for this */
+    actions?: ReactNode;
+    undoRedo?: ReactNode;
+    /** The status line + Save button (`SaveControls`, shown when saving is enabled) */
+    save?: ReactNode;
+    /** Far right, after the save controls — empty by default */
+    trailing?: ReactNode;
+}
 
 export interface ShellTopBarProps {
     /** App name — the fixed first breadcrumb segment */
@@ -25,17 +51,29 @@ export interface ShellTopBarProps {
     icon?: ComponentType<{ className?: string; style?: CSSProperties }>;
     /** The open document's name — the trailing breadcrumb segment */
     documentName?: ReactNode;
-    /** Host controls, placed left of undo/redo (mode tabs, "Send test", …) */
+    /** Host controls, placed left of undo/redo (mode tabs, "Send test", …) —
+     * the same thing as `slots.actions` */
     actions?: ReactNode;
-    /** Omit, or pass a disabled controller, to hide the save UI */
+    /** The save controller the default save slot renders. Inside a shell it
+     * is read from context when omitted; omit it outside one (or pass a
+     * disabled controller) to hide the save UI */
     save?: SaveController;
     saveLabels?: Partial<ShellSaveLabels>;
+    /** Per-slot overrides — omit a slot for its default, `false` to hide it,
+     * a node to replace it */
+    slots?: ShellTopBarSlots;
     className?: string;
 }
 
+/** A slot's content: the default when the host said nothing, else exactly
+ * what the host passed (including `false`/`null`, which render nothing). */
+const slot = (value: ReactNode | undefined, fallback: () => ReactNode): ReactNode =>
+    value === undefined ? fallback() : value;
+
 export function ShellTopBar(props: ShellTopBarProps) {
-    const { title, icon: Icon, documentName, actions, save, saveLabels, className } = props;
-    const hasIdentity = Boolean(Icon || title || documentName);
+    const { title, icon, documentName, actions, save: saveProp, saveLabels, slots = {}, className } = props;
+    const shell = useContext(ShellContext);
+    const save = saveProp ?? shell?.save;
 
     return (
         <header
@@ -46,42 +84,55 @@ export function ShellTopBar(props: ShellTopBarProps) {
             className={`mat-builder-topbar mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-3 pl-4 pr-3 ${className ?? ""}`}
             style={dockedPanel}
         >
-            {/* min-w-0 all the way down so a long document name truncates
-                instead of shoving the trailing controls off the bar */}
-            {hasIdentity && (
-                <div className="flex min-w-0 items-center gap-3">
-                    {Icon && (
-                        <span
-                            aria-hidden
-                            className="flex size-7 shrink-0 items-center justify-center rounded-(--border-radius-menu-item)"
-                            style={{ backgroundColor: "var(--mat-builder-color-selection)" }}
-                        >
-                            <Icon className="size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
-                        </span>
-                    )}
-                    {/* Tighter gap than the chip's: the two segments read as one
-                        path, the chip as a separate object */}
-                    <div className="flex min-w-0 items-center gap-2">
-                        {title && <h1 className="shrink-0 font-semibold">{title}</h1>}
-                        {title && documentName && (
-                            <span aria-hidden className="shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
-                                /
-                            </span>
-                        )}
-                        {documentName && (
-                            <p className="truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                                {documentName}
-                            </p>
-                        )}
-                    </div>
-                </div>
+            {slot(slots.identity, () =>
+                icon || title || documentName ? <Identity icon={icon} title={title} documentName={documentName} /> : null,
             )}
+            {slots.leading}
             <div className="ml-auto flex shrink-0 items-center gap-3">
-                {actions}
-                <UndoRedoButtons />
-                {save?.enabled && <SaveControls save={save} labels={saveLabels} />}
+                {slot(slots.actions, () => actions)}
+                {slot(slots.undoRedo, () => <UndoRedoButtons />)}
+                {slot(slots.save, () => (save?.enabled ? <SaveControls save={save} labels={saveLabels} /> : null))}
+                {slots.trailing}
             </div>
         </header>
+    );
+}
+
+/** The app chip and the app / document breadcrumb — the default `identity` slot. */
+function Identity({
+    icon: Icon,
+    title,
+    documentName,
+}: Pick<ShellTopBarProps, "icon" | "title" | "documentName">) {
+    return (
+        // min-w-0 all the way down so a long document name truncates
+        // instead of shoving the trailing controls off the bar
+        <div className="flex min-w-0 items-center gap-3">
+            {Icon && (
+                <span
+                    aria-hidden
+                    className="flex size-7 shrink-0 items-center justify-center rounded-(--border-radius-menu-item)"
+                    style={{ backgroundColor: "var(--mat-builder-color-selection)" }}
+                >
+                    <Icon className="size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
+                </span>
+            )}
+            {/* Tighter gap than the chip's: the two segments read as one
+                path, the chip as a separate object */}
+            <div className="flex min-w-0 items-center gap-2">
+                {title && <h1 className="shrink-0 font-semibold">{title}</h1>}
+                {title && documentName && (
+                    <span aria-hidden className="shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
+                        /
+                    </span>
+                )}
+                {documentName && (
+                    <p className="truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                        {documentName}
+                    </p>
+                )}
+            </div>
+        </div>
     );
 }
 

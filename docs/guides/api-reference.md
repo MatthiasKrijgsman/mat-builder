@@ -93,7 +93,8 @@ Throw or reject from `onSave` to signal failure: status goes to `error` and the 
 | `onBlockError` | `(error, context: BlockErrorContext) => void` — a block's `editRender` or inspector threw; the block shows a fallback, the editor keeps working |
 | `onRenderError` | `(error, info) => void` — something outside a block threw; the shell shows a message instead of unmounting the page |
 | `actions` | `ReactNode` — top-bar controls left of undo/redo |
-| `topBar` | `ReactNode \| false` |
+| `topBarSlots` | `ShellTopBarSlots` — `{ identity?, leading?, actions?, undoRedo?, save?, trailing? }`: omit a slot for its default, `false` to hide it, a node to replace it (04 §Top bar) |
+| `topBar` | `ReactNode \| false` — replaces the whole bar; a replacement uses `useShellSave()`, `<UndoRedoButtons>` and `<SaveControls>` to keep the built-in wiring |
 | `saveLabels` | `Partial<ShellSaveLabels>` |
 | `panels` | `{ palette?, layers?, inspector? }` — all `true` by default |
 | `collapseLeftPanel` | `boolean` |
@@ -220,7 +221,7 @@ Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionCha
 | `<MergeTagValuesPanel>` | `className` |
 | `<Toolbar>` | `className`, `children` |
 | `<UndoRedoButtons>` | — |
-| `<ShellTopBar>` | `title`, `icon`, `documentName`, `actions`, `save`, `saveLabels`, `className` |
+| `<ShellTopBar>` | `title`, `icon`, `documentName`, `actions`, `slots` (`ShellTopBarSlots`), `save` (read from the shell when omitted), `saveLabels`, `className` |
 | `<SaveControls>` | `save`, `labels?` |
 | `<EmailPreview>` (from `/email`) | `className`, `initialWidth`, `initialHeight`, `debounceMs`, `blocks` |
 
@@ -241,6 +242,7 @@ Surface styles used by the shell, exported so a custom layout can match: `docked
 | `useMergeTagUsage()` | `MergeTagUsage[]` |
 | `useRenderedBlockSize(id)` | `RenderedSize \| null` — measured px; mark the box with `SIZE_BOX_CLASS` |
 | `useDocumentSave(options)` | `SaveController` |
+| `useShellSave()` | `SaveController` — the shell's own controller, for components rendered inside `<BuilderShell>`/`<EmailBuilder>` (a top-bar slot, a replacement bar); throws outside a shell |
 
 **`EditorActions`** — `select`, `hover`, `setArtboardSize`, `startEditing`, `stopEditing`, `setDrag`, `setExpanded`, `toggleExpanded`, `revealBlock`, `insertBlock(spec \| type, at)`, `moveBlock`, `updateProps`, `setVisibility`, `setPreviewValue`, `setPreviewValues`, `removeBlock`, `duplicateBlock`, `loadDocument`, `undo`, `redo`.
 

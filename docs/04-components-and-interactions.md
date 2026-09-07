@@ -38,7 +38,7 @@ BuilderProvider                    context, store, keyboard shortcuts, DnD monit
 └── Toolbar                        undo/redo, zoom/device width, preview toggle, custom slots
 
 BuilderShell                       all of the above, assembled + docked + saving
-├── ShellTopBar                    app/document breadcrumb, host actions, undo/redo, save
+├── ShellTopBar                    named slots: identity · leading · actions · undoRedo · save · trailing
 │   └── SaveControls               status line ("Unsaved changes" / "Saving…" / …) + Save button
 └── (the panels and canvas above, in the docked layout)
 ```
@@ -127,7 +127,8 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
   defaultValue={document}                    // or value/onChange for controlled
   onSave={(doc) => api.save(doc)}            // Save button + ⌘S; autoSaveMs to debounce
   documentName="Aura One launch" title="Email builder" icon={IconMail}
-  actions={<Button>Send test</Button>}       // extra top-bar controls
+  actions={<Button>Send test</Button>}       // extra top-bar controls (= topBarSlots.actions)
+  topBarSlots={{ save: <Publish /> }}        // add to / replace / hide parts of the bar (§Top bar)
   panels={{ layers: false }}                 // any panel can be dropped
   canvas={<EmailPreview />}                  // swap the editing surface
   inspector={<MergeTagValuesPanel />}        // …and the right-hand panel
@@ -138,6 +139,7 @@ Thin bar of independent, individually usable controls: `<UndoRedoButtons />`, `<
 - **Layout**: one continuous dotted surface (`dottedSurface`, exported with `dockedPanel`/`transparentSurface` from the same module) with the top bar in flow above a work area, palette + layers docked left, inspector docked right, canvas between them. Hiding a side panel gives its width back to the canvas; `collapseLeftPanel` does the same as an animation instead — the palette/layers column slides out to the left, still mounted (so its state survives), while the canvas edge follows it (06 §Preview mode). `canvas` and `inspector` each replace their slot's default component — the pair is how `<EmailBuilder>` swaps both surfaces on the mode toggle (06 §Preview mode) while the panels, top bar and saving stay put. `topBar={false}` (or a node) replaces the bar for hosts bringing their own header.
 - **Document**: `value`/`defaultValue` exactly as the provider takes them; with neither, `rootType` seeds a blank document through `createDocument` (the root's `onCreate` fills it).
 - **Blocks**: the shell takes a final list. The presets' wrappers (`<EmailBuilder blocks={…}>`) merge host definitions into the preset with `mergeBlockDefinitions` — same `type` replaces in place, new types append — because `createRegistry` throws on duplicates.
+- **Top bar** — three levels of control, matching the ladder in 07. The bar is a fixed sequence of named slots, `identity · leading ··· actions · undoRedo · save · trailing` (`ShellTopBarSlots`); `topBarSlots` on the shell (and `<EmailBuilder>`) fills them. *Add:* `topBarSlots={{ trailing: <HelpMenu /> }}` — `leading` and `trailing` are empty by default, `actions` is where `actions` already went. *Replace or hide:* `topBarSlots={{ save: <PublishButton />, undoRedo: false }}` — a slot renders its default when omitted, nothing for `false`/`null`, the node otherwise. *Bring your own:* `topBar={<MyBar />}` replaces the bar; everything the built-in one is made of is exported (`ShellTopBar` itself takes `slots`, `SaveControls`, `UndoRedoButtons`, `dockedPanel`), and **`useShellSave()`** hands any component inside the shell the save controller — status, `dirty`, `save()` — so a replacement bar or a custom Publish button keeps the built-in saving (manual save, ⌘S, autosave, the unload guard) instead of losing it. Order is deliberately not configurable: a host that needs a different order is at level three, where it owns the markup. `<EmailBuilder>` keeps its Edit/Preview toggle at the head of `actions` whichever way the host fills that slot; a host that wants it elsewhere drives `mode` itself and passes `showModeToggle={false}`.
 - **Saving** (`useDocumentSave`, exported for custom layouts): host state, deliberately **not** in the editor store, and driven by the provider's `onChange` rather than by watching the document. That is what makes an external `value` replacement land clean: `onChange` fires only for committed user commands, while a document loaded from the server is already saved. `onSave` gets the document; hosts needing HTML call `renderEmail` themselves (`./email/render`) — the shell never renders output on the save path. Manual save is a Save button plus ⌘/Ctrl+S (bound on the window, so it beats the browser's own save dialog from anywhere in the app); `autoSaveMs` adds debounced background saves on top. Status runs `idle → dirty → saving → saved`, a rejected `onSave` shows "Save failed" and leaves the edits pending so the button is the retry, and unsaved edits arm a `beforeunload` guard. Wording is overridable (`saveLabels`) for non-English hosts.
 
 ## Interaction model

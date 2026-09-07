@@ -86,7 +86,9 @@ export type { EditorState, EditorActions, EditingTarget, BlockErrorContext } fro
 // The assembled editor: provider + docked layout + panels + saving (docs/04 §Shell).
 // Block-set agnostic — the email builder is <EmailBuilder> in ./email.
 export { BuilderShell, type BuilderShellProps, type BuilderShellPanels } from "./components/shell/BuilderShell.tsx";
-export { ShellTopBar, SaveControls, type ShellTopBarProps } from "./components/shell/ShellTopBar.tsx";
+export { ShellTopBar, SaveControls, type ShellTopBarProps, type ShellTopBarSlots } from "./components/shell/ShellTopBar.tsx";
+// The shell's save controller, for host components in a top-bar slot or a replacement bar
+export { useShellSave } from "./components/shell/context.ts";
 export { DEFAULT_SAVE_LABELS, type ShellSaveLabels } from "./components/shell/labels.ts";
 export { dockedPanel, dottedSurface, transparentSurface } from "./components/shell/chrome.ts";
 // Theming — token overrides per instance, and the colour scheme (docs/guides/theming.md)

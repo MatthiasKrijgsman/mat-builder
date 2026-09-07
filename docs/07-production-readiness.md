@@ -26,7 +26,7 @@ Level 2 was rated "works, undocumented" when this was written, which was too gen
 | Level | Consumer writes | Controls | Status |
 |---|---|---|---|
 | 0 | `<EmailBuilder defaultValue onSave />` | nothing — batteries included | ✅ ships |
-| 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial |
+| 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial (theme, panels, top bar ✅) |
 | 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works (see below) |
 | 3 | `<BuilderProvider>` + components | their own layout entirely | ✅ ships |
 | 4 | `./email/render`, `core` exports | server rendering, validation, migration, own pipeline | ✅ ships |
@@ -176,6 +176,10 @@ No error boundary anywhere in the tree. A `editRender` that throws on a malforme
 
 - [x] Error boundary per block on the canvas, rendering the existing missing-block fallback treatment plus the error. *(2026-09-07: `BlockErrorBoundary` around every block render — primitive or composed — and every inspector form, reset when the block's props change; `ShellErrorBoundary` around the shell.)*
 - [x] `onError?: (error, info) => void` on the provider/shell so hosts can wire Sentry. *(2026-09-07: `onBlockError` on the provider, `onRenderError` on the shell; `onDocumentIssues` for documents that needed repair on load.)*
+
+### B8. Top bar customization ✅ (2026-09-07)
+
+A host could add controls in one spot (`actions`) or replace the whole bar — and a replaced bar lost saving, because the save controller lived inside the shell. Now: named slots (`topBarSlots`: `identity · leading · actions · undoRedo · save · trailing`, omit = default, `false` = hidden, node = replaced) on the shell and `<EmailBuilder>`, and `useShellSave()` so a custom Publish button or a replacement bar keeps the built-in save wiring. See 04 §Top bar.
 
 ### B7. Documentation is design rationale, not an integration guide — GUIDES DONE
 
