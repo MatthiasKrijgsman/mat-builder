@@ -47,9 +47,9 @@ Level 2 was rated "works, undocumented" when this was written, which was too gen
 
 Tasks:
 
-- [ ] Pick the registry option; buy the plan if npm private.
-- [ ] `publishConfig.access` → `"restricted"` (currently `"public"`).
-- [ ] Add the missing manifest fields — **`license`, `description`, `repository`, `author`, `homepage`, `engines`** are all absent today. `license: "UNLICENSED"` for private.
+- [x] Pick the registry option; buy the plan if npm private. *(2026-09-07: the repo went public, so it is the third row — **public npm, MIT**, same as mat-ui. No tokens to distribute.)*
+- [x] `publishConfig.access` → `"public"` on npmjs (the GitHub Packages registry was tried and dropped: a scoped `.npmrc` would route mat-ui there too).
+- [x] Add the missing manifest fields — `license` (MIT, with a `LICENSE` file), `description`, `keywords`, `repository`, `bugs`, `author`, `homepage`, `engines` (node ≥ 20). README links are absolute so npmjs.com renders them.
 - [ ] Write `INSTALL.md` (or a README section) with the exact `.npmrc` snippet a consumer pastes, using an env var for the token — never a literal.
 - [ ] Decide token rotation: one token per consuming company, revocable independently.
 
@@ -74,8 +74,8 @@ The only workflow deployed the site. Tests, types and lint had never run in CI.
 26 modified files + 6 new (merge tags, conditional visibility, `MergeTagValuesPanel`, `VisibilityGroup`, `ConditionalMarkers`) — a substantial feature sitting unversioned.
 
 - [ ] Land it, with the doc updates it already carries.
-- [ ] Then cut **0.1.0** (not 0.0.3 — first real release, and it signals "0.x, breaking changes allowed" rather than "prototype").
-- [ ] Start `CHANGELOG.md`. Manual `0.x` bumps are fine until two consumers are live; adopt changesets when three teams are waiting on releases.
+- [x] Then cut **0.1.0** (not 0.0.3 — first real release, and it signals "0.x, breaking changes allowed" rather than "prototype"). *(2026-09-07)*
+- [x] Start `CHANGELOG.md`. *(2026-09-07)* Manual `0.x` bumps are fine until two consumers are live; adopt changesets when three teams are waiting on releases.
 
 ### A5. Tailwind preflight leaks into the host app — FIXED
 

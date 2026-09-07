@@ -1,6 +1,27 @@
 {
   "name": "@matthiaskrijgsman/mat-builder",
-  "version": "0.0.2",
+  "version": "0.1.0",
+  "description": "Headless-first React drag-and-drop block builder: document model, undo/redo, Pragmatic drag and drop, and composable editor UI. Ships an email builder preset.",
+  "keywords": [
+    "react",
+    "drag-and-drop",
+    "block-builder",
+    "page-builder",
+    "email-builder",
+    "headless",
+    "pragmatic-drag-and-drop",
+    "react-email"
+  ],
+  "homepage": "https://matthiaskrijgsman.github.io/mat-builder/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MatthiasKrijgsman/mat-builder.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MatthiasKrijgsman/mat-builder/issues"
+  },
+  "author": "Matthias Krijgsman",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -37,6 +58,9 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "dev:watch": "vite build --watch",

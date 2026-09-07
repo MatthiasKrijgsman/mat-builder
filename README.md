@@ -24,23 +24,23 @@ import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 ```
 
 Installing it is more than one package — the peer list and why each entry is on it are in
-[Getting started](docs/guides/getting-started.md#21-the-dependencies).
+[Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md#21-the-dependencies).
 
-Need a different layout? Every part it is built from — `BuilderProvider`, `Canvas`, `Palette`, `Inspector`, `LayersPanel`, `useDocumentSave` — is exported separately (see [docs/04](docs/04-components-and-interactions.md)).
+Need a different layout? Every part it is built from — `BuilderProvider`, `Canvas`, `Palette`, `Inspector`, `LayersPanel`, `useDocumentSave` — is exported separately (see [docs/04](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/04-components-and-interactions.md)).
 
 ## Guides
 
 | Guide | For |
 |---|---|
-| [Getting started](docs/guides/getting-started.md) | install → first builder → saving → rendering |
-| [Custom blocks](docs/guides/custom-blocks.md) | your own blocks, patterns and composed blocks |
-| [Server rendering](docs/guides/server-rendering.md) | `renderEmail`, personalization, conditional blocks |
-| [Theming](docs/guides/theming.md) | tokens, dark mode, the `theme` prop |
-| [API reference](docs/guides/api-reference.md) | every export, by level of control |
+| [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md) | install → first builder → saving → rendering |
+| [Custom blocks](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/custom-blocks.md) | your own blocks, patterns and composed blocks |
+| [Server rendering](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/server-rendering.md) | `renderEmail`, personalization, conditional blocks |
+| [Theming](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/theming.md) | tokens, dark mode, the `theme` prop |
+| [API reference](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/api-reference.md) | every export, by level of control |
 
 ## Status
 
-Early development — see [docs/README.md](docs/README.md) for the architecture plan, agreed decisions, and build order.
+Early development — see [docs/README.md](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/README.md) for the architecture plan, agreed decisions, and build order.
 
 ## Development
 
