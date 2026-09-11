@@ -58,8 +58,8 @@ importers:
         specifier: 0.45.0
         version: 0.45.0
       '@matthiaskrijgsman/mat-ui':
-        specifier: ^0.0.67
-        version: 0.0.67(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.0.68
+        version: 0.0.68(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@react-email/render':
         specifier: ^2.0.10
         version: 2.0.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -93,6 +93,9 @@ importers:
       lexical:
         specifier: 0.45.0
         version: 0.45.0
+      postcss:
+        specifier: ^8.5.28
+        version: 8.5.28
       react:
         specifier: ^19.1.1
         version: 19.2.7
@@ -142,8 +145,8 @@ importers:
         specifier: workspace:*
         version: link:..
       '@matthiaskrijgsman/mat-ui':
-        specifier: ^0.0.67
-        version: 0.0.67(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.0.68
+        version: 0.0.68(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tabler/icons-react':
         specifier: ^3.34.1
         version: 3.44.0(react@19.2.7)
@@ -821,8 +824,8 @@ packages:
     peerDependencies:
       yjs: '>=13.5.22'
 
-  '@matthiaskrijgsman/mat-ui@0.0.67':
-    resolution: {integrity: sha512-bdEVvwa1DVxpN65H2VTHrKp5G5j9GtEWLLi6D67CWtd1xP4iUgRD4+88gjgc72qhH1tuZJ22TlFCpogbgkwCHw==}
+  '@matthiaskrijgsman/mat-ui@0.0.68':
+    resolution: {integrity: sha512-Ry/p5639c0BD9TnJbJnlaQVMwL7dxqNM3uwe1c2o1ewVNckdNkFWIallRJFGQF/t/AAgMthYP09H/xgzbwn+Zg==}
     peerDependencies:
       '@lexical/link': 0.45.0
       '@lexical/list': 0.45.0
@@ -1959,6 +1962,11 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nanoid@3.3.19:
+    resolution: {integrity: sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
   nanoid@5.1.16:
     resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
@@ -2065,8 +2073,8 @@ packages:
     resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.16:
-    resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
+  postcss@8.5.28:
+    resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -3157,7 +3165,7 @@ snapshots:
       lexical: 0.45.0
       yjs: 13.6.31
 
-  '@matthiaskrijgsman/mat-ui@0.0.67(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@matthiaskrijgsman/mat-ui@0.0.68(@lexical/link@0.45.0)(@lexical/list@0.45.0)(@lexical/react@0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31))(@lexical/rich-text@0.45.0)(@lexical/selection@0.45.0)(@lexical/utils@0.45.0)(lexical@0.45.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@floating-ui/react': 0.27.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@lexical/link': 0.45.0
@@ -3380,7 +3388,7 @@ snapshots:
       '@alloc/quick-lru': 5.2.0
       '@tailwindcss/node': 4.3.2
       '@tailwindcss/oxide': 4.3.2
-      postcss: 8.5.16
+      postcss: 8.5.28
       tailwindcss: 4.3.2
 
   '@tailwindcss/vite@4.3.2(vite@7.3.6(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0))':
@@ -4184,6 +4192,8 @@ snapshots:
 
   nanoid@3.3.15: {}
 
+  nanoid@3.3.19: {}
+
   nanoid@5.1.16: {}
 
   natural-compare@1.4.0: {}
@@ -4278,9 +4288,9 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.16:
+  postcss@8.5.28:
     dependencies:
-      nanoid: 3.3.15
+      nanoid: 3.3.19
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -4583,7 +4593,7 @@ snapshots:
       esbuild: 0.28.1
       fdir: 6.5.0(picomatch@4.0.5)
       picomatch: 4.0.5
-      postcss: 8.5.16
+      postcss: 8.5.28
       rollup: 4.62.2
       tinyglobby: 0.2.17
     optionalDependencies:
