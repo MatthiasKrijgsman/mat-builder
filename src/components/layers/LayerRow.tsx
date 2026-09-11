@@ -18,7 +18,7 @@ import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType, type DragLike, resolveCombineLocation } from "../../dnd/resolve.ts";
 import { scrollBlockIntoView } from "../../react/canvas-scroll.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
+import { useBlockNode, useBuilderFeatures, useBuilderState } from "../../react/hooks.ts";
 
 /*
  * LayerRow — one tree row (docs/04 §LayersPanel, docs/05 §2). Uses the
@@ -74,6 +74,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
   const actions = useBuilderState((s) => s.actions);
   const isSelected = useBuilderState((s) => s.selectedId === id);
   const isHovered = useBuilderState((s) => s.hoveredId === id);
+  const features = useBuilderFeatures();
   const isExpanded = useBuilderState((s) => s.expanded.has(id));
   const isDragSource = useBuilderState((s) => s.drag?.kind === "move-block" && s.drag.blockId === id);
 
@@ -221,7 +222,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         <span className="min-w-0 flex-1 truncate font-medium" style={ { color: labelColor } }>{ label }</span>
         { /* A block that only renders for some recipients looks identical to
              every other one on the canvas — the tree is where that reads. */ }
-        { hasVisibilityRules(node.visibility) && (
+        { features.visibility && hasVisibilityRules(node.visibility) && (
           <IconFilter
             className="size-3.5 shrink-0"
             style={ { color: isSelected ? mutedColor : "var(--mat-builder-color-conditional-fg)" } }
@@ -243,6 +244,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
                 style={ {
                   paddingLeft: ROW_PAD_LEFT + (depth + 1) * INDENT_PX + GLYPH_PX + GAP_PX,
                   color: "var(--mat-builder-color-panel-muted-fg)",
+                  fontFamily: "var(--mat-builder-font-family-eyebrow)",
                 } }
               >
                 { definition?.containers?.find((c) => c.name === containerName)?.label ?? containerName }

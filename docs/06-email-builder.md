@@ -182,6 +182,8 @@ interface VisibilityRule {
 
 The export stays free of ESP template syntax — no `{{#if}}`/Liquid/`*|IF:|*` wrappers. That is the model for a host that renders per recipient from its own backend. Emitting conditionals for the ESP to evaluate is the other half of the problem and is **not built**: it needs a consumer-supplied syntax adapter (the library assumes no delimiter syntax for tokens, so it cannot assume one for conditionals either), and React escapes `"`/`&`/`<` in text children, so a wrapper like `{{#if plan == "pro"}}` would have to be emitted as a sentinel and string-replaced after `render()`. The rule model is the same either way, so it can be added without reworking documents.
 
+Until it is, a host that compiles once and personalises afterwards has a feature it cannot honour: rules render for everyone (no `values`) or for no one (`values: {}`), and the authoring UI promises otherwise. `features={{ visibility: false }}` on the provider/shell/`<EmailBuilder>` hides that UI — the inspector group, the canvas badges, the layer-tree marker — while stored rules keep loading and exporting, so nothing is stripped from documents and the switch can be flipped back once the adapter exists. It is a `BuilderFeatures` switch (04 §Shell), not a document setting: the document does not know how it will be sent.
+
 ### The editing surface
 
 `VisibilityGroup` (`src/components/inspector/VisibilityGroup.tsx`) renders the group under whatever the block's own inspector shows, with `InspectorGroup`'s `meta` slot carrying the rule count so it survives collapsing:

@@ -241,6 +241,28 @@ Already flagged as open questions in `docs/README.md`; worth pricing now so we c
 
 ---
 
+### C6. First external integration — the Mailcrate feedback (2026-09-09)
+
+A Next 16 / React 19 / **Tailwind 3** host embedding the editor and compiling with `/email/render` in a NestJS API, personalised afterwards with Liquid. The full document is the source of the items below; the ones checked shipped in **0.1.1**.
+
+- [x] `features={{ visibility: false }}` — hide the conditional-visibility UI for a compile-once host (06 §Conditional visibility).
+- [x] `renderEmail(doc, { pretty: false })` — the prettifier could break a line inside a merge-tag token.
+- [x] `renderEmail(doc, { strict: true })` — throw on an unknown block type instead of rendering nothing.
+- [x] `loadDocument` / `validateDocument` / `repairDocument` / `migrateDocument` / `DOCUMENT_VERSION` from `/email/render`, registry optional — validate on the server without the editor or a hand-rolled shape check.
+- [x] `"./package.json"` in `exports`.
+- [x] Tokens: `artboard-radius`, `font-family-eyebrow`, `palette-icon-fg` (one colour over the seven tints); the selected layer row is a wash rather than a filled bar; theming.md says which tokens are shell-level.
+- [x] `minWidth` + `smallScreenNotice` on the shell (04 §Shell).
+- [x] Docs: the email peers are optional only for a core-only consumer — a bundler resolves the preview's dynamic import at build time.
+- [ ] **CSS packaging for a non-Tailwind-4 host** (the largest item): build mat-ui and mat-builder with a Tailwind `prefix` so no utility collides with the host's, and ship a second, unlayered stylesheet entry scoped to the builder's roots plus `[data-floating-ui-portal]`. With layers intact a Tailwind 3 host's unlayered rules beat every vendor rule; flattened without a prefix, the vendor's utilities leak into the host. Both halves are needed, in both packages.
+- [ ] Responsive stacking in the output: a `<style>` media query stacking horizontal-container columns below ~600px, `stackOnMobile` per container.
+- [ ] The ESP conditional-emission adapter (C5).
+- [ ] Keyboard block moving — `moveBlock` exists, nothing binds it.
+- [ ] `labels` dictionary (B3).
+- [ ] A real-client pass (C1).
+- [ ] `--font-family-numeric` in mat-ui for number fields, with `font-variant-numeric: tabular-nums`.
+
+---
+
 ## D. Confidence — the tests we don't have
 
 252 tests, all of them pure-logic or renderer tests. There is **no component or interaction test in the repo** (no jsdom, no testing-library in devDependencies). Drop *resolution* is unit-tested (`dnd/resolve.test.ts`, 7 tests); the drag *behavior* is not tested at all — and `@atlaskit/pragmatic-drag-and-drop-unit-testing` is already installed and unused.

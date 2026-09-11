@@ -74,6 +74,7 @@
     --mat-builder-color-artboard-bg: #ffffff;
     /* The frame AROUND the paper is chrome, not content — a white page needs a
        hairline to sit on a light canvas, and a different one on a dark canvas. */
+    --mat-builder-artboard-radius: 8px;
     --mat-builder-color-artboard-border: #e7e5e4;
     --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(229 231 235 / 0.5), 0 4px 6px -4px rgb(229 231 235 / 0.5);
     --mat-builder-color-resize-handle: #d4d4d8;
@@ -130,9 +131,16 @@
     --mat-builder-color-panel-fg: #3f3f46;
     --mat-builder-color-panel-muted-fg: #71717a;
     --mat-builder-color-panel-border: #e4e4e7;
-    /* Layer tree rows */
-    --mat-builder-color-layer-row-selected-bg: var(--mat-builder-color-selection);
-    --mat-builder-color-layer-row-selected-fg: #ffffff;
+    /* Section eyebrows — the small uppercase labels heading an inspector
+       group, a palette category, a named container in the tree. `inherit`
+       keeps the panel font; a host whose system sets these in mono points
+       the one token at it. */
+    --mat-builder-font-family-eyebrow: inherit;
+    /* Layer tree rows. The selected row is a WASH of the selection colour
+       with the ordinary panel text over it, not a filled bar: the canvas ring
+       already marks the selection, and a second solid element competes. */
+    --mat-builder-color-layer-row-selected-bg: color-mix(in srgb, var(--mat-builder-color-selection) 12%, transparent);
+    --mat-builder-color-layer-row-selected-fg: var(--mat-builder-color-panel-fg);
     --mat-builder-color-layer-row-hover-bg: color-mix(in srgb, var(--mat-builder-color-panel-fg) 6%, transparent);
     /* Field/group labels in panels — also feeds mat-ui's InputLabel via
        --color-input-label-text (see style.css panel scope) */
@@ -140,6 +148,11 @@
     /* Scrollbar thumb on all builder surfaces (track is always transparent) */
     --mat-builder-color-scrollbar-thumb: rgb(0 0 0 / 0.2);
 
+    /* One colour for every block icon (palette, layers, inspector header),
+       overriding the seven category tints below. `initial` is the
+       guaranteed-invalid value, so `var(--mat-builder-palette-icon-fg, tint)`
+       falls through to the tint until a host sets this. */
+    --mat-builder-palette-icon-fg: initial;
     /* Palette category tints — assigned to categories in registry order,
        cycling. Each set is tile background / tile border / icon color.
        The set count must match PALETTE_TINT_COUNT in Palette.tsx. */
@@ -178,8 +191,6 @@
     --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
     /* Selection reads washed out on a dark ground — one step brighter */
     --mat-builder-color-selection: #60a5fa;
-    /* …which makes white text on the selected layer row too low-contrast */
-    --mat-builder-color-layer-row-selected-fg: #09090b;
     --mat-builder-color-chrome-tag-fg: #09090b;
     /* A 7% shadow is invisible on near-black */
     --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.5);
@@ -219,7 +230,6 @@
     --mat-builder-color-artboard-border: #e7e5e4;
     --mat-builder-color-artboard-shadow: 0 10px 15px -3px rgb(229 231 235 / 0.5), 0 4px 6px -4px rgb(229 231 235 / 0.5);
     --mat-builder-color-selection: #3b82f6;
-    --mat-builder-color-layer-row-selected-fg: #ffffff;
     --mat-builder-color-chrome-tag-fg: #ffffff;
     --mat-builder-chrome-shadow-hover: 0 6px 16px rgb(0 0 0 / 0.07);
     --mat-builder-color-drop-blocked: #f59e0b;
@@ -278,6 +288,7 @@
     --mat-builder-color-resize-handle-active: var(--mat-builder-color-selection);
     --mat-builder-color-rule-accent: var(--mat-builder-color-selection);
     --mat-builder-color-conditional-ring: color-mix(in srgb, var(--mat-builder-color-conditional-fg) 30%, transparent);
-    --mat-builder-color-layer-row-selected-bg: var(--mat-builder-color-selection);
+    --mat-builder-color-layer-row-selected-bg: color-mix(in srgb, var(--mat-builder-color-selection) 12%, transparent);
+    --mat-builder-color-layer-row-selected-fg: var(--mat-builder-color-panel-fg);
     --mat-builder-color-layer-row-hover-bg: color-mix(in srgb, var(--mat-builder-color-panel-fg) 6%, transparent);
 }

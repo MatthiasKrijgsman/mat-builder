@@ -108,7 +108,10 @@ export function Palette({ className }: PaletteProps) {
         <div key={ category } className="flex flex-col">
           <p
             className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider"
-            style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+            style={ {
+              color: "var(--mat-builder-color-panel-muted-fg)",
+              fontFamily: "var(--mat-builder-font-family-eyebrow)",
+            } }
           >
             { category }
           </p>

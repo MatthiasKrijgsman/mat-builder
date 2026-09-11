@@ -236,10 +236,11 @@ export function Artboard(props: ArtboardProps) {
                     transition={REVEAL_TRANSITION}
                 >
                     <div
-                        className="mat-builder-artboard-frame overflow-hidden rounded-lg shadow-lg border"
+                        className="mat-builder-artboard-frame overflow-hidden border"
                         style={{
                             width: size.width,
                             height: size.height,
+                            borderRadius: "var(--mat-builder-artboard-radius)",
                             backgroundColor: "var(--mat-builder-color-artboard-bg)",
                             // The frame AROUND the paper is chrome, so it follows the
                             // colour scheme even though the paper itself never does.

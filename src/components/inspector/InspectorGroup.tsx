@@ -48,7 +48,10 @@ export function InspectorGroup({ label, defaultOpen = true, meta, children }: In
       >
         <span
           className="truncate text-[11px] font-medium uppercase tracking-wider"
-          style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
+          style={ {
+            color: "var(--mat-builder-color-panel-muted-fg)",
+            fontFamily: "var(--mat-builder-font-family-eyebrow)",
+          } }
         >
           { label }
         </span>

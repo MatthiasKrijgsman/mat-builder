@@ -127,25 +127,37 @@ Most of a convincing retheme is these:
 
 ---
 
-## 4. Derived tokens — leave them alone
+## 4. Derived tokens — where each token is declared
 
-Nine tokens are defined in terms of others:
+Every token is declared on `:root`. Ten of them are **derived** — defined in terms of another token — and those ten are declared a second time on `.mat-builder-shell`. Which group a token is in decides how you override it (below).
 
-| Token | Derived from |
-|---|---|
-| `color-hover` | `color-selection` |
-| `color-drop-indicator` | `color-selection` |
-| `color-drop-parent` | `color-drop-indicator` |
-| `color-resize-handle-active` | `color-selection` |
-| `color-rule-accent` | `color-selection` |
-| `color-layer-row-selected-bg` | `color-selection` |
-| `chrome-shadow-drag` | `color-selection` |
-| `color-layer-row-hover-bg` | `color-panel-fg` |
-| `color-conditional-ring` | `color-conditional-fg` |
+| Token | Derived from | Declared on |
+|---|---|---|
+| `color-hover` | `color-selection` | `:root` and `.mat-builder-shell` |
+| `color-drop-indicator` | `color-selection` | `:root` and `.mat-builder-shell` |
+| `color-drop-parent` | `color-drop-indicator` | `:root` and `.mat-builder-shell` |
+| `color-resize-handle-active` | `color-selection` | `:root` and `.mat-builder-shell` |
+| `color-rule-accent` | `color-selection` | `:root` and `.mat-builder-shell` |
+| `color-layer-row-selected-bg` | `color-selection` (a 12% wash) | `:root` and `.mat-builder-shell` |
+| `color-layer-row-selected-fg` | `color-panel-fg` | `:root` and `.mat-builder-shell` |
+| `chrome-shadow-drag` | `color-selection` | `:root` and `.mat-builder-shell` |
+| `color-layer-row-hover-bg` | `color-panel-fg` | `:root` and `.mat-builder-shell` |
+| `color-conditional-ring` | `color-conditional-fg` | `:root` and `.mat-builder-shell` |
+| every other token | — | `:root` only |
 
 Set `--mat-builder-color-selection` and all seven of its dependants follow. Override a derived token directly and you break that — which is occasionally what you want (a drop indicator that is deliberately *not* the selection colour), but do it knowing you have severed the link.
 
-This is also why the built-in dark set is 28 declarations rather than 68: derived tokens need no dark value.
+This is also why the built-in dark set is 27 declarations rather than 71: derived tokens need no dark value.
+
+**Overriding a derived token from CSS.** Because the shell re-declares them, a `:root` rule for one of the ten does nothing — the shell's own declaration wins for everything inside it. Target the shell instead:
+
+```css
+.mat-builder-shell {
+    --mat-builder-color-layer-row-selected-bg: var(--brand-selection-wash);
+}
+```
+
+The `theme` prop lands inline on the shell and needs no such care.
 
 > **The subtlety that makes this work.** A `var()` inside a custom property is substituted where the property is **declared**, not where it is read. If these lived only on `:root`, they would already hold a resolved colour by the time the shell inherited them — so `theme={{ "color-selection": … }}`, which sets tokens inline on the shell, would change the source and nothing downstream. They are therefore re-declared on `.mat-builder-shell`, which re-runs the substitution against whatever that element resolves. If you add your own derived token, declare it at the same level as the override you expect to drive it.
 
@@ -170,7 +182,6 @@ This is also why the built-in dark set is 28 declarations rather than 68: derive
 | `color-resize-handle` | `#d4d4d8` | `#3f3f46` | artboard resize bars |
 | `color-resize-handle-hover` | `#a1a1aa` | `#71717a` | …under the pointer |
 | `color-chrome-tag-fg` | `#ffffff` | `#09090b` | text in the block name pill |
-| `color-layer-row-selected-fg` | `#ffffff` | `#09090b` | text on the selected layer row |
 | `color-scrollbar-thumb` | `rgb(0 0 0 / 0.2)` | `rgb(255 255 255 / 0.2)` | all builder scrollbars |
 | `color-drop-blocked` | `#f59e0b` | `#fbbf24` | a refused drop |
 | `chrome-shadow-hover` | 7% black | 50% black | hovered block |
@@ -179,8 +190,9 @@ This is also why the built-in dark set is 28 declarations rather than 68: derive
 | `color-rule-joiner-bg` | `#e4e4e7` | `#3f3f46` | the AND/OR chip |
 | `color-rule-joiner-fg` | `#52525b` | `#d4d4d8` | …its text |
 | `palette-tint-1-fg` … `-7-fg` | violet, blue, sky, emerald, amber, indigo, rose | brighter | block icons, per category |
+| `palette-icon-fg` | unset | unset | **one** colour for every block icon, overriding the seven tints — for a quiet host, set this instead of all seven |
 
-Palette tints are assigned to categories in registry order and cycle after seven. `PALETTE_TINT_COUNT` must match the number of tint tokens if you add more.
+Palette tints are assigned to categories in registry order and cycle after seven. `PALETTE_TINT_COUNT` must match the number of tint tokens if you add more. The selected layer row is a wash of `color-selection` with `color-panel-fg` over it (§4), so it has no colours of its own.
 
 ### 5.2 Content — never flips
 
@@ -196,7 +208,9 @@ You *can* override these — they are ordinary tokens. Just know you are changin
 
 ### 5.3 Structural — geometry and motion
 
-Sizes: `sidebar-width` (300px), `chrome-ring-width` (1.5px), `chrome-ring-width-strong`, `chrome-ring-offset`, `chrome-radius`, `chrome-handle-size` / `-border` / `-radius`, `drop-indicator-thickness`, `conditional-badge-size`.
+Sizes: `sidebar-width` (300px), `artboard-radius` (8px — the paper's corners; its shadow is `color-artboard-shadow`), `chrome-ring-width` (1.5px), `chrome-ring-width-strong`, `chrome-ring-offset`, `chrome-radius`, `chrome-handle-size` / `-border` / `-radius`, `drop-indicator-thickness`, `conditional-badge-size`.
+
+Type: `font-family-eyebrow` (`inherit`) — the small uppercase labels heading an inspector group, a palette category and a named container in the layer tree. Point it at a mono stack if your system sets section eyebrows that way.
 
 Motion: `duration-lift`, `duration-shadow`, `duration-ring`, `duration-panel-slide`, `ease-spring`, `ease-panel-slide`.
 
@@ -226,7 +240,7 @@ Tokens cover colour, geometry and motion. They do not cover **layout** — where
 
 For that, compose the pieces yourself. `<BuilderShell>` takes `panels`, `topBar`, `actions`, `canvas` and `inspector`; below that, `<BuilderProvider>` plus `<Canvas>` / `<Palette>` / `<LayersPanel>` / `<Inspector>` / `<Toolbar>` lets you arrange everything from scratch. `dockedPanel`, `dottedSurface` and `transparentSurface` are the shell's own surface styles, exported so a custom layout can match.
 
-Fonts inside the *editor* come from mat-ui's tokens (`--font-family-base`), not from these. Fonts inside the *email* are a block prop — see the typography group in the inspector.
+Fonts inside the *editor* come from mat-ui's tokens (`--font-family-base`, and `--font-family-numeric` for number fields), with one exception here: `font-family-eyebrow` for the panels' section labels (§5.3). Fonts inside the *email* are a block prop — see the typography group in the inspector.
 
 ---
 
@@ -239,6 +253,8 @@ Fonts inside the *editor* come from mat-ui's tokens (`--font-family-base`), not 
 | Panel labels are invisible | You are on a build before panel colour was scoped, or you overrode `color-panel-fg` to something near the panel background. |
 | The email went dark | It should not. If the artboard flipped, something overrode `color-artboard-bg` in a dark rule — the built-in dark set never touches it. |
 | Selection colour changed but drop lines did not | You overrode `color-drop-indicator` directly and severed it from `color-selection` — §4. |
+| A `:root` override of a derived token does nothing | The shell re-declares the ten derived tokens; put the rule on `.mat-builder-shell`, or use the `theme` prop — §4. |
+| Every block icon should be one colour | Set `palette-icon-fg` once rather than the seven tints — §5.1. |
 | Your app's headings lost their styling | Not `./style`, which is scoped — see the mat-ui note in §6. |
 | Two builders on one page look identical when they should not | A `:root` rule themes both; use the `theme` prop per instance — §3.2. |
 | A token in an old snippet does nothing | `palette-tint-N-bg` and `-border` were removed — nothing read them. Only `-fg` exists. |

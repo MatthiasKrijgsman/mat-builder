@@ -55,8 +55,13 @@ export function migrateDocument(document: BuilderDocument): BuilderDocument {
  * names exist on the parent's definition, `accepts`/`maxChildren` rules hold.
  * Unknown block types are a warning, not an error — old documents with
  * removed block types must keep loading.
+ *
+ * Without a `registry` — a server, which has no block definitions — only the
+ * structural invariants are checked: the definition-dependent ones (unknown
+ * types, container names, `accepts`, `maxChildren`) need definitions and are
+ * skipped rather than reported as unknown for every block.
  */
-export function validateDocument(document: BuilderDocument, registry: BlockRegistry): ValidationIssue[] {
+export function validateDocument(document: BuilderDocument, registry?: BlockRegistry): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
 
     if (!document.blocks[document.rootId]) {
@@ -80,8 +85,8 @@ export function validateDocument(document: BuilderDocument, registry: BlockRegis
             });
         }
 
-        const definition = registry.getDefinition(node.type);
-        if (!definition) {
+        const definition = registry?.getDefinition(node.type);
+        if (registry && !definition) {
             issues.push({
                 code: "unknown-type",
                 severity: "warning",
@@ -201,8 +206,13 @@ function assertDocumentShape(input: unknown): asserts input is BuilderDocument {
  * clean unless the root itself is missing or malformed, which is the one
  * thing nothing can be rebuilt from — `validateDocument` reports that as
  * `missing-root` and `loadDocument` throws.
+ *
+ * Without a `registry` (a server), the structural repairs still run; the
+ * definition-dependent ones — unknown-type warnings, container and `accepts`
+ * checks, `defaultProps` backfill — are skipped, and every container a node
+ * carries is kept as is.
  */
-export function repairDocument(input: BuilderDocument, registry: BlockRegistry): LoadedDocument {
+export function repairDocument(input: BuilderDocument, registry?: BlockRegistry): LoadedDocument {
     assertDocumentShape(input);
     const issues: ValidationIssue[] = [];
     const source = input.blocks as Record<string, unknown>;
@@ -224,8 +234,8 @@ export function repairDocument(input: BuilderDocument, registry: BlockRegistry):
         const id = queue.shift() as BlockId;
         const raw = rawNode(id) as Record<string, unknown>;
         const type = raw.type as string;
-        const definition = registry.getDefinition(type);
-        if (!definition) {
+        const definition = registry?.getDefinition(type);
+        if (registry && !definition) {
             issues.push({
                 code: "unknown-type",
                 severity: "warning",
@@ -379,8 +389,12 @@ export function repairDocument(input: BuilderDocument, registry: BlockRegistry):
  * missing/malformed. Everything else loads, and `issues` says what had to
  * be changed on the way in (worth logging on the host: it means a stored
  * document was not what this release expected).
+ *
+ * `registry` is optional for the same reason as in `validateDocument`: a
+ * server has no block definitions, and still wants the version check, the
+ * migrations and the structural repairs before it renders.
  */
-export function loadDocument(input: BuilderDocument, registry: BlockRegistry): LoadedDocument {
+export function loadDocument(input: BuilderDocument, registry?: BlockRegistry): LoadedDocument {
     assertDocumentShape(input);
     const issues: ValidationIssue[] = [];
     let document = input;

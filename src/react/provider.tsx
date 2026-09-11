@@ -3,6 +3,7 @@ import { createRegistry, loadDocument, type AnyBlockDefinition } from "../core/i
 import type { BlockId, BlockPattern, BuilderDocument, ValidationIssue } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
+import { resolveFeatures, sameFeatures, type BuilderFeatures } from "./features.ts";
 import type { MergeTag } from "./merge-tags.ts";
 import {
     createEditorStore,
@@ -51,6 +52,10 @@ export interface BuilderProviderProps {
     /** Palette entries that expand into ordinary blocks on insert (docs/08 §7).
      * Not block definitions — they never enter the registry. Pass a stable array. */
     patterns?: BlockPattern[];
+    /** Editor feature switches — all on by default. `{ visibility: false }`
+     * hides the conditional-visibility UI for a host whose pipeline cannot
+     * honour rules (see `BuilderFeatures`). */
+    features?: BuilderFeatures;
     children: ReactNode;
 }
 
@@ -74,6 +79,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
         onBlockError,
         mergeTags,
         patterns,
+        features,
         children,
     } = props;
 
@@ -90,6 +96,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
             document: loaded.document,
             mergeTags,
             patterns,
+            features,
             callbacks,
         });
         return {
@@ -144,6 +151,15 @@ export function BuilderProvider(props: BuilderProviderProps) {
             instance.store.setState({ patterns: next });
         }
     }, [patterns, instance]);
+
+    // Compared by value: `features={{ visibility: false }}` is a fresh object
+    // every host render and must not churn the store.
+    useEffect(() => {
+        const next = resolveFeatures(features);
+        if (!sameFeatures(next, instance.store.getState().features)) {
+            instance.store.setState({ features: next });
+        }
+    }, [features, instance]);
 
     return <BuilderContext.Provider value={instance}>{children}</BuilderContext.Provider>;
 }

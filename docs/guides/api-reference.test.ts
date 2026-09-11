@@ -42,7 +42,6 @@ const INTERNAL = new Set([
     "redo",
     "HISTORY_CAP",
     "HISTORY_COALESCE_MS",
-    "DOCUMENT_VERSION",
     "findInsertLocation",
 ]);
 

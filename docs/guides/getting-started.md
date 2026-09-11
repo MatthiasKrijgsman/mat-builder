@@ -65,7 +65,7 @@ Everything else — drag and drop, immer, zustand, nanoid, icons, Floating UI, m
 
 npm and pnpm's default auto-install-peers hides most of this. It does **not** on strict installs, Yarn PnP, or a monorepo with `auto-install-peers=false`, so install them explicitly and you never find out the hard way.
 
-**The last two are genuinely optional.** They are needed by `/email/render`, and loaded on demand by the preview — so if you are using the core editor with your own block set and never render email, you can drop them. Everyone building an *email* builder wants them; leave them out and the preview fails with a message telling you so.
+**The last two are optional only for a core-only consumer.** They are needed by `/email/render`, and the preview in `/email` loads them on demand — but a bundler (Turbopack, webpack, Vite) resolves that dynamic import at build time, so any app that imports `/email` must have them installed or its build fails. They are skippable only if you use the root entry with your own block set and never touch `/email` or `/email/render`. Everyone building an *email* builder installs them.
 
 ### 2.2 The stylesheet
 
@@ -286,7 +286,8 @@ Nothing special: import the component, import the stylesheet, give it a height.
 | Changing `defaultValue` does nothing | It is read once at mount. Add `key={documentId}` to remount on switch — §4.2. |
 | Your app's headings and links lose their styling | Not `./style`, which is scoped (§2.2). On mat-ui ≤ 0.0.66 the leak comes from `@matthiaskrijgsman/mat-ui/style`; upgrade to 0.0.67. |
 | Inline text editing misbehaves or throws | Two copies of `lexical` / `@lexical/*`. Dedupe to one. |
-| The preview says it needs `react-email` | The optional peers are not installed — §2.1. |
+| The preview says it needs `react-email`, or the build cannot resolve it | The email peers are not installed — they are required by anything that imports `/email`, §2.1. |
+| The editor shows "This editor needs more room" | The shell is narrower than `minWidth` (768px by default). Give it more width, lower `minWidth`, or pass `0` to disable the guard. |
 | Server build fails on mat-ui or `"use client"` | Something imported `/email` instead of `/email/render` — §6. |
 | Save button does nothing | No `onSave`. The whole save apparatus is gated on it. |
 | Saves silently do not persist | `onSave` swallowed its error. Throw or reject so the shell can show it. |

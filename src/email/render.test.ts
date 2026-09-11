@@ -703,3 +703,83 @@ describe("output safety", () => {
         expect(sanitizeUrlAttributes('<p>href="javascript:x" as text</p>')).toBe('<p>href="" as text</p>');
     });
 });
+
+describe("renderEmail options for a compile-once host", () => {
+    /** The demo email with one block of a type nothing renders. */
+    function withUnknownBlock(): BuilderDocument {
+        const document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        return {
+            ...document,
+            blocks: {
+                ...document.blocks,
+                [containerId]: {
+                    ...document.blocks[containerId],
+                    children: { content: [...document.blocks[containerId].children.content, "widget-1"] },
+                },
+                "widget-1": { id: "widget-1", type: "widget", props: {}, children: {} },
+            },
+        };
+    }
+
+    it("renders an unknown block type as nothing by default, and throws under `strict`", async () => {
+        const document = withUnknownBlock();
+        const { html } = await renderEmail(document);
+        expect(html).toContain("Hello from mat-builder");
+
+        await expect(renderEmail(document, { strict: true })).rejects.toThrow(
+            /no email renderer for block type "widget" \(block "widget-1"\)/,
+        );
+        // A known type is not what strict is about
+        await expect(renderEmail(buildDemoEmail(), { strict: true })).resolves.toBeDefined();
+    });
+
+    it("`pretty: false` hands back the render's own single-line HTML", async () => {
+        const document = buildDemoEmail();
+        const { html: prettified } = await renderEmail(document);
+        const { html: raw } = await renderEmail(document, { pretty: false });
+
+        expect(prettified.split("\n").length).toBeGreaterThan(20);
+        expect(raw).toContain("<html");
+        expect(raw).toContain("Hello from mat-builder");
+        // Attributes are neither reflowed nor re-quoted
+        expect(raw).toContain('href="https://example.com/buy"');
+        expect(raw.split("\n").length).toBeLessThan(5);
+    });
+
+    it("`pretty: false` keeps a merge-tag token on one line where the prettifier could wrap it", async () => {
+        let document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const textId = document.blocks[containerId].children.content[0];
+        const longRun = "A long enough sentence that the prettifier will want to reflow across several lines ";
+        const content = JSON.stringify({
+            root: {
+                type: "root",
+                children: [
+                    {
+                        type: "paragraph",
+                        children: [
+                            { type: "text", text: longRun.repeat(3), format: 0 },
+                            richTextMergeTagNode("{{unsubscribe_url}}", "Unsubscribe"),
+                            { type: "text", text: longRun.repeat(3), format: 0 },
+                        ],
+                    },
+                ],
+            },
+        });
+        document = updateProps(document, { id: textId, patch: { content } });
+        const { html } = await renderEmail(document, { pretty: false });
+        expect(html).toContain("{{unsubscribe_url}}");
+        // The prettified output can break the line right there
+        const { html: prettified } = await renderEmail(document);
+        expect(prettified.replace(/\s+/g, " ")).toContain("{{unsubscribe_url}}");
+    });
+
+    it("exposes the document functions a server needs, registry-free", async () => {
+        const { validateDocument: validate, loadDocument: load, DOCUMENT_VERSION: version } = await import("./render.ts");
+        const document = buildDemoEmail();
+        expect(version).toBe(document.version);
+        expect(validate(document)).toEqual([]);
+        expect(load(document).document).toBe(document);
+    });
+});

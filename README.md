@@ -35,7 +35,7 @@ npm install @matthiaskrijgsman/mat-builder \
   react-email @react-email/render
 ```
 
-The last two are optional: only `/email/render` and the preview need them. Why each package is a peer is explained in [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md#21-the-dependencies).
+The last two are needed by `/email` and `/email/render`; only a consumer using the root entry with its own block set can skip them. Why each package is a peer is explained in [Getting started](https://github.com/MatthiasKrijgsman/mat-builder/blob/main/docs/guides/getting-started.md#21-the-dependencies).
 
 ## Quick start
 

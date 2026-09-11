@@ -20,6 +20,7 @@ import type { CSSProperties } from "react";
 
 /** Every themeable token, minus the `--mat-builder-` prefix. */
 export type BuilderToken =
+    | "artboard-radius"
     | "chrome-handle-border"
     | "chrome-handle-radius"
     | "chrome-handle-size"
@@ -80,6 +81,8 @@ export type BuilderToken =
     | "duration-shadow"
     | "ease-panel-slide"
     | "ease-spring"
+    | "font-family-eyebrow"
+    | "palette-icon-fg"
     | "palette-tint-1-fg"
     | "palette-tint-2-fg"
     | "palette-tint-3-fg"

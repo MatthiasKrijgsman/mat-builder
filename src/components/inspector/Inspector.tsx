@@ -2,7 +2,7 @@ import { ButtonIconSquare, Divider, TableEmpty } from "@matthiaskrijgsman/mat-ui
 import { IconClick, IconCopy, IconTrash } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
+import { useBuilderFeatures, useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
 import { BlockErrorBoundary, errorMessage } from "../canvas/BlockErrorBoundary.tsx";
 import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 import { VisibilityGroup } from "./VisibilityGroup.tsx";
@@ -23,6 +23,7 @@ export function Inspector({ className }: InspectorPanelProps) {
   const selected = useSelectedBlock();
   const actions = useBuilderState((s) => s.actions);
   const document = useBuilderState((s) => s.document);
+  const features = useBuilderFeatures();
 
   // Icon tint matches the block's palette row and layers icon (shared assignment).
   const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
@@ -85,7 +86,8 @@ export function Inspector({ className }: InspectorPanelProps) {
       { /* The definition's own form, then the groups every block gets whether
            its definition asked for them or not — conditional visibility is a
            node field, so a consumer's blocks inherit it without doing
-           anything (docs/06 §Conditional visibility). */ }
+           anything (docs/06 §Conditional visibility) — unless the host
+           switched the feature off (`features.visibility`). */ }
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
         { InspectorForm ? (
           // A throwing form costs the form, not the panel (BlockErrorBoundary)
@@ -111,7 +113,7 @@ export function Inspector({ className }: InspectorPanelProps) {
             This block has no settings.
           </p>
         ) }
-        { !isRoot && (
+        { !isRoot && features.visibility && (
           <>
             { InspectorForm && <Divider/> }
             <VisibilityGroup key={ id } id={ id }/>

@@ -22,6 +22,7 @@ Guides: [Getting started](getting-started.md) · [Custom blocks](custom-blocks.m
 | `@matthiaskrijgsman/mat-builder/email` | block preset, `<EmailBuilder>`, `<EmailPreview>` | ✗ |
 | `@matthiaskrijgsman/mat-builder/email/render` | output pipeline, style converters, rich text, visibility | ✓ |
 | `@matthiaskrijgsman/mat-builder/style` | the stylesheet (required) | — |
+| `@matthiaskrijgsman/mat-builder/package.json` | the manifest, for tooling that reads the installed version | — |
 
 ---
 
@@ -70,6 +71,7 @@ Block-set agnostic: provider + docked layout + panels + saving. `<EmailBuilder>`
 | `onSelectionChange` | `(id \| null) => void` | |
 | `mergeTags` | `MergeTag[]` | pass a stable array |
 | `patterns` | `BlockPattern[]` | pass a stable array |
+| `features` | `BuilderFeatures` | `{ visibility?: boolean }` — all on by default; `{ visibility: false }` hides the conditional-visibility UI (inspector group, canvas badges, layer marker) for a host whose pipeline cannot honour rules. Stored rules still load and export |
 
 **Saving** (from `UseDocumentSaveOptions`)
 
@@ -100,10 +102,12 @@ Throw or reject from `onSave` to signal failure: status goes to `error` and the 
 | `collapseLeftPanel` | `boolean` |
 | `canvas`, `inspector` | `ReactNode` — replace those surfaces |
 | `className`, `style` | |
+| `minWidth` | `number` — below this many px of the shell's own width the editor is covered by `smallScreenNotice` instead of squeezed; default `768`, `0` disables |
+| `smallScreenNotice` | `ReactNode` — what to show below `minWidth`; a short English notice by default |
 | `theme` | `BuilderTheme` — [§7](#7-theming) |
 | `colorScheme` | `"inherit" \| "light" \| "dark"` |
 
-Types: `BuilderShellProps`, `BuilderShellPanels`.
+Types: `BuilderShellProps`, `BuilderShellPanels`, `BuilderFeatures`.
 
 ### Save labels
 
@@ -205,7 +209,7 @@ Drop rules: `acceptsEmailContent(childType)` — the rule every preset container
 
 Creates the per-instance store and registry; arrange the panels yourself.
 
-Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `mergeTags`, `patterns`, `children`. Type `BuilderProviderProps`.
+Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `onDocumentIssues`, `onBlockError`, `mergeTags`, `patterns`, `features`, `children`. Type `BuilderProviderProps`.
 
 ### Components
 
@@ -238,6 +242,7 @@ Surface styles used by the shell, exported so a custom layout can match: `docked
 | `useSelectedBlock()` | `SelectedBlock \| null` — `{ id, node, definition }` |
 | `useBlockNode(id)` | `BlockNode \| undefined` |
 | `useMergeTags()` | `MergeTag[]` |
+| `useBuilderFeatures()` | `ResolvedBuilderFeatures` — the provider's `features`, every switch resolved |
 | `useMergeTagValues()` | `MergeTagValues` — the preview data |
 | `useMergeTagUsage()` | `MergeTagUsage[]` |
 | `useRenderedBlockSize(id)` | `RenderedSize \| null` — measured px; mark the box with `SIZE_BOX_CLASS` |
@@ -275,11 +280,14 @@ Types: `InlineTextProps`, `InlineRichTextProps`, `BlockTypographyItemsProps`, `M
 | Export | Signature |
 |---|---|
 | `createDocument(registry, rootType, rootProps?)` | `BuilderDocument` |
-| `loadDocument(document, registry)` | `LoadedDocument` — shape check → `version` normalized → migrate → repair → validate; what the provider runs on every document it is handed. Throws only when nothing can be rebuilt (not a document, a newer version, a missing root) |
-| `repairDocument(document, registry)` | `LoadedDocument` — drops dangling ids, orphans and second parents, adds missing containers, backfills `defaultProps`, normalizes malformed nodes; every change is an issue in the result |
+| `loadDocument(document, registry?)` | `LoadedDocument` — shape check → `version` normalized → migrate → repair → validate; what the provider runs on every document it is handed. Throws only when nothing can be rebuilt (not a document, a newer version, a missing root) |
+| `repairDocument(document, registry?)` | `LoadedDocument` — drops dangling ids, orphans and second parents, adds missing containers, backfills `defaultProps`, normalizes malformed nodes; every change is an issue in the result |
 | `migrateDocument(document)` | upgrades an older `version` |
-| `validateDocument(document, registry)` | `ValidationIssue[]` |
+| `validateDocument(document, registry?)` | `ValidationIssue[]` |
+| `DOCUMENT_VERSION` | the version this release writes and migrates up to |
 | `safeUrl(value)` | `string \| undefined` — the URL when its scheme is allowed (`http`, `https`, `mailto`, `tel`, `sms`, or none), else `undefined`. What the email output applies to every `href`/`src` |
+
+Everything but `createDocument` is also exported from `/email/render`, and there the `registry` is optional: a server has no block definitions, so without one the structural invariants are checked (ids resolve, one parent each, the root exists, the version is supported) and the definition-dependent ones — unknown types, container names, `accepts`, `defaultProps` backfill — are skipped. See the [server-rendering guide](server-rendering.md#3-validate-before-you-render).
 
 `BuilderDocument` = `{ version, rootId, blocks: Record<BlockId, BlockNode> }`.
 `BlockNode` = `{ id, type, props, children: Record<string, BlockId[]>, visibility? }`.
@@ -322,9 +330,10 @@ From `/email/render` — see the [server-rendering guide](server-rendering.md).
 | `withVerticalGap(children, gap)` | table-safe vertical gap |
 | `safeUrl(value)` | the URL scheme allow-list the preset renderers apply — use it in your own |
 | `sanitizeUrlAttributes(html)` | blanks every `href`/`src`/`background` attribute whose value fails `safeUrl`; `renderEmail` runs it after merge-tag substitution |
+| `loadDocument`, `repairDocument`, `migrateDocument`, `validateDocument`, `DOCUMENT_VERSION` | the document functions ([Documents](#documents)) with the registry optional — validate before you render without importing the editor |
 
-`RenderEmailOptions` = `BuildEmailTreeOptions` + `substituteTokens?`.
-`BuildEmailTreeOptions` = `{ values?, blocks? }`.
+`RenderEmailOptions` = `BuildEmailTreeOptions` + `substituteTokens?` + `pretty?` (default `true`; `false` skips the prettifier, which can otherwise break a line inside a merge-tag token).
+`BuildEmailTreeOptions` = `{ values?, blocks?, strict? }` — `strict: true` throws on a block type no renderer knows instead of rendering it as nothing.
 `EmailBlockOverride` = `{ type, defaultProps?, compose? | render? }`.
 `RenderedEmail` = `{ html, text }`.
 `EmailRenderer<P>` = `(props, children, ctx: BlockContext) => ReactElement | null`; `AnyEmailRenderer` is `EmailRenderer<any>`, which is what the registry maps hold.
@@ -340,7 +349,7 @@ Full guide: [theming](theming.md).
 | `themeToStyle(theme)` | `BuilderTheme` → inline custom properties |
 | `colorSchemeAttr(scheme)` | the `data-mat-builder-color-scheme` value, or `undefined` |
 
-`BuilderTheme` = `Partial<Record<BuilderToken, string>>`. `BuilderToken` is a union of all 68 token names minus the `--mat-builder-` prefix. `BuilderColorScheme` = `"inherit" | "light" | "dark"`.
+`BuilderTheme` = `Partial<Record<BuilderToken, string>>`. `BuilderToken` is a union of all 71 token names minus the `--mat-builder-` prefix. `BuilderColorScheme` = `"inherit" | "light" | "dark"`.
 
 ---
 

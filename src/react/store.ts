@@ -27,6 +27,7 @@ import type {
 } from "../core/types.ts";
 import type { BlockVisibility, MergeTagValues } from "../core/visibility.ts";
 import type { MergeTag } from "./merge-tags.ts";
+import { resolveFeatures, type BuilderFeatures, type ResolvedBuilderFeatures } from "./features.ts";
 
 /*
  * Per-instance editor store — see docs/03-architecture.md §3.
@@ -139,6 +140,9 @@ export interface EditorState {
      * `mergeTags`: never document state, never in history. They are not
      * registered block types, so nothing but the Palette reads them. */
     patterns: BlockPattern[];
+    /** Feature switches (provider prop) — editor configuration like
+     * `mergeTags`: never document state, never in history. */
+    features: ResolvedBuilderFeatures;
     /** Stand-in merge-tag values the preview renders with, keyed by literal
      * token (docs/06 §Preview data). Editor state, never document state: they
      * are the viewer's scratch data, so they stay out of history and out of
@@ -160,6 +164,7 @@ export interface CreateEditorStoreOptions {
     /** Consumer-provided personalization tokens (see merge-tags.ts) */
     mergeTags?: MergeTag[];
     patterns?: BlockPattern[];
+    features?: BuilderFeatures;
     /** Starting stand-in values for preview mode, keyed by literal token */
     previewValues?: MergeTagValues;
     /** Mutable — the provider reassigns its fields every render so callbacks never go stale */
@@ -211,6 +216,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             drag: null,
             mergeTags: options.mergeTags ?? [],
             patterns: options.patterns ?? [],
+            features: resolveFeatures(options.features),
             previewValues: options.previewValues ?? {},
             artboardSize: null,
             history: createHistory(),

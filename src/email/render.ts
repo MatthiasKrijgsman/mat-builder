@@ -47,6 +47,26 @@ export { withVerticalGap } from "./gap.ts";
 // The URL allow-list the renderers apply to every href/src, for custom
 // renderers to apply to theirs.
 export { safeUrl } from "../core/safe-url.ts";
+// Document loading, for a server that validates before it renders. All pure
+// (docs/03 §1); the registry arguments are optional here because a server
+// has no block definitions — see each function for what that skips.
+// `createDocument` is deliberately absent: it needs the definitions.
+export {
+    DOCUMENT_VERSION,
+    loadDocument,
+    migrateDocument,
+    repairDocument,
+    validateDocument,
+} from "../core/document.ts";
+export type {
+    BlockId,
+    BlockNode,
+    BuilderDocument,
+    BlockLocation,
+    LoadedDocument,
+    ValidationIssue,
+    ValidationIssueCode,
+} from "../core/types.ts";
 // Conditional visibility: the rule vocabulary and its evaluator, so a backend
 // resolving conditions itself never has to reach into the client entry.
 export {
@@ -140,6 +160,7 @@ function renderSpec(
     ctx: BlockContext,
     resolve: Resolver,
     depth: number,
+    options: BuildEmailTreeOptions,
 ): ReactElement | null {
     if (depth > MAX_COMPOSE_DEPTH) return null;
     const props = { ...resolve.defaults(spec.type), ...spec.props };
@@ -147,17 +168,17 @@ function renderSpec(
     // A composed block may compose another — recurse before looking for a
     // renderer it does not have.
     const compose = resolve.compose(spec.type);
-    if (compose) return renderSpec(compose(props, ctx), slotChildren, ctx, resolve, depth + 1);
+    if (compose) return renderSpec(compose(props, ctx), slotChildren, ctx, resolve, depth + 1, options);
 
     const renderer = resolve.render(spec.type);
-    if (!renderer) return null;
+    if (!renderer) return unknownBlock(spec.type, undefined, options);
 
     const children: Record<string, ReactElement[]> = {};
     for (const [container, value] of Object.entries(spec.children ?? {})) {
         children[container] = isSlotRef(value)
             ? (slotChildren[value.__slot] ?? [])
             : value.map((child, index) =>
-                  createElement(Fragment, { key: index }, renderSpec(child, slotChildren, ctx, resolve, depth + 1)),
+                  createElement(Fragment, { key: index }, renderSpec(child, slotChildren, ctx, resolve, depth + 1, options)),
               );
     }
     return renderer(props, children, ctx);
@@ -180,6 +201,23 @@ export interface BuildEmailTreeOptions {
      * `mergeBlockDefinitions` on the editor side.
      */
     blocks?: readonly EmailBlockOverride[];
+    /**
+     * Throw on a block type no renderer knows, instead of rendering it as
+     * nothing. Off by default — a document may outlive a block, and one
+     * unknown block should not kill a send — but a server that would rather
+     * fail a render than ship an email with a hole in it turns this on.
+     */
+    strict?: boolean;
+}
+
+/** The one place an unknown block type is decided: skipped, or refused under `strict`. */
+function unknownBlock(type: string, id: BlockId | undefined, options: BuildEmailTreeOptions): null {
+    if (options.strict) {
+        throw new Error(
+            `renderEmail: no email renderer for block type "${type}"${id ? ` (block "${id}")` : ""} — pass it in \`blocks\`, or drop \`strict\` to render it as nothing`,
+        );
+    }
+    return null;
 }
 
 /**
@@ -220,7 +258,7 @@ export function buildEmailTree(
     const resolve = makeResolver(options.blocks);
     const compose = resolve.compose(node.type);
     const renderer = compose ? undefined : resolve.render(node.type);
-    if (!compose && !renderer) return null;
+    if (!compose && !renderer) return unknownBlock(node.type, id, options);
     // Child lists are pre-filtered below, so this only fires for a hidden
     // block the caller asked for directly (including the root).
     if (!isBlockVisible(node, options.values)) return null;
@@ -250,13 +288,13 @@ export function buildEmailTree(
     if (compose) {
         // Composed: the node's children are its SLOT children, spliced into
         // the tree wherever the spec references them.
-        return renderSpec(compose(props, ctx), children, ctx, resolve, 0);
+        return renderSpec(compose(props, ctx), children, ctx, resolve, 0, options);
     }
     return renderer!(props, children, ctx);
 }
 
 export interface RenderedEmail {
-    /** Prettified full-document HTML — hand this to the ESP */
+    /** Full-document HTML, prettified unless `pretty: false` — hand this to the ESP */
     html: string;
     /** Plain-text variant */
     text: string;
@@ -270,6 +308,13 @@ export interface RenderEmailOptions extends BuildEmailTreeOptions {
      * substitute — turn this on only when you are rendering per recipient.
      */
     substituteTokens?: boolean;
+    /**
+     * Prettify the HTML (the default). The prettifier reflows long text and
+     * can break a line inside a merge-tag token (`{{\n  first_name }}`), which
+     * some template languages and any substring check will not recognise —
+     * pass `false` to get the render's own single-line output instead.
+     */
+    pretty?: boolean;
 }
 
 /*
@@ -360,7 +405,8 @@ export async function renderEmail(
         const rootType = document.blocks[document.rootId]?.type ?? "(missing root)";
         throw new Error(`renderEmail: no email renderer for root block type "${rootType}"`);
     }
-    const html = await pretty(await render(tree));
+    const rendered = await render(tree);
+    const html = options.pretty === false ? rendered : await pretty(rendered);
     const text = await render(tree, { plainText: true });
     const values = options.substituteTokens ? (options.values ?? {}) : null;
     return {

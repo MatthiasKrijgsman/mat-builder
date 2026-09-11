@@ -372,3 +372,11 @@ describe("preview values", () => {
         expect(store.getState().previewValues).toEqual({ "{{plan}}": "Pro" });
     });
 });
+
+describe("feature switches", () => {
+    it("default to everything on, and resolve what the provider passes", () => {
+        expect(makeStore().store.getState().features).toEqual({ visibility: true });
+        const off = createEditorStore({ registry: testRegistry, document: exampleDoc(), features: { visibility: false } });
+        expect(off.getState().features).toEqual({ visibility: false });
+    });
+});

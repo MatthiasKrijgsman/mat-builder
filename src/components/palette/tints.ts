@@ -33,7 +33,15 @@ export function tintByCategory(registry: BlockRegistry, patterns: readonly Block
 /** Default palette grouping for patterns that don't name a category. */
 export const PATTERN_CATEGORY = "Patterns";
 
-/** The CSS var for one part of a tint set (e.g. tintCssVar(2, "fg")). */
+/**
+ * The CSS var for one part of a tint set (e.g. tintCssVar(2, "fg")).
+ *
+ * The icon colour reads through `--mat-builder-palette-icon-fg` first: it is
+ * `initial` (the guaranteed-invalid value) by default, so `var()` falls
+ * through to the per-category tint, and a host wanting one quiet colour for
+ * every icon sets that single token instead of all seven tints.
+ */
 export function tintCssVar(tint: number, part: "bg" | "border" | "fg"): string {
-  return `var(--mat-builder-palette-tint-${tint}-${part})`;
+  const own = `var(--mat-builder-palette-tint-${tint}-${part})`;
+  return part === "fg" ? `var(--mat-builder-palette-icon-fg, ${own})` : own;
 }

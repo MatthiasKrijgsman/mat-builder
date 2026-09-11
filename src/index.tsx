@@ -69,11 +69,13 @@ export { useDocumentSave } from "./react/save.ts";
 export type { SaveController, SaveStatus, UseDocumentSaveOptions } from "./react/save.ts";
 export { collectMergeTagUsage } from "./react/merge-tags.ts";
 export type { MergeTag, MergeTagUsage } from "./react/merge-tags.ts";
+export type { BuilderFeatures, ResolvedBuilderFeatures } from "./react/features.ts";
 export {
     useEditor,
     useSelectedBlock,
     useBlockNode,
     useBuilderState,
+    useBuilderFeatures,
     useMergeTags,
     useMergeTagUsage,
     useMergeTagValues,

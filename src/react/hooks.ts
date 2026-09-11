@@ -4,6 +4,7 @@ import type { AnyBlockDefinition, BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockNode } from "../core/types.ts";
 import type { MergeTagValues } from "../core/visibility.ts";
 import { useBuilderContext } from "./context.ts";
+import type { ResolvedBuilderFeatures } from "./features.ts";
 import { collectMergeTagUsage, type MergeTag, type MergeTagUsage } from "./merge-tags.ts";
 import type { EditorActions, EditorState } from "./store.ts";
 
@@ -43,6 +44,11 @@ export function useBlockNode(id: BlockId): BlockNode | undefined {
 /** The provider's merge tags (see merge-tags.ts); empty when none configured. */
 export function useMergeTags(): MergeTag[] {
     return useBuilderState((s) => s.mergeTags);
+}
+
+/** The provider's feature switches, every one resolved (see `BuilderFeatures`). */
+export function useBuilderFeatures(): ResolvedBuilderFeatures {
+    return useBuilderState((s) => s.features);
 }
 
 /** Stand-in merge-tag values the preview renders with (docs/06 §Preview data). */

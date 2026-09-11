@@ -1,6 +1,7 @@
-import { Component, useMemo, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode, type RefObject } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
+import type { BuilderFeatures } from "../../react/features.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
 import { BuilderProvider, type BuilderProviderProps } from "../../react/provider.tsx";
 import { colorSchemeAttr, themeToStyle, type BuilderColorScheme, type BuilderTheme } from "../../react/theme.ts";
@@ -62,6 +63,9 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     /** Palette entries that expand into ordinary blocks on insert (docs/08 §7);
      * pass a stable array */
     patterns?: BlockPattern[];
+    /** Editor feature switches, all on by default — see `BuilderFeatures`.
+     * `{ visibility: false }` hides the conditional-visibility UI. */
+    features?: BuilderFeatures;
 
     /* ── Chrome ─────────────────────────────────────────────────────── */
     /** App name — the fixed first breadcrumb segment in the top bar */
@@ -98,6 +102,16 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     className?: string;
     style?: CSSProperties;
     /**
+     * The narrowest width (px) the three-panel layout is usable at. Below it
+     * the shell shows `smallScreenNotice` over the editor instead of a
+     * squeezed layout. Measured on the shell's own box, not the viewport, so
+     * an embedded editor is judged by the space it actually has. `0` disables
+     * the guard.
+     */
+    minWidth?: number;
+    /** What to show below `minWidth`; defaults to a short English notice */
+    smallScreenNotice?: ReactNode;
+    /**
      * Per-instance token overrides — keys are `--mat-builder-*` names without
      * the prefix (docs/guides/theming.md). For a fixed look a stylesheet rule
      * is simpler; use this when the values come from data, or when two
@@ -124,6 +138,7 @@ export function BuilderShell(props: BuilderShellProps) {
         onRenderError,
         mergeTags,
         patterns,
+        features,
         onSave,
         autoSaveMs,
         onError,
@@ -142,6 +157,8 @@ export function BuilderShell(props: BuilderShellProps) {
         inspector,
         className,
         style,
+        minWidth,
+        smallScreenNotice,
         theme,
         colorScheme,
     } = props;
@@ -176,6 +193,7 @@ export function BuilderShell(props: BuilderShellProps) {
                 onSelectionChange={onSelectionChange}
                 mergeTags={mergeTags}
                 patterns={patterns}
+                features={features}
                 onDocumentIssues={onDocumentIssues}
                 onBlockError={onBlockError}
             >
@@ -195,6 +213,8 @@ export function BuilderShell(props: BuilderShellProps) {
                         inspector={inspector}
                         className={className}
                         style={style}
+                        minWidth={minWidth}
+                        smallScreenNotice={smallScreenNotice}
                         theme={theme}
                         colorScheme={colorScheme}
                     />
@@ -280,15 +300,47 @@ interface BuilderShellLayoutProps {
     inspector?: ReactNode;
     className?: string;
     style?: CSSProperties;
+    minWidth?: number;
+    smallScreenNotice?: ReactNode;
     theme?: BuilderTheme;
     colorScheme?: BuilderColorScheme;
+}
+
+/** Below this many px of shell width the panels leave no room for a canvas */
+const DEFAULT_MIN_WIDTH = 768;
+
+/**
+ * Whether the shell's box is narrower than `minWidth`. Starts false — the
+ * first paint (and a server render) shows the editor, and the observer
+ * corrects it before the user can act.
+ */
+function useTooNarrow(root: RefObject<HTMLDivElement | null>, minWidth: number): boolean {
+    const [tooNarrow, setTooNarrow] = useState(false);
+    useEffect(() => {
+        const element = root.current;
+        if (!element || minWidth <= 0 || typeof ResizeObserver === "undefined") {
+            setTooNarrow(false);
+            return;
+        }
+        const check = () => setTooNarrow(element.getBoundingClientRect().width < minWidth);
+        check();
+        const observer = new ResizeObserver(check);
+        observer.observe(element);
+        return () => observer.disconnect();
+    }, [root, minWidth]);
+    return tooNarrow;
 }
 
 /** The docked layout: one continuous dotted surface with the top bar and
  * panels floating over it. Separate component so it renders inside the
  * provider (the panels are all context consumers). */
 function BuilderShellLayout(props: BuilderShellLayoutProps) {
-    const { save, title, icon, documentName, actions, topBarSlots, topBar, saveLabels, panels, collapseLeftPanel, canvas, inspector, className, style, theme, colorScheme } = props;
+    const {
+        save, title, icon, documentName, actions, topBarSlots, topBar, saveLabels, panels, collapseLeftPanel,
+        canvas, inspector, className, style, minWidth = DEFAULT_MIN_WIDTH, smallScreenNotice, theme, colorScheme,
+    } = props;
+    const rootRef = useRef<HTMLDivElement>(null);
+    const tooNarrow = useTooNarrow(rootRef, minWidth);
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
@@ -303,12 +355,37 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
 
     return (
         <div
+            ref={rootRef}
             className={`mat-builder-shell relative h-full ${className ?? ""}`}
             data-mat-builder-color-scheme={colorSchemeAttr(colorScheme)}
             // Theme first, so an explicit `style` stays the last word.
             style={{ ...dottedSurface, ...themeToStyle(theme), ...style }}
         >
-            <div className="absolute inset-0 flex flex-col">
+            {/* Too narrow: the notice covers the editor, which stays mounted
+                (nothing is lost by resizing) but leaves the tab order and the
+                accessibility tree until there is room for it again. */}
+            {tooNarrow && (
+                <div role="status" className="absolute inset-0 z-40 grid place-items-center p-6" style={dottedSurface}>
+                    <div
+                        className="mat-builder-small-screen-notice max-w-sm rounded-lg border p-4 text-sm"
+                        style={{ ...dockedPanel, color: "var(--mat-builder-color-panel-fg)" }}
+                    >
+                        {smallScreenNotice ?? (
+                            <>
+                                <div className="font-semibold">This editor needs more room</div>
+                                <p className="mt-1" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                                    Widen the window to at least {minWidth}px, or open it on a larger screen.
+                                </p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+            <div
+                className="absolute inset-0 flex flex-col"
+                inert={tooNarrow || undefined}
+                aria-hidden={tooNarrow || undefined}
+            >
                 {topBar === false ? null : topBar !== undefined ? (
                     topBar
                 ) : (

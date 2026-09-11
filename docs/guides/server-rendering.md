@@ -54,26 +54,50 @@ const { html } = await renderEmail(JSON.parse(row.document_json));
 
 ---
 
-## 3. What you get back
+## 3. Validate before you render
+
+A stored document is untrusted input — it may predate this release, or have been edited by hand. The editor runs `loadDocument` on everything it is handed; a server can do the same, from this entry, without importing the editor:
+
+```ts
+import { DOCUMENT_VERSION, loadDocument, renderEmail } from "@matthiaskrijgsman/mat-builder/email/render";
+
+const { document, issues } = loadDocument(stored);   // throws: not a document, newer than DOCUMENT_VERSION, no root
+if (issues.length > 0) log.warn({ issues }, "document repaired on load");
+const { html, text } = await renderEmail(document, { strict: true });
+```
+
+`loadDocument`, `validateDocument`, `repairDocument`, `migrateDocument` and `DOCUMENT_VERSION` are the same functions the root entry exports, with one difference: here the **registry argument is optional**, because a server has no block definitions to build one from. Without it you get the structural pass — every referenced id exists, every block has one parent, the root is there, the version is supported (and migrated) — and the definition-dependent checks are skipped rather than failed: nothing is reported as an unknown type, container names are kept as stored, no `defaultProps` are backfilled. That is exactly the shape check a backend would otherwise hand-roll, plus the version handling it would otherwise hardcode.
+
+`strict: true` covers the type check the structural pass cannot: `renderEmail` throws on a block type no renderer knows, instead of rendering it as nothing (§9). Together, a document that renders is a document you know to be whole.
+
+---
+
+## 4. What you get back
 
 ```ts
 interface RenderedEmail {
-    html: string;   // prettified full document — hand this to the ESP
+    html: string;   // full document, prettified unless `pretty: false` — hand this to the ESP
     text: string;   // plain-text alternative for the multipart message
 }
 ```
 
 `html` is a complete document, table-based with inline styles — what email clients need, not what a browser would like. Send `text` as the `text/plain` part; most ESPs take both.
 
+**`pretty: false`.** By default the HTML is run through a prettifier, which reflows long lines — including, occasionally, a line break *inside* a merge-tag token (`{{\n  unsubscribe_url }}`). Liquid tolerates that; simpler template languages and any substring check do not. Pass `pretty: false` to get the renderer's own single-line output instead:
+
+```ts
+const { html } = await renderEmail(document, { pretty: false });
+```
+
 ---
 
-## 4. Merge tags: pass through, or substitute
+## 5. Merge tags: pass through, or substitute
 
 This is the decision that trips people up, so it is worth being explicit.
 
 Merge tags are stored as their **literal token** — `{{first_name}}`, `*|FNAME|*`, whatever your ESP uses. The library never assumes a syntax.
 
-### 4.1 Pass through (the default) — one render for everyone
+### 5.1 Pass through (the default) — one render for everyone
 
 ```ts
 const { html } = await renderEmail(document);
@@ -82,7 +106,7 @@ const { html } = await renderEmail(document);
 
 The ESP substitutes per recipient. **This is the normal path**: one render, one template, the ESP does the per-recipient work it is built for.
 
-### 4.2 Substitute — one render per recipient
+### 5.2 Substitute — one render per recipient
 
 ```ts
 const { html } = await renderEmail(document, {
@@ -108,7 +132,7 @@ Substitution is a post-render string pass over both `html` and `text`, so it cat
 
 ---
 
-## 5. Conditional blocks
+## 6. Conditional blocks
 
 Authors set visibility rules per block in the inspector; you decide when they are evaluated.
 
@@ -123,11 +147,13 @@ Hidden blocks are removed from their parent's **child list**, not returned as nu
 
 If your ESP has its own conditional syntax and you would rather emit that than resolve it here, you can: read the rules yourself with the vocabulary this entry re-exports (`hasVisibilityRules`, `describeVisibility`, `evaluateRule`, `isVisible`, `OPERATOR_LABELS`, `VALUE_OPERATORS`) and write your own adapter.
 
+**If your pipeline cannot honour rules at all** — you compile once and personalise afterwards, with no values at compile time and no adapter — the feature is a trap for authors: a block they marked "only for Pro" goes to everyone. Switch the UI off with `features={{ visibility: false }}` on `<EmailBuilder>` / `<BuilderShell>` / `<BuilderProvider>`. Rules already stored keep loading and exporting; only the inspector group, the canvas badges and the layer-tree marker disappear.
+
 ---
 
-## 6. Custom blocks
+## 7. Custom blocks
 
-If the document contains blocks your app defined, the renderer needs to know about them — otherwise they render as **nothing, silently** (§8).
+If the document contains blocks your app defined, the renderer needs to know about them — otherwise they render as **nothing, silently** (§9).
 
 ```ts
 import { renderEmail } from "@matthiaskrijgsman/mat-builder/email/render";
@@ -153,7 +179,7 @@ Keep `compose` in a server-safe module (no JSX, no mat-ui imports) and spread it
 
 ---
 
-## 7. Lower-level pieces
+## 8. Lower-level pieces
 
 Most consumers need only `renderEmail`. The entry also exports:
 
@@ -171,9 +197,13 @@ All of it is server-safe; that is the point of re-exporting it here rather than 
 
 ---
 
-## 8. Failure modes
+## 9. Failure modes
 
-**A block type the renderer does not know renders as nothing — no error, no warning.** This is deliberate (a document may outlive a block, and one unknown block should not kill a send), but it is the single most common surprise. If content is missing from your export, check `blocks` first.
+**A block type the renderer does not know renders as nothing — no error, no warning.** This is deliberate (a document may outlive a block, and one unknown block should not kill a send), but it is the single most common surprise. If content is missing from your export, check `blocks` first — or pass `strict: true`, which turns the silence into a thrown error naming the type and the block:
+
+```
+renderEmail: no email renderer for block type "product-card" (block "b7") — pass it in `blocks`, or drop `strict` to render it as nothing
+```
 
 **A missing root renderer throws:**
 
@@ -192,9 +222,9 @@ if (!html.includes(expectedMarker)) throw new Error("template rendered empty");
 
 ---
 
-## 9. Practical notes
+## 10. Practical notes
 
-**Cost.** A render is react-email doing SSR over the tree — milliseconds for a normal email, but not free. For a campaign, render **once** and let the ESP personalize (§4.1). Only render per recipient when you actually need `substituteTokens`.
+**Cost.** A render is react-email doing SSR over the tree — milliseconds for a normal email, but not free. For a campaign, render **once** and let the ESP personalize (§5.1). Only render per recipient when you actually need `substituteTokens`.
 
 **Caching.** The document is the only input, so cache on its identity — a hash, or the row's `updated_at`. Nothing inside the renderer is stateful.
 
@@ -213,16 +243,18 @@ it("renders the welcome template", async () => {
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Cause |
 |---|---|
 | Build fails on `"use client"` or mat-ui | Imported `/email` instead of `/email/render` — §1 |
-| A block is missing from the output | Its type is unknown to the renderer. Pass it via `blocks` — §6 |
+| A block is missing from the output | Its type is unknown to the renderer. Pass it via `blocks`, or `strict: true` to be told — §7, §9 |
 | `no email renderer for root block type` | The document's root has no renderer; wrong block set |
-| Tokens appear literally in the sent email | Expected unless `substituteTokens` is set — the ESP was meant to do it — §4 |
-| Conditional blocks all render | No `values` passed, so nothing is evaluated — §5 |
-| A custom block renders but its props are defaults | The `blocks` entry has no `defaultProps`, or the stored node predates them — §6 |
+| Tokens appear literally in the sent email | Expected unless `substituteTokens` is set — the ESP was meant to do it — §5 |
+| A merge tag is split across two lines | The prettifier reflowed it. `pretty: false` — §4 |
+| Conditional blocks all render | No `values` passed, so nothing is evaluated — §6 |
+| Conditional blocks are all dropped | You passed `values: {}` — an empty object is a complete, empty set of values, and `exists` rules fail against it. Omit `values` to render the whole template — §6 |
+| A custom block renders but its props are defaults | The `blocks` entry has no `defaultProps`, or the stored node predates them — §7 |
 | `Cannot find module '@react-email/render'` | Optional peer, but required by this entry. Install it |
 | Layout differs from the canvas | A composed block whose spec set a partial nested style value — see the [cookbook](custom-blocks.md#42-the-pure-half) |
 

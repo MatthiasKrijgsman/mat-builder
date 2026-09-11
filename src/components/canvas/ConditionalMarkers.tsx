@@ -2,7 +2,7 @@ import { IconFilter } from "@tabler/icons-react";
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import type { BlockId } from "../../core/types.ts";
 import { describeVisibility, hasVisibilityRules } from "../../core/visibility.ts";
-import { useBuilderState, useMergeTags } from "../../react/hooks.ts";
+import { useBuilderFeatures, useBuilderState, useMergeTags } from "../../react/hooks.ts";
 import { computeMarkerGeometry, markerChanged, type MarkerGeometry } from "./chrome-geometry.ts";
 
 /*
@@ -32,13 +32,16 @@ export function ConditionalMarkers({ scrollerRef }: { scrollerRef: RefObject<HTM
     const document = useBuilderState((s) => s.document);
     const actions = useBuilderState((s) => s.actions);
     const tags = useMergeTags();
+    const { visibility: enabled } = useBuilderFeatures();
 
     const marked = useMemo(
         () =>
-            Object.values(document.blocks)
-                .filter((node) => node.id !== document.rootId && hasVisibilityRules(node.visibility))
-                .map((node) => node.id),
-        [document],
+            enabled
+                ? Object.values(document.blocks)
+                      .filter((node) => node.id !== document.rootId && hasVisibilityRules(node.visibility))
+                      .map((node) => node.id)
+                : [],
+        [document, enabled],
     );
 
     // Tooltips read the tag's display name; a token the provider no longer

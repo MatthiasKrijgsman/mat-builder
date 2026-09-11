@@ -239,3 +239,38 @@ describe("loadDocument — a stored document is repaired, not refused", () => {
         expect(() => loadDocument({ ...exampleDoc(), version: DOCUMENT_VERSION + 1 }, testRegistry)).toThrow(/newer/);
     });
 });
+
+describe("without a registry — the server's structural pass", () => {
+    const codes = (issues: { code: string }[]) => issues.map((issue) => issue.code).sort();
+
+    it("validates the structure and skips every definition-dependent check", () => {
+        expect(validateDocument(exampleDoc(), undefined)).toEqual([]);
+
+        const document = exampleDoc();
+        document.blocks.t1 = block({ id: "t1", type: "widget", children: { anything: ["ghost"] } });
+        // No unknown-type warning (nothing to know types against), but a
+        // dangling id is a dangling id whoever renders it.
+        expect(codes(validateDocument(document))).toEqual(["dangling-child-id"]);
+        expect(codes(validateDocument(document, testRegistry))).toEqual(["dangling-child-id", "unknown-type"]);
+    });
+
+    it("loads with the structural repairs only — containers kept, no defaults backfilled", () => {
+        const document = exampleDoc();
+        document.blocks.t1 = block({ id: "t1", type: "text", props: {}, children: { extra: ["ghost"] } });
+        const loaded = loadDocument(document);
+
+        expect(codes(loaded.issues)).toEqual(["dangling-child-id"]);
+        expect(loaded.document.blocks.t1.props).toEqual({});
+        expect(loaded.document.blocks.t1.children).toEqual({ extra: [] });
+        // The same input WITH the registry drops the container and backfills the props
+        const known = loadDocument(document, testRegistry);
+        expect(codes(known.issues)).toEqual(["unknown-container"]);
+        expect(known.document.blocks.t1.children).toEqual({});
+    });
+
+    it("still refuses what nothing can rebuild, and still migrates", () => {
+        expect(() => loadDocument({ ...exampleDoc(), rootId: "ghost" })).toThrow(/cannot be loaded/);
+        expect(() => loadDocument({ ...exampleDoc(), version: DOCUMENT_VERSION + 1 })).toThrow(/newer/);
+        expect(loadDocument(exampleDoc()).document).toEqual(exampleDoc());
+    });
+});
