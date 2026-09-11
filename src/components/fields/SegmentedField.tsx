@@ -2,7 +2,7 @@ import { InputLabel, TabButtons, Tooltip } from "@matthiaskrijgsman/mat-ui";
 import type { TablerIcon } from "@tabler/icons-react";
 
 /** The sizing mat-ui's TabButtons gives an icon-only tab at size="sm". */
-const iconClasses = "h-[var(--control-size-sm-icon)] w-[var(--control-size-sm-icon)] shrink-0";
+const iconClasses = "mat:h-[var(--control-size-sm-icon)] mat:w-[var(--control-size-sm-icon)] mat:shrink-0";
 
 export interface SegmentedFieldOption<T extends string> {
     label: string;
@@ -21,7 +21,7 @@ export interface SegmentedFieldProps<T extends string> {
 /** Segmented control for small closed sets (modes, alignments) — mat-ui TabButtons underneath. */
 export function SegmentedField<T extends string>({ label, value, onChange, options }: SegmentedFieldProps<T>) {
     return (
-        <div className="flex flex-col gap-1">
+        <div className="mat:flex mat:flex-col mat:gap-1">
             {label && <InputLabel>{label}</InputLabel>}
             <TabButtons
                 size="sm"
@@ -35,7 +35,7 @@ export function SegmentedField<T extends string>({ label, value, onChange, optio
                     label: option.Icon ? (
                         <Tooltip
                             content={option.label}
-                            className="mat-builder-tab-tooltip inline-flex"
+                            className="mat-builder-tab-tooltip mat:inline-flex"
                             contentClassName="mat-builder-tooltip"
                             minWidth={0}
                             delay={300}

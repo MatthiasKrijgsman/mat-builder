@@ -52,13 +52,13 @@ interface LinkedFieldsProps {
 
 function LinkedFields({ label, expanded, onToggle, toggleTitle, children }: LinkedFieldsProps) {
     return (
-        <div className="flex flex-col gap-1.5">
+        <div className="mat:flex mat:flex-col mat:gap-1.5">
             {label && <span className="input-label">{label}</span>}
-            <div className="flex items-start gap-1.5">
-                <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5">{children}</div>
+            <div className="mat:flex mat:items-start mat:gap-1.5">
+                <div className="mat:grid mat:min-w-0 mat:flex-1 mat:grid-cols-2 mat:gap-1.5">{children}</div>
                 <Tooltip
                     content={toggleTitle}
-                    className="inline-flex shrink-0"
+                    className="mat:inline-flex mat:shrink-0"
                     contentClassName="mat-builder-tooltip"
                     minWidth={0}
                     delay={300}

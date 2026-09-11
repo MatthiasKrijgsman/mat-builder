@@ -32,7 +32,7 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
             />
             {v.shadow.type !== "none" && (
                 <>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="mat:grid mat:grid-cols-2 mat:gap-1.5">
                         <Fields.NumberField label="X" value={v.shadow.x} onChange={(x) => setShadow({ x })} />
                         <Fields.NumberField label="Y" value={v.shadow.y} onChange={(y) => setShadow({ y })} />
                         <Fields.NumberField

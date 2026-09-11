@@ -15,7 +15,7 @@ export const dividerBlock = defineBlock<EmailDividerProps>({
     editRender: ({ props }) => <hr style={emailDividerStyles(props)} />,
     inspector: ({ props, update }) => (
         <>
-            <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
+            <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
                 <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
                 <Fields.NumberField
                     label="Thickness"

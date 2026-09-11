@@ -91,8 +91,8 @@ export function Palette({ className }: PaletteProps) {
   }, [ entries, query ]);
 
   return (
-    <div className={ `mat-builder-palette flex flex-col gap-1 p-2 ${ className ?? "" }` }>
-      <div className="shrink-0 p-1">
+    <div className={ `mat-builder-palette mat-ui mat:flex mat:flex-col mat:gap-1 mat:p-2 ${ className ?? "" }` }>
+      <div className="mat:shrink-0 mat:p-1">
         <Input
           size="sm"
           variant={'flat'}
@@ -103,11 +103,11 @@ export function Palette({ className }: PaletteProps) {
           onChange={ (event) => setQuery(event.target.value) }
         />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
+      <div className="mat:flex mat:min-h-0 mat:flex-1 mat:flex-col mat:gap-4 mat:overflow-y-auto mat:p-1">
       { groups.map(([ category, groupEntries ]) => (
-        <div key={ category } className="flex flex-col">
+        <div key={ category } className="mat:flex mat:flex-col">
           <p
-            className="mb-1 px-2 text-[11px] font-medium uppercase tracking-wider"
+            className="mat:mb-1 mat:px-2 mat:text-[11px] mat:font-medium mat:uppercase mat:tracking-wider"
             style={ {
               color: "var(--mat-builder-color-panel-muted-fg)",
               fontFamily: "var(--mat-builder-font-family-eyebrow)",
@@ -125,7 +125,7 @@ export function Palette({ className }: PaletteProps) {
         </div>
       )) }
       { groups.length === 0 && (
-        <p className="px-2 text-sm font-medium" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+        <p className="mat:px-2 mat:text-sm mat:font-medium" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
           No blocks match &ldquo;{ query }&rdquo;.
         </p>
       ) }
@@ -164,17 +164,17 @@ function PaletteItem({ entry, tint }: { entry: PaletteEntry; tint: number }) {
       ref={ ref }
       type="button"
       onClick={ onClick }
-      className="group my-px flex h-8 w-full cursor-grab items-center gap-2.5 rounded-(--border-radius-menu-item) px-2 text-sm font-normal font-(family-name:--font-family-base) transition-colors duration-(--control-transition-duration) select-none hover:bg-(--mat-builder-color-layer-row-hover-bg)"
+      className="mat:group mat:my-px mat:flex mat:h-8 mat:w-full mat:cursor-grab mat:items-center mat:gap-2.5 mat:rounded-(--border-radius-menu-item) mat:px-2 mat:text-sm mat:font-normal mat:font-(family-name:--font-family-base) mat:transition-colors mat:duration-(--control-transition-duration) mat:select-none mat:hover:bg-(--mat-builder-color-layer-row-hover-bg)"
     >
-      { Icon && <Icon className="size-4 shrink-0" style={ { color: tintCssVar(tint, "fg") } }/> }
+      { Icon && <Icon className="mat:size-4 mat:shrink-0" style={ { color: tintCssVar(tint, "fg") } }/> }
       <span
-        className="min-w-0 flex-1 truncate text-left font-medium"
+        className="mat:min-w-0 mat:flex-1 mat:truncate mat:text-left mat:font-medium"
         style={ { color: "var(--mat-builder-color-panel-fg)" } }
       >
         { label }
       </span>
       <IconGripVertical
-        className="size-4 shrink-0 opacity-40 transition-opacity group-hover:opacity-70"
+        className="mat:size-4 mat:shrink-0 mat:opacity-40 mat:transition-opacity mat:group-hover:opacity-70"
         style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
       />
     </button>

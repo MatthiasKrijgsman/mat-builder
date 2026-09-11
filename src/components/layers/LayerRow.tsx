@@ -172,7 +172,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
     : "var(--mat-builder-color-panel-muted-fg)";
 
   return (
-    <div className={ isDragSource ? "opacity-40" : undefined }>
+    <div className={ isDragSource ? "mat:opacity-40" : undefined }>
       { /* The row IS the select target: clicking anywhere but the chevron
            selects; the chevron only toggles expansion. */ }
       <div
@@ -180,7 +180,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         data-layer-id={ id }
         role="button"
         aria-selected={ isSelected }
-        className="relative my-px flex h-8 cursor-pointer items-center rounded-(--border-radius-menu-item) pr-2 font-normal font-(family-name:--font-family-base) text-sm transition-colors duration-(--control-transition-duration) select-none"
+        className="mat:relative mat:my-px mat:flex mat:h-8 mat:cursor-pointer mat:items-center mat:rounded-(--border-radius-menu-item) mat:pr-2 mat:font-normal mat:font-(family-name:--font-family-base) mat:text-sm mat:transition-colors mat:duration-(--control-transition-duration) mat:select-none"
         style={ { ...rowStyle, columnGap: GAP_PX } }
         onClick={ (event) => {
           event.stopPropagation();
@@ -203,7 +203,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
           <button
             type="button"
             aria-label={ isExpanded ? "Collapse" : "Expand" }
-            className="flex shrink-0 cursor-pointer items-center justify-center bg-transparent p-0"
+            className="mat:flex mat:shrink-0 mat:cursor-pointer mat:items-center mat:justify-center mat:bg-transparent mat:p-0"
             style={ { width: GLYPH_PX, height: GLYPH_PX } }
             onClick={ (event) => {
               event.stopPropagation();
@@ -211,26 +211,26 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
             } }
           >
             <IconChevronRight
-              className={ `size-4 transition-transform ${ isExpanded ? "rotate-90" : "" }` }
+              className={ `mat:size-4 mat:transition-transform ${ isExpanded ? "mat:rotate-90" : "" }` }
               style={ { color: mutedColor } }
             />
           </button>
         ) : (
-          <span className="shrink-0" style={ { width: GLYPH_PX, height: GLYPH_PX } } aria-hidden/>
+          <span className="mat:shrink-0" style={ { width: GLYPH_PX, height: GLYPH_PX } } aria-hidden/>
         ) }
-        { Icon && <Icon className="size-4 shrink-0" style={ { color: iconColor } }/> }
-        <span className="min-w-0 flex-1 truncate font-medium" style={ { color: labelColor } }>{ label }</span>
+        { Icon && <Icon className="mat:size-4 mat:shrink-0" style={ { color: iconColor } }/> }
+        <span className="mat:min-w-0 mat:flex-1 mat:truncate mat:font-medium" style={ { color: labelColor } }>{ label }</span>
         { /* A block that only renders for some recipients looks identical to
              every other one on the canvas — the tree is where that reads. */ }
         { features.visibility && hasVisibilityRules(node.visibility) && (
           <IconFilter
-            className="size-3.5 shrink-0"
+            className="mat:size-3.5 mat:shrink-0"
             style={ { color: isSelected ? mutedColor : "var(--mat-builder-color-conditional-fg)" } }
             aria-label="Shown conditionally"
           />
         ) }
         { isRoot && (
-          <span className="shrink-0 text-xs mr-1" style={ { color: mutedColor } }>Root</span>
+          <span className="mat:shrink-0 mat:text-xs mat:mr-1" style={ { color: mutedColor } }>Root</span>
         ) }
         { instruction && <InstructionIndicator instruction={ instruction } depth={ depth }/> }
       </div>
@@ -240,7 +240,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
           <Fragment key={ containerName }>
             { childEntries.length > 1 && (
               <p
-                className="py-0.5 text-[10px] font-medium uppercase tracking-wide"
+                className="mat:py-0.5 mat:text-[10px] mat:font-medium mat:uppercase mat:tracking-wide"
                 style={ {
                   paddingLeft: ROW_PAD_LEFT + (depth + 1) * INDENT_PX + GLYPH_PX + GAP_PX,
                   color: "var(--mat-builder-color-panel-muted-fg)",
@@ -272,7 +272,7 @@ function InstructionIndicator({ instruction, depth }: { instruction: Instruction
   if (instruction.operation === "combine") {
     return (
       <div
-        className="pointer-events-none absolute inset-0 rounded-(--border-radius-menu-item)"
+        className="mat:pointer-events-none mat:absolute mat:inset-0 mat:rounded-(--border-radius-menu-item)"
         style={ { boxShadow: `inset 0 0 0 ${ thickness } ${ color }` } }
       />
     );
@@ -280,7 +280,7 @@ function InstructionIndicator({ instruction, depth }: { instruction: Instruction
   const edge = instruction.operation === "reorder-before" ? { top: `calc(${ thickness } / -2)` } : { bottom: `calc(${ thickness } / -2)` };
   return (
     <div
-      className="pointer-events-none absolute z-10 rounded-full"
+      className="mat:pointer-events-none mat:absolute mat:z-10 mat:rounded-full"
       style={ { ...edge, left, right: 0, height: thickness, backgroundColor: color } }
     />
   );

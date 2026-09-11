@@ -18,7 +18,7 @@ export interface ToolbarProps {
 
 export function Toolbar({ className, children }: ToolbarProps) {
     return (
-        <div className={`mat-builder-toolbar flex items-center gap-2 ${className ?? ""}`}>
+        <div className={`mat-builder-toolbar mat-ui mat:flex mat:items-center mat:gap-2 ${className ?? ""}`}>
             <UndoRedoButtons />
             {children}
         </div>
@@ -28,7 +28,7 @@ export function Toolbar({ className, children }: ToolbarProps) {
 export function UndoRedoButtons() {
     const { undo, redo, canUndo, canRedo } = useEditor();
     return (
-        <div className="flex items-center gap-1">
+        <div className="mat:flex mat:items-center mat:gap-1">
             <ButtonIconSquare
                 Icon={IconArrowBackUp}
                 variant={canUndo ? 'primary' : 'transparent'}

@@ -255,18 +255,18 @@ class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, { error: unk
         const message = error instanceof Error ? error.message : String(error);
         return (
             <div
-                className={`mat-builder-shell relative h-full ${this.props.className ?? ""}`}
+                className={`mat-builder-shell mat-ui mat:relative mat:h-full ${this.props.className ?? ""}`}
                 style={{ ...dottedSurface, ...this.props.style }}
             >
-                <div className="absolute inset-0 grid place-items-center p-6">
+                <div className="mat:absolute mat:inset-0 mat:grid mat:place-items-center mat:p-6">
                     <div
                         role="alert"
-                        className="max-w-lg rounded-lg border p-4 text-sm"
+                        className="mat:max-w-lg mat:rounded-lg mat:border mat:p-4 mat:text-sm"
                         style={{ ...dockedPanel, color: "var(--mat-builder-color-panel-fg)" }}
                     >
-                        <div className="font-semibold">The editor could not be shown</div>
+                        <div className="mat:font-semibold">The editor could not be shown</div>
                         <pre
-                            className="mt-2 whitespace-pre-wrap break-words text-xs"
+                            className="mat:mt-2 mat:whitespace-pre-wrap mat:break-words mat:text-xs"
                             style={{ color: "var(--mat-builder-color-missing-fg)" }}
                         >
                             {message}
@@ -356,7 +356,7 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
     return (
         <div
             ref={rootRef}
-            className={`mat-builder-shell relative h-full ${className ?? ""}`}
+            className={`mat-builder-shell mat-ui mat:relative mat:h-full ${className ?? ""}`}
             data-mat-builder-color-scheme={colorSchemeAttr(colorScheme)}
             // Theme first, so an explicit `style` stays the last word.
             style={{ ...dottedSurface, ...themeToStyle(theme), ...style }}
@@ -365,15 +365,15 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                 (nothing is lost by resizing) but leaves the tab order and the
                 accessibility tree until there is room for it again. */}
             {tooNarrow && (
-                <div role="status" className="absolute inset-0 z-40 grid place-items-center p-6" style={dottedSurface}>
+                <div role="status" className="mat:absolute mat:inset-0 mat:z-40 mat:grid mat:place-items-center mat:p-6" style={dottedSurface}>
                     <div
-                        className="mat-builder-small-screen-notice max-w-sm rounded-lg border p-4 text-sm"
+                        className="mat-builder-small-screen-notice mat:max-w-sm mat:rounded-lg mat:border mat:p-4 mat:text-sm"
                         style={{ ...dockedPanel, color: "var(--mat-builder-color-panel-fg)" }}
                     >
                         {smallScreenNotice ?? (
                             <>
-                                <div className="font-semibold">This editor needs more room</div>
-                                <p className="mt-1" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                                <div className="mat:font-semibold">This editor needs more room</div>
+                                <p className="mat:mt-1" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                                     Widen the window to at least {minWidth}px, or open it on a larger screen.
                                 </p>
                             </>
@@ -382,7 +382,7 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                 </div>
             )}
             <div
-                className="absolute inset-0 flex flex-col"
+                className="mat:absolute mat:inset-0 mat:flex mat:flex-col"
                 inert={tooNarrow || undefined}
                 aria-hidden={tooNarrow || undefined}
             >
@@ -403,14 +403,14 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                     panels. Clipped, so a collapsed column parks off-stage
                     instead of hanging outside the shell. (Panel popovers are
                     portalled to the body and are not affected.) */}
-                <div className="relative min-h-0 flex-1 overflow-hidden">
+                <div className="mat:relative mat:min-h-0 mat:flex-1 mat:overflow-hidden">
                     {/* Canvas column. A wrapper, not a className on the surface:
                         the Artboard root is position:relative itself.
                         transparentSurface lets the root's dot layer show
                         through, so there is no phase seam where the canvas
                         meets the app background. */}
                     <div
-                        className="absolute inset-y-0"
+                        className="mat:absolute mat:inset-y-0"
                         style={{
                             ...transparentSurface,
                             left: leftDocked ? sidebar : 0,
@@ -418,14 +418,14 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                             transition: slide("left"),
                         }}
                     >
-                        {canvas ?? <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />}
+                        {canvas ?? <Canvas className="mat:h-full" artboardWidth="fill" artboardHeight="fill" />}
                     </div>
                     {/* The panels are wrapped rather than styled directly: the
                         docked surface (background + border color) is shell
                         chrome, and the panel components take only a className. */}
                     {showLeftColumn && (
                         <aside
-                            className="absolute inset-y-0 left-0 z-30 flex w-(--mat-builder-sidebar-width) flex-col border-r"
+                            className="mat:absolute mat:inset-y-0 mat:left-0 mat:z-30 mat:flex mat:w-(--mat-builder-sidebar-width) mat:flex-col mat:border-r"
                             // Off-stage is also out of the tab order and out of
                             // the accessibility tree — it is not a panel you can
                             // reach, only one that is coming back.
@@ -437,23 +437,23 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                                 transition: slide("transform"),
                             }}
                         >
-                            {showPalette && <Palette className="min-h-0 flex-1" />}
+                            {showPalette && <Palette className="mat:min-h-0 mat:flex-1" />}
                             {showLayers && (
                                 <div
-                                    className="flex min-h-0 flex-1 flex-col"
+                                    className="mat:flex mat:min-h-0 mat:flex-1 mat:flex-col"
                                     style={showPalette ? DIVIDED_PANEL : undefined}
                                 >
-                                    <LayersPanel className="min-h-0 flex-1" />
+                                    <LayersPanel className="mat:min-h-0 mat:flex-1" />
                                 </div>
                             )}
                         </aside>
                     )}
                     {showInspector && (
                         <div
-                            className="absolute inset-y-0 right-0 z-30 w-(--mat-builder-sidebar-width) border-l"
+                            className="mat:absolute mat:inset-y-0 mat:right-0 mat:z-30 mat:w-(--mat-builder-sidebar-width) mat:border-l"
                             style={dockedPanel}
                         >
-                            {inspector ?? <Inspector className="h-full" />}
+                            {inspector ?? <Inspector className="mat:h-full" />}
                         </div>
                     )}
                 </div>

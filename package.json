@@ -1,6 +1,6 @@
 {
   "name": "@matthiaskrijgsman/mat-builder",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Headless-first React drag-and-drop block builder: document model, undo/redo, Pragmatic drag and drop, and composable editor UI. Ships an email builder preset.",
   "keywords": [
     "react",
@@ -48,6 +48,12 @@
     "./style.css": {
       "default": "./dist/style.css"
     },
+    "./style-flat": {
+      "default": "./dist/style-flat.css"
+    },
+    "./style-flat.css": {
+      "default": "./dist/style-flat.css"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -65,9 +71,10 @@
   "scripts": {
     "dev": "vite",
     "dev:watch": "vite build --watch",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && tsc -p tsconfig.build.json && node scripts/build-style-flat.mjs && node scripts/check-css.mjs",
     "build:types": "tsc -p tsconfig.build.json",
-    "prepublishOnly": "vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "vite build && tsc -p tsconfig.build.json && node scripts/build-style-flat.mjs && node scripts/check-css.mjs",
+    "check:css": "node scripts/build-style-flat.mjs && node scripts/check-css.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -92,7 +99,7 @@
     "@lexical/rich-text": "^0.45.0",
     "@lexical/selection": "^0.45.0",
     "@lexical/utils": "^0.45.0",
-    "@matthiaskrijgsman/mat-ui": "^0.0.67",
+    "@matthiaskrijgsman/mat-ui": "^0.0.68",
     "@react-email/render": "^2.0.10",
     "lexical": "^0.45.0",
     "react": "^19.1.1",
@@ -114,7 +121,7 @@
     "@lexical/rich-text": "0.45.0",
     "@lexical/selection": "0.45.0",
     "@lexical/utils": "0.45.0",
-    "@matthiaskrijgsman/mat-ui": "^0.0.67",
+    "@matthiaskrijgsman/mat-ui": "^0.0.68",
     "@react-email/render": "^2.0.10",
     "@tabler/icons-react": "^3.34.1",
     "@tailwindcss/vite": "^4.1.12",
@@ -127,6 +134,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "lexical": "0.45.0",
+    "postcss": "^8.5.28",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-email": "^6.0.0",

@@ -59,7 +59,7 @@ export function ChromeOverlay({ scrollerRef }: { scrollerRef: RefObject<HTMLDivE
         // same boundary, so nothing visible changes.
         <div
             ref={overlayRef}
-            className="pointer-events-none absolute z-20 overflow-hidden"
+            className="mat:pointer-events-none mat:absolute mat:z-20 mat:overflow-hidden"
             style={{ inset: `calc(-1 * (var(--mat-builder-chrome-ring-offset) + ${RING_SLACK}px))` }}
         >
             <AnimatePresence>
@@ -155,7 +155,7 @@ function ChromeFrame({ id, state, overlayRef, scrollerRef }: ChromeFrameProps) {
     return (
         <motion.div
             ref={frameRef}
-            className="mat-builder-chrome-frame absolute left-0 top-0"
+            className="mat-builder-chrome-frame mat:absolute mat:left-0 mat:top-0"
             data-state={state}
             style={{ visibility: attached ? "visible" : "hidden" }}
             initial={{ opacity: 0 }}

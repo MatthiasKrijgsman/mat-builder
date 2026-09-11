@@ -21,7 +21,8 @@ Guides: [Getting started](getting-started.md) · [Custom blocks](custom-blocks.m
 | `@matthiaskrijgsman/mat-builder` | editor, core, hooks, fields, style groups, theming | ✗ |
 | `@matthiaskrijgsman/mat-builder/email` | block preset, `<EmailBuilder>`, `<EmailPreview>` | ✗ |
 | `@matthiaskrijgsman/mat-builder/email/render` | output pipeline, style converters, rich text, visibility | ✓ |
-| `@matthiaskrijgsman/mat-builder/style` | the stylesheet (required) | — |
+| `@matthiaskrijgsman/mat-builder/style` | the stylesheet (required) — Tailwind v4 output, every utility `mat:`-prefixed | — |
+| `@matthiaskrijgsman/mat-builder/style-flat` | the same rules unlayered and scoped to the builder's roots, for a host not on Tailwind v4 ([getting started §2.2](getting-started.md#22-the-stylesheet)) | — |
 | `@matthiaskrijgsman/mat-builder/package.json` | the manifest, for tooling that reads the installed version | — |
 
 ---

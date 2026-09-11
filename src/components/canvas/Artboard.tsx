@@ -210,7 +210,7 @@ export function Artboard(props: ArtboardProps) {
     return (
         <div
             ref={surfaceRef}
-            className={`relative overflow-auto ${className ?? ""}`}
+            className={`mat:relative mat:overflow-auto ${className ?? ""}`}
             style={{
                 backgroundColor: "var(--mat-builder-color-canvas-bg)",
                 backgroundImage:
@@ -224,9 +224,9 @@ export function Artboard(props: ArtboardProps) {
             }}
             {...rest}
         >
-            <div className="grid min-h-full place-items-center p-6">
+            <div className="mat:grid mat:min-h-full mat:place-items-center mat:p-6">
                 <motion.div
-                    className="relative"
+                    className="mat:relative"
                     initial={false}
                     animate={
                         fitted
@@ -236,7 +236,7 @@ export function Artboard(props: ArtboardProps) {
                     transition={REVEAL_TRANSITION}
                 >
                     <div
-                        className="mat-builder-artboard-frame overflow-hidden border"
+                        className="mat-builder-artboard-frame mat:overflow-hidden mat:border"
                         style={{
                             width: size.width,
                             height: size.height,
@@ -313,7 +313,7 @@ function ResizeHandle(props: {
         <div
             role="separator"
             aria-label={horizontal ? "Resize height" : "Resize width"}
-            className="absolute grid place-items-center"
+            className="mat:absolute mat:grid mat:place-items-center"
             style={hitStyle}
             onPointerDown={startDrag}
             onPointerEnter={() => setHovered(true)}
@@ -321,7 +321,7 @@ function ResizeHandle(props: {
             onClick={(event) => event.stopPropagation()}
         >
             <motion.div
-                className="rounded-full"
+                className="mat:rounded-full"
                 initial={false}
                 animate={{
                     width: horizontal ? length : thickness,

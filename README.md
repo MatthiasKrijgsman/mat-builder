@@ -40,7 +40,7 @@ The last two are needed by `/email` and `/email/render`; only a consumer using t
 ## Quick start
 
 ```tsx
-import "@matthiaskrijgsman/mat-ui/style";
+import "@matthiaskrijgsman/mat-ui/style";        // on Tailwind v3 or no Tailwind: the `/style-flat` entries instead
 import "@matthiaskrijgsman/mat-builder/style";
 import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 

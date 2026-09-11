@@ -13,9 +13,19 @@
  * Verified by site/public/preflight-check.html, a deliberately non-Tailwind
  * page: with this stylesheet loaded, nothing on it may change.
  */
+/*
+ * PREFIXED. Every utility is authored as `mat:flex`, `mat:h-full`, … and
+ * compiles to `.mat\:flex`; Tailwind's theme variables come out as `--mat-*`.
+ * A host on Tailwind v3 (or on v4 with a different config) therefore never
+ * has a class of the same name as ours: its `.flex` and our `.mat\:flex`
+ * cannot collide, and a v3 `-translate-y-1/2` can never stack on top of our
+ * `mat:-translate-y-1/2`. The same prefix as mat-ui, so a selector here can
+ * name a mat-ui utility (`.mat\:h-px` below). scripts/check-css.mjs fails
+ * the build if an unprefixed utility slips in.
+ */
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "tailwindcss/theme.css" layer(theme) prefix(mat);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(mat);
 
 /* The scoped stand-in for preflight */
 @import "./styles/preflight.css";
@@ -196,9 +206,9 @@
 /*
  * Dividers inside panels sit as items of scrolling flex columns; once the
  * column overflows, flex shrinks their 1px extent to 0 and they vanish.
- * Pin both orientations of mat-ui's Divider (h-px / w-px).
+ * Pin both orientations of mat-ui's Divider (mat:h-px / mat:w-px).
  */
-:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar) :where(.h-px, .w-px) {
+:where(.mat-builder-palette, .mat-builder-inspector, .mat-builder-layers, .mat-builder-toolbar) :where(.mat\:h-px, .mat\:w-px) {
     flex-shrink: 0;
 }
 

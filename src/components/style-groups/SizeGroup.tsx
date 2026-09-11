@@ -39,7 +39,7 @@ export function SizeGroup({
     return (
         <InspectorGroup label={label} defaultOpen={defaultOpen}>
             {/* W and H side by side (Figma) — a lone axis takes the full row */}
-            <div className={both ? "grid grid-cols-2 gap-1.5" : undefined}>
+            <div className={both ? "mat:grid mat:grid-cols-2 mat:gap-1.5" : undefined}>
                 {show("width") && (
                     <Fields.DimensionField
                         axis="width"

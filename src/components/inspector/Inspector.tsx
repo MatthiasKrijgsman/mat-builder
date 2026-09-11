@@ -30,7 +30,7 @@ export function Inspector({ className }: InspectorPanelProps) {
 
   if (!selected) {
     return (
-      <div className={ `mat-builder-inspector grid place-items-center p-2 ${ className ?? "" }` }>
+      <div className={ `mat-builder-inspector mat-ui mat:grid mat:place-items-center mat:p-2 ${ className ?? "" }` }>
           <TableEmpty
             Icon={ IconClick }
             title={ 'No block selected' }
@@ -49,17 +49,17 @@ export function Inspector({ className }: InspectorPanelProps) {
   const InspectorForm = definition?.inspector;
 
   return (
-    <div className={ `mat-builder-inspector flex flex-col gap-1 px-1 ${ className ?? "" }` }>
-      <header className="flex shrink-0 flex-col">
-        <div className="flex flex-row items-center gap-2.5 py-1.5 pl-3 pr-1">
+    <div className={ `mat-builder-inspector mat-ui mat:flex mat:flex-col mat:gap-1 mat:px-1 ${ className ?? "" }` }>
+      <header className="mat:flex mat:shrink-0 mat:flex-col">
+        <div className="mat:flex mat:flex-row mat:items-center mat:gap-2.5 mat:py-1.5 mat:pl-3 mat:pr-1">
           { Icon && (
             <Icon
-              className="size-5 shrink-0 stroke-2"
+              className="mat:size-5 mat:shrink-0 mat:stroke-2"
               style={ { color: tint ? tintCssVar(tint, "fg") : "var(--mat-builder-color-panel-fg)" } }
             />
           ) }
-          <div className="line-clamp-1 flex-1 break-all py-2 font-semibold">{ label }</div>
-          <div className="flex shrink-0 flex-row items-center gap-1">
+          <div className="mat:line-clamp-1 mat:flex-1 mat:break-all mat:py-2 mat:font-semibold">{ label }</div>
+          <div className="mat:flex mat:shrink-0 mat:flex-row mat:items-center mat:gap-1">
             { canDuplicate && (
               <ButtonIconSquare
                 Icon={ IconCopy }
@@ -88,7 +88,7 @@ export function Inspector({ className }: InspectorPanelProps) {
            node field, so a consumer's blocks inherit it without doing
            anything (docs/06 §Conditional visibility) — unless the host
            switched the feature off (`features.visibility`). */ }
-      <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+      <div className="mat:flex mat:min-h-0 mat:flex-1 mat:flex-col mat:gap-1 mat:overflow-y-auto">
         { InspectorForm ? (
           // A throwing form costs the form, not the panel (BlockErrorBoundary)
           <BlockErrorBoundary
@@ -97,7 +97,7 @@ export function Inspector({ className }: InspectorPanelProps) {
             onError={ callbacks.onBlockError }
             resetKey={ node.props }
             fallback={ (error) => (
-              <p className="px-3 py-2 text-xs" style={ { color: "var(--mat-builder-color-missing-fg)" } }>
+              <p className="mat:px-3 mat:py-2 mat:text-xs" style={ { color: "var(--mat-builder-color-missing-fg)" } }>
                 The settings for this block could not be rendered: { errorMessage(error) }
               </p>
             ) }
@@ -109,7 +109,7 @@ export function Inspector({ className }: InspectorPanelProps) {
             />
           </BlockErrorBoundary>
         ) : (
-          <p className="px-3 py-2 text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+          <p className="mat:px-3 mat:py-2 mat:text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
             This block has no settings.
           </p>
         ) }

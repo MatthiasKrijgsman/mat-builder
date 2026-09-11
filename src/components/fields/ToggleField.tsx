@@ -24,9 +24,9 @@ export interface ToggleFieldProps {
  */
 export function ToggleField({ label, value, onChange, description }: ToggleFieldProps) {
     return (
-        <div className="flex flex-col">
-            <label className="flex cursor-pointer flex-row items-center justify-between gap-3">
-                {label && <span className="input-label min-w-0 font-[number:var(--font-weight-input-label)]">{label}</span>}
+        <div className="mat:flex mat:flex-col">
+            <label className="mat:flex mat:cursor-pointer mat:flex-row mat:items-center mat:justify-between mat:gap-3">
+                {label && <span className="input-label mat:min-w-0 mat:font-[number:var(--font-weight-input-label)]">{label}</span>}
                 <InputToggle checked={value ?? false} onChange={(event) => onChange(event.target.checked)} />
             </label>
             <InputDescription>{description}</InputDescription>

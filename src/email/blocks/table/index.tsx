@@ -115,7 +115,7 @@ export const tableBlock = defineBlock<EmailTableProps>({
     editRender: ({ props, containers }) => <table style={tableStyles(props)}>{containers.rows}</table>,
     inspector: ({ props, update }) => (
         <>
-            <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
+            <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
                 <Fields.SegmentedField
                     label="Column sizing"
                     value={props.tableLayout}
@@ -147,7 +147,7 @@ export const tableBlock = defineBlock<EmailTableProps>({
                 onChange={(background) => update({ background })}
             />
             <Divider />
-            <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
+            <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
                 <Fields.SelectField
                     label="Borders"
                     value={props.borderMode}
@@ -200,7 +200,7 @@ export const tableRowBlock = defineBlock<EmailTableRowProps>({
     getDisplayName: (props) => (props.variant === "body" ? undefined : props.variant === "header" ? "Header row" : "Footer row"),
     editRender: ({ containers }) => <>{containers.cells}</>,
     inspector: ({ props, update }) => (
-        <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
+        <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
             <Fields.SegmentedField
                 label="Row type"
                 value={props.variant}

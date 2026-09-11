@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flat stylesheet check</title>
+<!--
+  docs/07 §C6's "actual test": a host that is NOT on Tailwind v4 — its CSS is
+  unlayered, like Tailwind v3's or a hand-written reset's.
+
+  Load with ?entry=flat to pull in both packages' `style-flat` entries, or
+  ?entry=layered for the plain `style` entries, and run window.__probe():
+
+    layered → the host's `input { padding: 0 }` beats our utility (a layered
+              declaration loses to any unlayered one), so the padding is 0.
+    flat    → the utility wins on specificity, as it should: 40px.
+
+  In BOTH modes the host's own `.flex`, `--font-sans` and body font must be
+  untouched — that is the prefix and the scope doing their job.
+-->
+<meta name="color-scheme" content="light only">
+<style>
+  /* The host: an unlayered reset and a few utilities of its own. */
+  html { background: #fff; color-scheme: light; }
+  body { font-family: Georgia, serif; max-width: 46rem; margin: 2rem auto; color: #1a1a1a; line-height: 1.6; }
+  input { padding: 0; border: 1px solid #888; }
+  :root { --font-sans: Georgia, serif; }
+  .flex { display: inline; }
+  .font-sans { font-family: Georgia, serif; }
+  section { border-top: 1px solid #ddd; padding-top: .5rem; margin-top: 1.5rem; }
+  code { background: #f4f4f5; padding: .1rem .3rem; }
+</style>
+<script>
+  const entry = new URLSearchParams(location.search).get("entry");
+  if (entry === "flat" || entry === "layered") {
+    const suffix = entry === "flat" ? "-style-flat.css" : "-style.css";
+    document.write('<link rel="stylesheet" href="/_mat-ui' + suffix + '">');
+    document.write('<link rel="stylesheet" href="/_mat-builder' + suffix + '">');
+  }
+</script>
+</head>
+<body>
+  <p id="mode"></p>
+
+  <section>
+    <h2>Inside the builder (scoped)</h2>
+    <div class="mat-builder-shell mat-ui">
+      <input id="ours" class="mat:pl-10 mat:flex" value="our input — expects padding-left 40px">
+    </div>
+  </section>
+
+  <section>
+    <h2>The host's own elements (must be untouched)</h2>
+    <p id="host-flex" class="flex">A host <code>.flex</code> element — expects <code>display: inline</code>.</p>
+    <p id="host-font" class="font-sans">A host <code>.font-sans</code> element — expects Georgia.</p>
+    <input id="host-input" value="a host input — expects padding 0">
+  </section>
+
+  <pre id="out"></pre>
+  <script>
+    document.getElementById("mode").textContent = entry ? "Entry: " + entry : "Baseline: no builder stylesheet loaded";
+    window.__probe = () => {
+      const cs = (id) => getComputedStyle(document.getElementById(id));
+      return {
+        oursPaddingLeft: cs("ours").paddingLeft,
+        oursDisplay: cs("ours").display,
+        hostFlexDisplay: cs("host-flex").display,
+        hostFontFamily: cs("host-font").fontFamily,
+        hostInputPadding: cs("host-input").paddingLeft,
+        hostFontSansVar: getComputedStyle(document.documentElement).getPropertyValue("--font-sans").trim(),
+        bodyFont: getComputedStyle(document.body).fontFamily,
+      };
+    };
+    document.getElementById("out").textContent = JSON.stringify(window.__probe(), null, 2);
+  </script>
+</body>
+</html>

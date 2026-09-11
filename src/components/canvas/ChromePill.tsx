@@ -28,7 +28,7 @@ export function ChromePill({ label, Icon, placement = "above" }: ChromePillProps
     const travel = placement === "below" ? -4 : 4;
     return (
         <motion.span
-            className="mat-builder-chrome-pill pointer-events-auto absolute"
+            className="mat-builder-chrome-pill mat:pointer-events-auto mat:absolute"
             data-placement={placement}
             // The artboard's empty-area click deselects — the pill must not bubble
             onClick={(event) => event.stopPropagation()}
@@ -37,7 +37,7 @@ export function ChromePill({ label, Icon, placement = "above" }: ChromePillProps
             exit={{ y: travel, scale: 0.9, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.34, 1.6, 0.5, 1] }}
         >
-            {Icon && <Icon className="size-4 shrink-0" />}
+            {Icon && <Icon className="mat:size-4 mat:shrink-0" />}
             {label}
         </motion.span>
     );

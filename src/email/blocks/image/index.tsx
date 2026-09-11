@@ -36,7 +36,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
             />
         ) : (
             <div
-                className={`${SIZE_BOX_CLASS} flex min-h-24 items-center justify-center rounded border border-dashed text-xs`}
+                className={`${SIZE_BOX_CLASS} mat:flex mat:min-h-24 mat:items-center mat:justify-center mat:rounded mat:border mat:border-dashed mat:text-xs`}
                 style={{
                     borderColor: "var(--mat-builder-color-placeholder-border)",
                     color: "var(--mat-builder-color-placeholder-fg)",
@@ -47,7 +47,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
         ),
     inspector: ({ props, update }) => (
         <>
-            <div className="flex flex-col gap-4 px-2 pb-4 pt-2">
+            <div className="mat:flex mat:flex-col mat:gap-4 mat:px-2 mat:pb-4 mat:pt-2">
                 <Fields.TextField label="Image URL" value={props.src} onChange={(src) => update({ src })} />
                 <Fields.TextField label="Alt text" value={props.alt} onChange={(alt) => update({ alt })} />
                 <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />

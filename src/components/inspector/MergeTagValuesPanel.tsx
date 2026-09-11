@@ -27,14 +27,14 @@ export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
     const filled = usage.filter((entry) => (values[entry.tag.token] ?? "") !== "").length;
 
     return (
-        <div className={`mat-builder-merge-tag-values flex flex-col gap-1 px-1 ${className ?? ""}`}>
-            <header className="flex shrink-0 flex-col">
-                <div className="flex flex-row items-center gap-2.5 py-1.5 pr-1 pl-3">
+        <div className={`mat-builder-merge-tag-values mat:flex mat:flex-col mat:gap-1 mat:px-1 ${className ?? ""}`}>
+            <header className="mat:flex mat:shrink-0 mat:flex-col">
+                <div className="mat:flex mat:flex-row mat:items-center mat:gap-2.5 mat:py-1.5 mat:pr-1 mat:pl-3">
                     <IconBraces
-                        className="size-5 shrink-0 stroke-2"
+                        className="mat:size-5 mat:shrink-0 mat:stroke-2"
                         style={{ color: "var(--mat-builder-color-rule-accent)" }}
                     />
-                    <div className="line-clamp-1 flex-1 py-2 font-semibold">Preview data</div>
+                    <div className="mat:line-clamp-1 mat:flex-1 mat:py-2 mat:font-semibold">Preview data</div>
                     {filled > 0 && (
                         <Button size="sm" variant="transparent" onClick={() => actions.setPreviewValues({})}>
                             Clear
@@ -45,7 +45,7 @@ export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
             </header>
 
             {usage.length === 0 ? (
-                <div className="grid flex-1 place-items-center p-2">
+                <div className="mat:grid mat:flex-1 mat:place-items-center mat:p-2">
                     <TableEmpty
                         Icon={IconTag}
                         title="No merge tags in use"
@@ -53,8 +53,8 @@ export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
                     />
                 </div>
             ) : (
-                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-                    <p className="text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                <div className="mat:flex mat:min-h-0 mat:flex-1 mat:flex-col mat:gap-3 mat:overflow-y-auto mat:p-3">
+                    <p className="mat:text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                         Stand-in values for this preview only. Tags left empty stay visible as their token.
                     </p>
                     {usage.map((entry) => (
@@ -81,21 +81,21 @@ function ValueField({ usage, value, onChange }: ValueFieldProps) {
     const { tag } = usage;
     const declaredValues = tag.values ?? [];
     return (
-        <div className="flex flex-col gap-1.5">
-            <div className="flex flex-row items-center gap-1.5">
-                <span className="min-w-0 truncate text-xs font-medium" style={{ color: "var(--mat-builder-color-input-label)" }}>
+        <div className="mat:flex mat:flex-col mat:gap-1.5">
+            <div className="mat:flex mat:flex-row mat:items-center mat:gap-1.5">
+                <span className="mat:min-w-0 mat:truncate mat:text-xs mat:font-medium" style={{ color: "var(--mat-builder-color-input-label)" }}>
                     {tag.label}
                 </span>
                 {/* A tag only a rule mentions never appears in the copy, so say
                     so — otherwise an empty preview looks like a broken tag. */}
                 {usage.inRules && !usage.inContent && (
                     <IconEyeOff
-                        className="size-3.5 shrink-0"
+                        className="mat:size-3.5 mat:shrink-0"
                         style={{ color: "var(--mat-builder-color-conditional-fg)" }}
                         aria-label="Used by visibility rules only"
                     />
                 )}
-                <code className="ml-auto shrink-0 truncate text-[11px]" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                <code className="mat:ml-auto mat:shrink-0 mat:truncate mat:text-[11px]" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                     {tag.token}
                 </code>
             </div>

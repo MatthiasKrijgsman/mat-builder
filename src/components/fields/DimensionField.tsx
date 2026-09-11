@@ -139,7 +139,7 @@ export function DimensionField({ axis, label, value, onChange, modes, blockId }:
                                     // mat-ui's own select convention: a leading check on the
                                     // active row, the rest indented past it
                                     Icon={option === mode ? IconCheck : undefined}
-                                    className={option === mode ? undefined : "pl-11"}
+                                    className={option === mode ? undefined : "mat:pl-11"}
                                     onClick={() => pickMode(option)}
                                 >
                                     <ModeRow Icon={modeIcon(option, axis)}>
@@ -157,8 +157,8 @@ export function DimensionField({ axis, label, value, onChange, modes, blockId }:
 
 function ModeRow({ Icon, children }: { Icon: TablerIcon; children: string }) {
     return (
-        <span className="flex flex-row items-center gap-2.5">
-            <Icon className="h-4 w-4 shrink-0 opacity-60" />
+        <span className="mat:flex mat:flex-row mat:items-center mat:gap-2.5">
+            <Icon className="mat:h-4 mat:w-4 mat:shrink-0 mat:opacity-60" />
             {children}
         </span>
     );

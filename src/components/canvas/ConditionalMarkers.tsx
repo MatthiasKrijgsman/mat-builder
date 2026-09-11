@@ -105,7 +105,7 @@ export function ConditionalMarkers({ scrollerRef }: { scrollerRef: RefObject<HTM
     }, [marked, scrollerRef]);
 
     return (
-        <div ref={originRef} className="absolute inset-0">
+        <div ref={originRef} className="mat:absolute mat:inset-0">
             {marked.map((id) => (
                 <Marker
                     key={id}
@@ -151,7 +151,7 @@ function Marker({
                 onSelect();
             }}
         >
-            <IconFilter className="size-3 shrink-0" aria-hidden />
+            <IconFilter className="mat:size-3 mat:shrink-0" aria-hidden />
         </button>
     );
 }

@@ -94,7 +94,7 @@ export function ContainerSlot(props: {
                 ref={ref as never}
                 data-container={container.name}
                 data-parent-id={parentId}
-                className="flex min-h-12 items-center justify-center rounded border border-dashed p-2 text-xs"
+                className="mat:flex mat:min-h-12 mat:items-center mat:justify-center mat:rounded mat:border mat:border-dashed mat:p-2 mat:text-xs"
                 style={{
                     // An empty slot has no child sibling targets, so it's only ever "direct"
                     borderColor:
@@ -155,7 +155,7 @@ export function ContainerSlot(props: {
             ref={ref as never}
             data-container={container.name}
             data-parent-id={parentId}
-            className={`relative ${className}`}
+            className={`mat:relative ${className}`}
             style={layoutStyle}
         >
             {children}
@@ -165,7 +165,7 @@ export function ContainerSlot(props: {
                 "clipping" the lifted drag source). Below the sibling edge
                 indicator (z-20). */}
             {highlight && Slot === "div" && (
-                <div className="pointer-events-none absolute inset-0 z-10" style={highlight} />
+                <div className="mat:pointer-events-none mat:absolute mat:inset-0 mat:z-10" style={highlight} />
             )}
         </Slot>
     );

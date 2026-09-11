@@ -73,9 +73,18 @@ npm and pnpm's default auto-install-peers hides most of this. It does **not** on
 import "@matthiaskrijgsman/mat-builder/style";
 ```
 
-Import it once, anywhere your bundler processes CSS — your root layout is the usual place.
+Import it once, anywhere your bundler processes CSS — your root layout is the usual place. Import mat-ui's `@matthiaskrijgsman/mat-ui/style` next to it; neither includes the other.
 
-It does **not** touch anything outside the builder. Tailwind's preflight — which would restyle your headings, links, lists and form controls app-wide — is deliberately not shipped; the resets the editor needs are scoped to its own roots instead. Import it wherever you like.
+It does **not** touch anything outside the builder. Tailwind's preflight — which would restyle your headings, links, lists and form controls app-wide — is deliberately not shipped; the resets the editor needs are scoped to its own roots instead. And every utility in it is **prefixed** (`.mat\:flex`, not `.flex`; `--mat-*` theme variables), so nothing in it can collide with your own Tailwind classes, whatever version you run.
+
+**Not on Tailwind v4?** Import the flat entries instead — from both packages:
+
+```ts
+import "@matthiaskrijgsman/mat-ui/style-flat";
+import "@matthiaskrijgsman/mat-builder/style-flat";
+```
+
+`./style` is Tailwind v4 output and uses native cascade layers. In a host whose own CSS is unlayered — Tailwind v3, or no Tailwind at all — **every layered rule loses to every host rule, regardless of specificity**; your reset's `input { padding: 0 }` would beat the padding on every inspector field. A Tailwind v3 PostCSS pipeline also refuses to import a file with bare `@layer` blocks. The flat entries are the same rules with the layers flattened and every selector scoped to the builder's roots (the shell, each panel, and Floating UI's portal for menus and tooltips) at zero extra specificity, so they win the fights they should and reach nothing else. The builder's roots already carry mat-ui's `mat-ui` scope class, so you wrap nothing. Details in [theming §6](theming.md#6-what-style-touches-and-what-it-breaks).
 
 ---
 

@@ -41,7 +41,7 @@ try {
     // The tarball is the published artifact — check it carries what it claims.
     const files = run("tar", ["-tzf", tarball]).split("\n");
     for (const required of ["package/dist/index.js", "package/dist/email.js", "package/dist/email/render.js",
-                            "package/dist/index.d.ts", "package/dist/style.css"]) {
+                            "package/dist/index.d.ts", "package/dist/style.css", "package/dist/style-flat.css"]) {
         if (!files.includes(required)) throw new Error(`tarball is missing ${required}`);
     }
     ok("tarball carries every entry point named in `exports`");
@@ -60,7 +60,14 @@ try {
         readFileSync(join(repo, "node_modules/@matthiaskrijgsman/mat-ui/package.json"), "utf8"),
     ).peerDependencies ?? {};
     const wanted = { ...pkg.peerDependencies, ...matUiPeers };
-    const specs = Object.entries(wanted).map(([name, range]) => `${name}@${range}`);
+    // An unpublished mat-ui under test arrives as a `file:` override
+    // (docs/07 §A5): install that tarball in place of the registry range.
+    const matUiOverride = pkg.pnpm?.overrides?.["@matthiaskrijgsman/mat-ui"];
+    const localMatUi = matUiOverride?.startsWith("file:") ? resolve(repo, matUiOverride.slice(5)) : null;
+    if (localMatUi) console.log(`  (mat-ui from local tarball: ${localMatUi})`);
+    const specs = Object.entries(wanted).map(([name, range]) =>
+        name === "@matthiaskrijgsman/mat-ui" && localMatUi ? localMatUi : `${name}@${range}`,
+    );
     run("npm", ["install", "--silent", "--no-audit", "--no-fund", tarball, ...specs], app);
     ok(`installed the tarball + ${specs.length} peers with no errors`);
 
@@ -141,7 +148,7 @@ export function App({ doc }: { doc: BuilderDocument }) {
         JSON.stringify({ name: "core-only", private: true, version: "0.0.0", type: "module" }, null, 2));
     const nonOptional = Object.entries(pkg.peerDependencies)
         .filter(([name]) => !pkg.peerDependenciesMeta?.[name]?.optional)
-        .map(([name, range]) => `${name}@${range}`);
+        .map(([name, range]) => (name === "@matthiaskrijgsman/mat-ui" && localMatUi ? localMatUi : `${name}@${range}`));
     run("npm", ["install", "--silent", "--no-audit", "--no-fund", tarball,
         ...nonOptional, ...Object.entries(matUiPeers).map(([n, r]) => `${n}@${r}`)], core);
     const coreModules = readdirSync(join(core, "node_modules"));

@@ -149,7 +149,7 @@ export function EmailPreview({
         >
             {error ? (
                 <pre
-                    className="h-full w-full overflow-auto whitespace-pre-wrap p-4 text-xs"
+                    className="mat:h-full mat:w-full mat:overflow-auto mat:whitespace-pre-wrap mat:p-4 mat:text-xs"
                     style={{ color: "var(--mat-builder-color-missing-fg)" }}
                 >
                     {error}
@@ -160,7 +160,7 @@ export function EmailPreview({
                 // HTML would run as the app. The empty allow-list blocks
                 // scripts, forms and top navigation; the preview needs none of
                 // them (the scrollbar styling above travels inside the srcDoc).
-                <iframe title="Email preview" srcDoc={html} sandbox="" className="h-full w-full border-0" />
+                <iframe title="Email preview" srcDoc={html} sandbox="" className="mat:h-full mat:w-full mat:border-0" />
             )}
         </Artboard>
     );

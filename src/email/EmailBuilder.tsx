@@ -114,10 +114,10 @@ export function EmailBuilder(props: EmailBuilderProps) {
             collapseLeftPanel={mode === "preview"}
             canvas={
                 mode === "edit" ? (
-                    <Canvas className="h-full" artboardWidth="fill" artboardHeight="fill" />
+                    <Canvas className="mat:h-full" artboardWidth="fill" artboardHeight="fill" />
                 ) : (
                     <EmailPreview
-                        className="h-full"
+                        className="mat:h-full"
                         initialWidth="fill"
                         initialHeight="fill"
                         debounceMs={previewDebounceMs}
@@ -128,7 +128,7 @@ export function EmailBuilder(props: EmailBuilderProps) {
             // Preview clears the selection, so a block inspector would sit
             // empty there. The panel becomes the preview's data sheet instead:
             // values for the tags this template uses (docs/06 §Preview data).
-            inspector={mode === "preview" ? <MergeTagValuesPanel className="h-full" /> : undefined}
+            inspector={mode === "preview" ? <MergeTagValuesPanel className="mat:h-full" /> : undefined}
         />
     );
 }

@@ -151,7 +151,7 @@ function SpecNode({
 function MissingComposedBlock({ type, reason }: { type: string; reason?: string }) {
     return (
         <div
-            className="rounded border border-dashed p-3 text-xs"
+            className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs"
             style={{
                 borderColor: "var(--mat-builder-color-missing-border)",
                 backgroundColor: "var(--mat-builder-color-missing-bg)",

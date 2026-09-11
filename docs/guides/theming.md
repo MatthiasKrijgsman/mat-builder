@@ -228,6 +228,17 @@ Two constraints worth knowing: keep `chrome-handle-size` ≤ 2 × (`RING_SLACK` 
 
 > **Note:** `@matthiaskrijgsman/mat-ui` had the same leak. It is fixed in mat-ui `0.0.67`; **on `0.0.66` and earlier, importing `@matthiaskrijgsman/mat-ui/style` brings the global reset back with it.** If your headings are being restyled, check which version you are on.
 
+**Every utility is prefixed.** The editor's Tailwind classes are authored as `mat:flex`, `mat:h-full`, … and compile to `.mat\:flex`; Tailwind's theme variables come out as `--mat-*`. So `./style` never defines a class your own Tailwind might also define — its `.flex` and our `.mat\:flex` cannot collide, whatever version you run, and a v3 `-translate-y-1/2` can never stack on top of our `mat:-translate-y-1/2`. mat-ui uses the same prefix. If you had CSS targeting one of the editor's utility classes, it needs the prefix now; the `.mat-builder-*` roots and every token are unchanged.
+
+**`./style-flat` — for a host not on Tailwind v4.** `./style` is Tailwind v4 output and uses native cascade layers (`@layer theme, base, components, utilities`). Layers have one rule that matters here: an unlayered declaration beats a layered one **regardless of specificity**. A host on Tailwind v3, or on no Tailwind, has unlayered CSS, so its `input { padding: 0 }` beats our inputs' padding and its `body { font-family }`… does not reach us, but everything of ours that competes with a host rule loses. A Tailwind v3 PostCSS pipeline also refuses to `@import` a file with bare `@layer` blocks. `./style-flat` is built from `./style` at publish time (`scripts/build-style-flat.mjs`): the layers are flattened, and every selector is scoped to the builder's roots — `.mat-builder-shell`, each panel root, `.mat-builder-canvas`, and `[data-floating-ui-portal]` — through `:where(roots, roots *)`, which adds no specificity, so the rules keep exactly the weight they had and now win the fights the layers made them lose. Tailwind's `*` resets and `@property` fallbacks are scoped the same way, and the `:root` / `.dark` token declarations drop to `:where(:root)` / `:where(.dark)`, so a same-named custom property of your own always wins over ours. Import the flat entry from mat-ui too; the builder's roots already carry mat-ui's `mat-ui` scope class, so you wrap nothing:
+
+```ts
+import "@matthiaskrijgsman/mat-ui/style-flat";
+import "@matthiaskrijgsman/mat-builder/style-flat";
+```
+
+`scripts/check-css.mjs` runs in the build and fails it on an unprefixed utility in `./style` or an unscoped rule in `./style-flat`.
+
 Beyond preflight, the stylesheet provides: the token definitions (§5), block chrome interaction states, slim scrollbars on builder surfaces, rich-text classes for the canvas (`.mat-builder-rt-*`), and the panel text colour.
 
 That last one is set on the panel roots (`.mat-builder-topbar`, `-palette`, `-layers`, `-inspector`) rather than on the shell — deliberately. Without it the panels inherit whatever `color` your body carries, so a dark app plus a dark builder gives near-black labels on a near-black panel. It is scoped to the panels and not the shell so the **artboard keeps inheriting nothing**: a block that sets no colour must look the same on canvas as it will in the inbox, whatever the editor's scheme.
@@ -256,6 +267,8 @@ Fonts inside the *editor* come from mat-ui's tokens (`--font-family-base`, and `
 | A `:root` override of a derived token does nothing | The shell re-declares the ten derived tokens; put the rule on `.mat-builder-shell`, or use the `theme` prop — §4. |
 | Every block icon should be one colour | Set `palette-icon-fg` once rather than the seven tints — §5.1. |
 | Your app's headings lost their styling | Not `./style`, which is scoped — see the mat-ui note in §6. |
+| Inspector fields lose their padding, or icons sit on the input's top edge, in a Tailwind v3 app | Your unlayered CSS is beating the layered stylesheet. Import `./style-flat` (from both packages) — §6. |
+| A rule of yours that targeted `.flex` or another editor utility stopped working | Utilities are prefixed since 0.2.0: `.mat\:flex` — §6. |
 | Two builders on one page look identical when they should not | A `:root` rule themes both; use the `theme` prop per instance — §3.2. |
 | A token in an old snippet does nothing | `palette-tint-N-bg` and `-border` were removed — nothing read them. Only `-fg` exists. |
 

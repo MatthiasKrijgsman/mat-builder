@@ -185,7 +185,7 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
             }
             // The root is the page: it stretches to fill the artboard so its background
             // paints the whole frame (taller content still grows and scrolls).
-            className={`mat-builder-block relative ${isRoot ? "flex min-h-full flex-col *:grow" : ""}`}
+            className={`mat-builder-block mat:relative ${isRoot ? "mat:flex mat:min-h-full mat:flex-col mat:*:grow" : ""}`}
             data-block-id={id}
             data-selected={isSelected && !isRoot ? "" : undefined}
             data-drag-source={isDragSource ? "" : undefined}
@@ -279,7 +279,7 @@ function EdgeIndicator({ edge }: { edge: Edge }) {
         : { right: offset, top: 0, bottom: 0, width: thickness };
     return (
         <div
-            className="pointer-events-none absolute z-20 rounded-full"
+            className="mat:pointer-events-none mat:absolute mat:z-20 mat:rounded-full"
             style={{ ...position, backgroundColor: "var(--mat-builder-color-drop-indicator)" }}
         />
     );
@@ -294,7 +294,7 @@ const MISSING_STYLE = {
 /** Unknown block types render this instead of crashing (docs/03 §2). */
 function MissingBlock({ type }: { type: string }) {
     return (
-        <div className="rounded border border-dashed p-3 text-xs" style={MISSING_STYLE}>
+        <div className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs" style={MISSING_STYLE}>
             Missing block type &ldquo;{type}&rdquo;
         </div>
     );
@@ -304,9 +304,9 @@ function MissingBlock({ type }: { type: string }) {
  * stays selectable, so its inspector can fix the prop that broke it. */
 function BrokenBlock({ label, message }: { label: string; message: string }) {
     return (
-        <div className="rounded border border-dashed p-3 text-xs" style={MISSING_STYLE}>
-            <div className="font-medium">{label} could not be rendered</div>
-            <div className="mt-1 break-words opacity-80">{message}</div>
+        <div className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs" style={MISSING_STYLE}>
+            <div className="mat:font-medium">{label} could not be rendered</div>
+            <div className="mat:mt-1 mat:break-words mat:opacity-80">{message}</div>
         </div>
     );
 }

@@ -20,7 +20,7 @@ export function InheritableField(props: {
     children?: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-2">
+        <div className="mat:flex mat:flex-col mat:gap-2">
             <Fields.ToggleField
                 label={props.label}
                 description={props.overridden ? undefined : props.inheritLabel}

@@ -25,10 +25,10 @@ export interface InspectorGroupProps {
  * (11px medium uppercase, muted), with a chevron that rotates open/closed.
  */
 const headerClasses =
-  "flex h-9 flex-row items-center justify-between gap-3 rounded-(--border-radius-menu-item) " +
-  "px-3 font-(family-name:--font-family-base) cursor-pointer select-none border-none bg-transparent " +
-  "transition-colors duration-(--control-transition-duration) " +
-  "hover:bg-(--mat-builder-color-layer-row-hover-bg) focus:outline-none focus:ring-0";
+  "mat:flex mat:h-9 mat:flex-row mat:items-center mat:justify-between mat:gap-3 mat:rounded-(--border-radius-menu-item) " +
+  "mat:px-3 mat:font-(family-name:--font-family-base) mat:cursor-pointer mat:select-none mat:border-none mat:bg-transparent " +
+  "mat:transition-colors mat:duration-(--control-transition-duration) " +
+  "mat:hover:bg-(--mat-builder-color-layer-row-hover-bg) mat:focus:outline-none mat:focus:ring-0";
 
 export function InspectorGroup({ label, defaultOpen = true, meta, children }: InspectorGroupProps) {
   const [ open, setOpen ] = useState(defaultOpen);
@@ -36,7 +36,7 @@ export function InspectorGroup({ label, defaultOpen = true, meta, children }: In
   // without a cascade of entrance animations.
   const [ hasToggled, setHasToggled ] = useState(false);
   return (
-    <section className={ 'flex flex-col' }>
+    <section className={ 'mat:flex mat:flex-col' }>
       <button
         type="button"
         aria-expanded={ open }
@@ -47,7 +47,7 @@ export function InspectorGroup({ label, defaultOpen = true, meta, children }: In
         } }
       >
         <span
-          className="truncate text-[11px] font-medium uppercase tracking-wider"
+          className="mat:truncate mat:text-[11px] mat:font-medium mat:uppercase mat:tracking-wider"
           style={ {
             color: "var(--mat-builder-color-panel-muted-fg)",
             fontFamily: "var(--mat-builder-font-family-eyebrow)",
@@ -55,21 +55,21 @@ export function InspectorGroup({ label, defaultOpen = true, meta, children }: In
         >
           { label }
         </span>
-        <span className="flex min-w-0 shrink-0 flex-row items-center gap-1.5">
+        <span className="mat:flex mat:min-w-0 mat:shrink-0 mat:flex-row mat:items-center mat:gap-1.5">
           { meta !== undefined && meta !== null && (
-            <span className="truncate text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
+            <span className="mat:truncate mat:text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
               { meta }
             </span>
           ) }
           <IconChevronRight
-            className={ `size-4 shrink-0 transition-transform duration-200 ${ open ? "rotate-90" : "" }` }
+            className={ `mat:size-4 mat:shrink-0 mat:transition-transform mat:duration-200 ${ open ? "mat:rotate-90" : "" }` }
             style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }
           />
         </span>
       </button>
       { open && (
         <motion.div
-          className="flex origin-top flex-col gap-2 p-3"
+          className="mat:flex mat:origin-top mat:flex-col mat:gap-2 mat:p-3"
           initial={ hasToggled ? { opacity: 0, y: -8, scaleY: 0.96 } : false }
           animate={ { opacity: 1, y: 0, scaleY: 1 } }
           transition={ { duration: 0.18, ease: [ 0.25, 0.6, 0.3, 1 ] } }

@@ -87,12 +87,12 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
 
             {mode === "rules" && (
                 <>
-                    <p className="text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                    <p className="mat:text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                         Show this block when&hellip;
                     </p>
 
                     {rules.map((rule, index) => (
-                        <div key={index} className="flex flex-col">
+                        <div key={index} className="mat:flex mat:flex-col">
                             {index > 0 && (
                                 <MatchJoiner
                                     match={match}
@@ -114,17 +114,17 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
                         onClick={addRule}
                         disabled={tags.length === 0}
                         className={
-                            "flex h-10 cursor-pointer flex-row items-center justify-center gap-1.5 rounded-lg " +
-                            "border border-dashed bg-transparent text-sm font-medium " +
-                            "font-(family-name:--font-family-base) transition-colors " +
-                            "duration-(--control-transition-duration) disabled:cursor-not-allowed disabled:opacity-50"
+                            "mat:flex mat:h-10 mat:cursor-pointer mat:flex-row mat:items-center mat:justify-center mat:gap-1.5 mat:rounded-lg " +
+                            "mat:border mat:border-dashed mat:bg-transparent mat:text-sm mat:font-medium " +
+                            "mat:font-(family-name:--font-family-base) mat:transition-colors " +
+                            "mat:duration-(--control-transition-duration) mat:disabled:cursor-not-allowed mat:disabled:opacity-50"
                         }
                         style={{
                             borderColor: "var(--mat-builder-color-rule-border)",
                             color: "var(--mat-builder-color-rule-accent)",
                         }}
                     >
-                        <IconPlus className="size-4 shrink-0" />
+                        <IconPlus className="mat:size-4 mat:shrink-0" />
                         Add rule
                     </button>
                 </>
@@ -138,16 +138,16 @@ const ruleCount = (count: number): string => `${count} ${count === 1 ? "rule" : 
 /** The AND/OR chip between two rule cards — clicking it flips the whole group. */
 function MatchJoiner({ match, onToggle }: { match: "all" | "any"; onToggle: () => void }) {
     return (
-        <div className="flex flex-row items-center gap-2 py-2">
+        <div className="mat:flex mat:flex-row mat:items-center mat:gap-2 mat:py-2">
             <Hairline />
             <button
                 type="button"
                 onClick={onToggle}
                 title={match === "all" ? "Every rule must match — switch to any" : "Any rule may match — switch to every"}
                 className={
-                    "cursor-pointer rounded-md border-none px-2 py-0.5 text-[11px] font-semibold uppercase " +
-                    "tracking-wider font-(family-name:--font-family-base) transition-opacity " +
-                    "duration-(--control-transition-duration) hover:opacity-80"
+                    "mat:cursor-pointer mat:rounded-md mat:border-none mat:px-2 mat:py-0.5 mat:text-[11px] mat:font-semibold mat:uppercase " +
+                    "mat:tracking-wider mat:font-(family-name:--font-family-base) mat:transition-opacity " +
+                    "mat:duration-(--control-transition-duration) mat:hover:opacity-80"
                 }
                 style={{
                     backgroundColor: "var(--mat-builder-color-rule-joiner-bg)",
@@ -162,7 +162,7 @@ function MatchJoiner({ match, onToggle }: { match: "all" | "any"; onToggle: () =
 }
 
 const Hairline = () => (
-    <span className="h-px flex-1" style={{ backgroundColor: "var(--mat-builder-color-rule-border)" }} />
+    <span className="mat:h-px mat:flex-1" style={{ backgroundColor: "var(--mat-builder-color-rule-border)" }} />
 );
 
 interface RuleCardProps {
@@ -189,14 +189,14 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
 
     return (
         <div
-            className="flex flex-col gap-2 rounded-lg border p-2"
+            className="mat:flex mat:flex-col mat:gap-2 mat:rounded-lg mat:border mat:p-2"
             style={{
                 backgroundColor: "var(--mat-builder-color-rule-bg)",
                 borderColor: "var(--mat-builder-color-rule-border)",
             }}
         >
-            <div className="flex flex-row items-center gap-1">
-                <div className="min-w-0 flex-1">
+            <div className="mat:flex mat:flex-row mat:items-center mat:gap-1">
+                <div className="mat:min-w-0 mat:flex-1">
                     <InputSelect
                         size="sm"
                         options={options}
@@ -216,7 +216,7 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
 
             {/* The operator takes the full row when it needs no value, so a
                 presence check reads as one finished phrase. */}
-            <div className={takesValue ? "grid grid-cols-2 gap-2" : undefined}>
+            <div className={takesValue ? "mat:grid mat:grid-cols-2 mat:gap-2" : undefined}>
                 <InputSelect
                     size="sm"
                     options={OPERATOR_OPTIONS}
@@ -248,9 +248,9 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
 /** Tag glyph + name, so a rule's subject reads as a token and not free text. */
 function tagLabel(label: string, token: string): ReactNode {
     return (
-        <span className="flex min-w-0 flex-row items-center gap-2" title={token}>
-            <IconTag className="size-4 shrink-0" style={{ color: "var(--mat-builder-color-rule-accent)" }} />
-            <span className="truncate">{label}</span>
+        <span className="mat:flex mat:min-w-0 mat:flex-row mat:items-center mat:gap-2" title={token}>
+            <IconTag className="mat:size-4 mat:shrink-0" style={{ color: "var(--mat-builder-color-rule-accent)" }} />
+            <span className="mat:truncate">{label}</span>
         </span>
     );
 }

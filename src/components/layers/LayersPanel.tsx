@@ -57,12 +57,12 @@ export function LayersPanel({ className }: LayersPanelProps) {
     }, [selectedId, store]);
 
     return (
-        <div className={`mat-builder-layers flex flex-col gap-1 p-2 ${className ?? ""}`}>
+        <div className={`mat-builder-layers mat-ui mat:flex mat:flex-col mat:gap-1 mat:p-2 ${className ?? ""}`}>
             <div
                 ref={scrollRef}
                 tabIndex={-1}
                 onKeyDown={onKeyDown}
-                className="min-h-0 flex-1 overflow-y-auto p-1 outline-none"
+                className="mat:min-h-0 mat:flex-1 mat:overflow-y-auto mat:p-1 mat:outline-none"
             >
                 <LayerRow id={rootId} depth={0} />
             </div>

@@ -45,7 +45,7 @@ export function MergeTagList({ tags, onInsert }: MergeTagListProps) {
 
     return (
         <>
-            <div className="p-1">
+            <div className="mat:p-1">
                 <Input
                     size="sm"
                     variant="flat"
@@ -66,7 +66,7 @@ export function MergeTagList({ tags, onInsert }: MergeTagListProps) {
                 ),
             )}
             {filtered.length === 0 && (
-                <p className="px-3 py-2 text-sm" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                <p className="mat:px-3 mat:py-2 mat:text-sm" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                     No tags match &ldquo;{query}&rdquo;.
                 </p>
             )}

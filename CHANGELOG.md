@@ -2,6 +2,14 @@
 
 Breaking changes are allowed while on `0.x` and are listed here per release.
 
+## 0.2.0 — 2026-09-11
+
+CSS packaging for hosts that are not on Tailwind v4. Requires `@matthiaskrijgsman/mat-ui@0.0.68`.
+
+- **Breaking: every Tailwind utility in the editor is now prefixed.** `dist/style.css` ships `.mat\:flex` instead of `.flex` and `--mat-*` theme variables instead of Tailwind's defaults, so no class of ours can collide with a host's own Tailwind (v3 or v4). A host that targeted the editor's utility classes in its own CSS must update those selectors; tokens and the `.mat-builder-*` roots are unchanged. mat-ui 0.0.68 makes the same change with the same prefix.
+- **New entry `./style-flat`** (and mat-ui's): the same rules with the cascade layers flattened and every selector scoped to the builder's roots plus Floating UI's portal, at zero extra specificity. For a Tailwind v3 or no-Tailwind host, whose unlayered CSS would otherwise beat every layered rule and whose PostCSS pipeline cannot import bare `@layer` blocks. The builder's roots carry mat-ui's `mat-ui` scope class, so a host wraps nothing.
+- **Build** — `scripts/build-style-flat.mjs` derives the flat entry from the layered one; `scripts/check-css.mjs` fails the build on an unprefixed utility or an unscoped flat rule. `pnpm test:pack` asserts the new entry ships.
+
 ## 0.1.1 — 2026-09-11
 
 From the first external integration (a Tailwind 3 host compiling once and personalising with Liquid). No breaking changes.

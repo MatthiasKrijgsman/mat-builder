@@ -81,14 +81,14 @@ export function ShellTopBar(props: ShellTopBarProps) {
             // controls like the inspector's, and opt into the same compact sm
             // scale so they match the panels rather than sitting a size larger
             // with a rounder corner
-            className={`mat-builder-topbar mat-builder-compact-controls z-30 flex shrink-0 items-center gap-3 border-b py-3 pl-4 pr-3 ${className ?? ""}`}
+            className={`mat-builder-topbar mat-ui mat-builder-compact-controls mat:z-30 mat:flex mat:shrink-0 mat:items-center mat:gap-3 mat:border-b mat:py-3 mat:pl-4 mat:pr-3 ${className ?? ""}`}
             style={dockedPanel}
         >
             {slot(slots.identity, () =>
                 icon || title || documentName ? <Identity icon={icon} title={title} documentName={documentName} /> : null,
             )}
             {slots.leading}
-            <div className="ml-auto flex shrink-0 items-center gap-3">
+            <div className="mat:ml-auto mat:flex mat:shrink-0 mat:items-center mat:gap-3">
                 {slot(slots.actions, () => actions)}
                 {slot(slots.undoRedo, () => <UndoRedoButtons />)}
                 {slot(slots.save, () => (save?.enabled ? <SaveControls save={save} labels={saveLabels} /> : null))}
@@ -107,27 +107,27 @@ function Identity({
     return (
         // min-w-0 all the way down so a long document name truncates
         // instead of shoving the trailing controls off the bar
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="mat:flex mat:min-w-0 mat:items-center mat:gap-3">
             {Icon && (
                 <span
                     aria-hidden
-                    className="flex size-7 shrink-0 items-center justify-center rounded-(--border-radius-menu-item)"
+                    className="mat:flex mat:size-7 mat:shrink-0 mat:items-center mat:justify-center mat:rounded-(--border-radius-menu-item)"
                     style={{ backgroundColor: "var(--mat-builder-color-selection)" }}
                 >
-                    <Icon className="size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
+                    <Icon className="mat:size-4" style={{ color: "var(--mat-builder-color-chrome-tag-fg)" }} />
                 </span>
             )}
             {/* Tighter gap than the chip's: the two segments read as one
                 path, the chip as a separate object */}
-            <div className="flex min-w-0 items-center gap-2">
-                {title && <h1 className="shrink-0 font-semibold">{title}</h1>}
+            <div className="mat:flex mat:min-w-0 mat:items-center mat:gap-2">
+                {title && <h1 className="mat:shrink-0 mat:font-semibold">{title}</h1>}
                 {title && documentName && (
-                    <span aria-hidden className="shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
+                    <span aria-hidden className="mat:shrink-0" style={{ color: "var(--mat-builder-color-panel-border)" }}>
                         /
                     </span>
                 )}
                 {documentName && (
-                    <p className="truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
+                    <p className="mat:truncate" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
                         {documentName}
                     </p>
                 )}
@@ -152,13 +152,13 @@ export function SaveControls({ save, labels }: { save: SaveController; labels?: 
                   : null;
 
     return (
-        <div className="flex items-center gap-3">
+        <div className="mat:flex mat:items-center mat:gap-3">
             {status && (
                 <span
                     // aria-live so a background autosave announces itself; the
                     // button is the only affordance a keyboard user needs.
                     aria-live="polite"
-                    className="whitespace-nowrap text-sm"
+                    className="mat:whitespace-nowrap mat:text-sm"
                     style={{
                         color:
                             save.status === "error"

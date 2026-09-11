@@ -55,7 +55,7 @@ function useInheritedPadding(id: BlockId): SideValues {
 export function CellInspector({ id, props, update }: InspectorProps<EmailTableCellProps>) {
     const inheritedPadding = useInheritedPadding(id);
     return (
-        <div className="flex flex-col gap-4 px-3 pb-4 pt-2">
+        <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
             <InheritableField
                 label="Background"
                 inheritLabel="Inherit from row"
@@ -97,7 +97,7 @@ export function CellInspector({ id, props, update }: InspectorProps<EmailTableCe
                 placeholder="auto, 30% or 120px"
                 onChange={(width) => update({ width })}
             />
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="mat:grid mat:grid-cols-2 mat:gap-1.5">
                 <Fields.NumberField
                     label="Column span"
                     value={props.colSpan}

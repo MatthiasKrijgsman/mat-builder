@@ -61,7 +61,7 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
 
     return (
         <Artboard
-            className={`mat-builder-canvas outline-none ${className ?? ""}`}
+            className={`mat-builder-canvas mat-ui mat:outline-none ${className ?? ""}`}
             initialWidth={artboardWidth}
             initialHeight={artboardHeight}
             size={persistedSize}
@@ -116,7 +116,7 @@ export function Canvas({ className, artboardWidth = 600, artboardHeight = 720 }:
                 </>
             }
         >
-            <div ref={scrollRef} className="mat-builder-artboard-scroll h-full overflow-y-auto">
+            <div ref={scrollRef} className="mat-builder-artboard-scroll mat:h-full mat:overflow-y-auto">
                 <BlockView id={rootId} />
             </div>
         </Artboard>
