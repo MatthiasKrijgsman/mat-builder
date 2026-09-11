@@ -1,5 +1,6 @@
 import { InputSelectSearchable } from "@matthiaskrijgsman/mat-ui";
 import { EMAIL_FONT_STACKS } from "../../style-props/typography.ts";
+import { useLabels } from "../../react/hooks.ts";
 
 /*
  * FontFamilyField — searchable select over the email-safe font stacks
@@ -24,11 +25,12 @@ const fontOption = (font: (typeof EMAIL_FONT_STACKS)[number]) => ({
 const OPTIONS = EMAIL_FONT_STACKS.map(fontOption);
 
 export function FontFamilyField({ value, onChange, ...rest }: FontFamilyFieldProps) {
+    const t = useLabels();
     return (
         <InputSelectSearchable<string>
             size="sm"
             variant="flat"
-            placeholder="Inherit"
+            placeholder={t.fields.inherit}
             clearable
             {...rest}
             options={OPTIONS}

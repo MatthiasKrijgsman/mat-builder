@@ -783,3 +783,130 @@ describe("renderEmail options for a compile-once host", () => {
         expect(load(document).document).toBe(document);
     });
 });
+
+describe("responsive stacking", () => {
+    /** The demo email plus a horizontal row of two texts with the given gap. */
+    function withRow(gap: number, stackOnMobile?: boolean): BuilderDocument {
+        let document = buildDemoEmail();
+        const row = insertBlock(document, { type: "container", at: { parentId: document.rootId, container: "main", index: 1 } }, registry);
+        document = updateProps(row.document, {
+            id: row.blockId,
+            patch: { direction: "horizontal", layout: { horizontal: "start", vertical: "start", gap }, ...(stackOnMobile === undefined ? {} : { stackOnMobile }) },
+        });
+        for (const index of [0, 1]) {
+            const text = insertBlock(document, { type: "text", at: { parentId: row.blockId, container: "content", index } }, registry);
+            document = updateProps(text.document, { id: text.blockId, patch: { content: richTextParagraph(`Column ${index + 1}`) } });
+        }
+        return document;
+    }
+
+    it("marks every cell of a horizontal container and emits one media query in the head", async () => {
+        const { html } = await renderEmail(withRow(12), { pretty: false });
+        expect(html).toContain("<style>@media only screen and (max-width: 600px)");
+        expect(html).toContain(".mb-stack { display: block !important; width: 100% !important;");
+        // The gap survives the stack as bottom padding on every cell but the last
+        expect(html).toContain(".mb-stack-gap-12 { padding-bottom: 12px !important; }");
+        expect(html).toContain('class="mb-stack mb-stack-gap-12"');
+        expect(html).toContain('class="mb-stack"');
+        expect(html.indexOf("<style>")).toBeLessThan(html.indexOf("<body"));
+    });
+
+    it("emits no gap rule for a gapless row, and no style at all when nothing stacks", async () => {
+        const { html: gapless } = await renderEmail(withRow(0), { pretty: false });
+        expect(gapless).toContain("<style>@media");
+        expect(gapless).not.toContain("mb-stack-gap");
+
+        const { html: optedOut } = await renderEmail(withRow(12, false), { pretty: false });
+        expect(optedOut).not.toContain("<style>");
+        expect(optedOut).not.toContain("mb-stack");
+
+        const { html: vertical } = await renderEmail(buildDemoEmail(), { pretty: false });
+        expect(vertical).not.toContain("<style>");
+    });
+
+    it("stacks by default on documents written before the option existed", async () => {
+        const document = withRow(8);
+        const rowId = document.blocks[document.rootId].children.main[1];
+        const { stackOnMobile: _dropped, ...legacyProps } = document.blocks[rowId].props;
+        void _dropped;
+        const legacy: BuilderDocument = { ...document, blocks: { ...document.blocks, [rowId]: { ...document.blocks[rowId], props: legacyProps } } };
+        const { html } = await renderEmail(legacy, { pretty: false });
+        expect(html).toContain('class="mb-stack mb-stack-gap-8"');
+    });
+});
+
+describe("conditional emission adapter", () => {
+    const liquid = {
+        wrap: (html: string, rule: BlockVisibility, block: { id: string; type: string }) =>
+            `{% if ${rule.rules.map((r) => `${r.token} ${r.operator} ${r.value ?? ""}`).join(rule.match === "all" ? " and " : " or ")} %}<!--${block.type}-->${html}{% endif %}`,
+    };
+    const proRule: BlockVisibility = { mode: "rules", match: "all", rules: [{ token: "{{plan}}", operator: "eq", value: "pro" }] };
+
+    /** The demo email with its button shown only to "pro" recipients. */
+    function withConditionalButton(): BuilderDocument {
+        const document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const buttonId = document.blocks[containerId].children.content[1];
+        return setVisibility(document, { id: buttonId, visibility: proRule });
+    }
+
+    it("wraps a conditional block's whole element in the host's syntax, marker removed", async () => {
+        for (const pretty of [false, true]) {
+            const { html } = await renderEmail(withConditionalButton(), { conditionals: liquid, pretty });
+            const open = html.indexOf("{% if {{plan}} eq pro %}<!--button-->");
+            const close = html.indexOf("{% endif %}");
+            expect(open).toBeGreaterThan(-1);
+            expect(close).toBeGreaterThan(open);
+            const inside = html.slice(open, close);
+            // The block's complete markup, outer table included, and only that
+            expect(inside).toContain("Buy now");
+            expect(inside.match(/<table/g)?.length).toBe(inside.match(/<\/table>/g)?.length);
+            expect(inside).not.toContain("Hello from mat-builder");
+            expect(html).not.toContain("data-mb-cond");
+        }
+    });
+
+    it("renders everything — `values` no longer hides — and leaves the plain text untouched", async () => {
+        const { html, text } = await renderEmail(withConditionalButton(), { conditionals: liquid, values: { "{{plan}}": "free" } });
+        expect(html).toContain("Buy now");
+        expect(text).toContain("Buy now");
+        expect(text).not.toContain("{% if");
+        // Without the adapter the same values drop the block
+        const resolved = await renderEmail(withConditionalButton(), { values: { "{{plan}}": "free" } });
+        expect(resolved.html).not.toContain("Buy now");
+    });
+
+    it("nests: a conditional block inside a conditional container wraps inside its parent's wrapper", async () => {
+        let document = withConditionalButton();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const outer: BlockVisibility = { mode: "rules", match: "any", rules: [{ token: "{{country}}", operator: "exists" }] };
+        document = setVisibility(document, { id: containerId, visibility: outer });
+        const { html } = await renderEmail(document, { conditionals: liquid, pretty: false });
+        const outerOpen = html.indexOf("{% if {{country}} exists  %}<!--container-->");
+        const innerOpen = html.indexOf("{% if {{plan}} eq pro %}<!--button-->");
+        const innerClose = html.indexOf("{% endif %}", innerOpen);
+        const outerClose = html.lastIndexOf("{% endif %}");
+        expect(outerOpen).toBeGreaterThan(-1);
+        expect(innerOpen).toBeGreaterThan(outerOpen);
+        expect(outerClose).toBeGreaterThan(innerClose);
+        expect(html).not.toContain("data-mb-cond");
+    });
+
+    it("works alongside token substitution, and on a void element", async () => {
+        let document = withConditionalButton();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const image = insertBlock(document, { type: "image", at: { parentId: containerId, container: "content", index: 2 } }, registry);
+        document = updateProps(image.document, { id: image.blockId, patch: { src: "https://example.com/{{plan}}.png", alt: "Plan" } });
+        document = setVisibility(document, { id: image.blockId, visibility: proRule });
+        const { html } = await renderEmail(document, {
+            conditionals: liquid,
+            values: { "{{plan}}": "pro" },
+            substituteTokens: true,
+            pretty: false,
+        });
+        // The wrapper's own syntax is never substituted; the block's content is
+        expect(html).toContain("{% if {{plan}} eq pro %}<!--image--><img");
+        expect(html).toContain('src="https://example.com/pro.png"');
+        expect(html).not.toContain("data-mb-cond");
+    });
+});

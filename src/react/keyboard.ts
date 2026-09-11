@@ -1,7 +1,16 @@
 import { useCallback, type KeyboardEvent } from "react";
 import { findLocation } from "../core/index.ts";
 import { useBuilderContext } from "./context.ts";
+import { moveTargetFor, type MoveDirection } from "./keyboard-move.ts";
 import { adjacentVisibleRow } from "./layer-tree.ts";
+
+/** Alt + arrow → the move it stands for (keyboard-move.ts). */
+const MOVE_KEYS: Record<string, MoveDirection> = {
+    ArrowUp: "up",
+    ArrowDown: "down",
+    ArrowLeft: "out",
+    ArrowRight: "in",
+};
 
 /*
  * Keyboard shortcuts — see docs/04 §Keyboard. Returned as an onKeyDown
@@ -27,7 +36,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function useBuilderKeyboard(options?: BuilderKeyboardOptions): (event: KeyboardEvent) => void {
-    const { store } = useBuilderContext();
+    const { store, registry } = useBuilderContext();
     const surface = options?.surface ?? "canvas";
 
     return useCallback(
@@ -36,6 +45,17 @@ export function useBuilderKeyboard(options?: BuilderKeyboardOptions): (event: Ke
             const { document, selectedId, expanded, actions } = store.getState();
             const meta = event.metaKey || event.ctrlKey;
             const key = event.key.toLowerCase();
+
+            // Alt + arrows move the selected block — the keyboard's drag and
+            // drop, on both surfaces alike. A move that does not exist is a
+            // no-op rather than a fallthrough to selection, so the key means
+            // one thing.
+            if (event.altKey && !meta && selectedId && event.key in MOVE_KEYS) {
+                event.preventDefault();
+                const to = moveTargetFor(document, registry, selectedId, MOVE_KEYS[event.key]);
+                if (to) actions.moveBlock(selectedId, to);
+                return;
+            }
 
             if (meta && key === "z") {
                 event.preventDefault();
@@ -87,6 +107,6 @@ export function useBuilderKeyboard(options?: BuilderKeyboardOptions): (event: Ke
                 actions.setExpanded(selectedId, event.key === "ArrowRight");
             }
         },
-        [store, surface],
+        [store, registry, surface],
     );
 }

@@ -14,7 +14,8 @@ import { isBuilderDrag, makeMoveBlockDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBlockNode, useBuilderState } from "../../react/hooks.ts";
+import { useBlockNode, useBuilderState, useLabels } from "../../react/hooks.ts";
+import { formatLabel } from "../../react/labels.ts";
 import { pressStartedInInlineEditor } from "../inline/focus.ts";
 import { BlockErrorBoundary, errorMessage } from "./BlockErrorBoundary.tsx";
 import { ComposedView } from "./ComposedView.tsx";
@@ -293,9 +294,10 @@ const MISSING_STYLE = {
 
 /** Unknown block types render this instead of crashing (docs/03 §2). */
 function MissingBlock({ type }: { type: string }) {
+    const t = useLabels();
     return (
         <div className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs" style={MISSING_STYLE}>
-            Missing block type &ldquo;{type}&rdquo;
+            {formatLabel(t.canvas.missingBlock, { type })}
         </div>
     );
 }
@@ -303,9 +305,10 @@ function MissingBlock({ type }: { type: string }) {
 /** A block whose render threw — same treatment, plus the reason. The block
  * stays selectable, so its inspector can fix the prop that broke it. */
 function BrokenBlock({ label, message }: { label: string; message: string }) {
+    const t = useLabels();
     return (
         <div className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs" style={MISSING_STYLE}>
-            <div className="mat:font-medium">{label} could not be rendered</div>
+            <div className="mat:font-medium">{formatLabel(t.canvas.blockFailed, { label })}</div>
             <div className="mat:mt-1 mat:break-words mat:opacity-80">{message}</div>
         </div>
     );

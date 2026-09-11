@@ -11,6 +11,8 @@ import {
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
 import { richTextParagraph } from "../../rich-text/index.ts";
+import { useLabels } from "../../../react/hooks.ts";
+import type { BuilderLabels } from "../../../react/labels.ts";
 import { CellInspector } from "./CellInspector.tsx";
 import { InheritableField } from "./InheritableField.tsx";
 import {
@@ -67,17 +69,17 @@ const columnCountAt = (document: BuilderDocument, location: BlockLocation | null
 
 /* ── table ─────────────────────────────────────────────────────────── */
 
-const BORDER_MODE_OPTIONS: { label: string; value: TableBorderMode }[] = [
-    { label: "All cells", value: "all" },
-    { label: "Outer frame only", value: "outer" },
-    { label: "Horizontal rules", value: "horizontal" },
-    { label: "Vertical rules", value: "vertical" },
-    { label: "None", value: "none" },
+const borderModeOptions = (t: BuilderLabels): { label: string; value: TableBorderMode }[] => [
+    { label: t.email.table.allCells, value: "all" },
+    { label: t.email.table.outerFrameOnly, value: "outer" },
+    { label: t.email.table.horizontalRules, value: "horizontal" },
+    { label: t.email.table.verticalRules, value: "vertical" },
+    { label: t.email.table.none, value: "none" },
 ];
 
-const TABLE_LAYOUT_OPTIONS: Fields.SegmentedFieldOption<"auto" | "fixed">[] = [
-    { label: "Auto", value: "auto" },
-    { label: "Fixed", value: "fixed" },
+const tableLayoutOptions = (t: BuilderLabels): Fields.SegmentedFieldOption<"auto" | "fixed">[] => [
+    { label: t.email.table.auto, value: "auto" },
+    { label: t.email.table.fixed, value: "fixed" },
 ];
 
 export const tableBlock = defineBlock<EmailTableProps>({
@@ -113,28 +115,30 @@ export const tableBlock = defineBlock<EmailTableProps>({
         },
     }),
     editRender: ({ props, containers }) => <table style={tableStyles(props)}>{containers.rows}</table>,
-    inspector: ({ props, update }) => (
+    inspector: function TableInspector({ props, update }) {
+        const t = useLabels();
+        return (
         <>
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
                 <Fields.SegmentedField
-                    label="Column sizing"
+                    label={t.email.table.columnSizing}
                     value={props.tableLayout}
-                    options={TABLE_LAYOUT_OPTIONS}
+                    options={tableLayoutOptions(t)}
                     onChange={(tableLayout) => update({ tableLayout })}
                 />
                 <Fields.SidesField
-                    label="Cell padding"
+                    label={t.email.table.cellPadding}
                     value={props.cellPadding}
                     onChange={(cellPadding) => update({ cellPadding })}
                 />
                 <Fields.ToggleField
-                    label="Striped rows"
+                    label={t.email.table.stripedRows}
                     value={props.stripe.enabled}
                     onChange={(enabled) => update({ stripe: { ...props.stripe, enabled } })}
                 />
                 {props.stripe.enabled && (
                     <Fields.ColorField
-                        label="Stripe color"
+                        label={t.email.table.stripeColor}
                         value={props.stripe.color}
                         onChange={(color) => update({ stripe: { ...props.stripe, color } })}
                     />
@@ -149,9 +153,9 @@ export const tableBlock = defineBlock<EmailTableProps>({
             <Divider />
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
                 <Fields.SelectField
-                    label="Borders"
+                    label={t.email.table.borders}
                     value={props.borderMode}
-                    options={BORDER_MODE_OPTIONS}
+                    options={borderModeOptions(t)}
                     onChange={(value) => update({ borderMode: value as TableBorderMode })}
                 />
             </div>
@@ -161,15 +165,16 @@ export const tableBlock = defineBlock<EmailTableProps>({
             <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
-    ),
+        );
+    },
 });
 
 /* ── table-row ─────────────────────────────────────────────────────── */
 
-const ROW_VARIANT_OPTIONS: Fields.SegmentedFieldOption<TableRowVariant>[] = [
-    { label: "Body", value: "body" },
-    { label: "Header", value: "header" },
-    { label: "Footer", value: "footer" },
+const rowVariantOptions = (t: BuilderLabels): Fields.SegmentedFieldOption<TableRowVariant>[] => [
+    { label: t.email.table.body, value: "body" },
+    { label: t.email.table.header, value: "header" },
+    { label: t.email.table.footer, value: "footer" },
 ];
 
 export const tableRowBlock = defineBlock<EmailTableRowProps>({
@@ -199,17 +204,19 @@ export const tableRowBlock = defineBlock<EmailTableRowProps>({
     }),
     getDisplayName: (props) => (props.variant === "body" ? undefined : props.variant === "header" ? "Header row" : "Footer row"),
     editRender: ({ containers }) => <>{containers.cells}</>,
-    inspector: ({ props, update }) => (
+    inspector: function TableRowInspector({ props, update }) {
+        const t = useLabels();
+        return (
         <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
             <Fields.SegmentedField
-                label="Row type"
+                label={t.email.table.rowType}
                 value={props.variant}
-                options={ROW_VARIANT_OPTIONS}
+                options={rowVariantOptions(t)}
                 onChange={(variant) => update({ variant })}
             />
             <InheritableField
-                label="Background"
-                inheritLabel="Inherit from table"
+                label={t.email.table.background}
+                inheritLabel={t.email.table.inheritFromTable}
                 overridden={Boolean(props.background)}
                 onOverriddenChange={(on) => update({ background: on ? ROW_VARIANT_FILL.header : "" })}
             >
@@ -219,14 +226,15 @@ export const tableRowBlock = defineBlock<EmailTableRowProps>({
                 />
             </InheritableField>
             <Fields.NumberField
-                label="Min height"
+                label={t.email.table.minHeight}
                 value={props.minHeight}
                 min={0}
                 max={400}
                 onChange={(minHeight) => update({ minHeight })}
             />
         </div>
-    ),
+        );
+    },
 });
 
 /* ── table-cell ────────────────────────────────────────────────────── */

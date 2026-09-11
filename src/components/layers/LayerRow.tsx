@@ -18,7 +18,7 @@ import { setChipDragPreview } from "../../dnd/preview.ts";
 import { dragBlockType, type DragLike, resolveCombineLocation } from "../../dnd/resolve.ts";
 import { scrollBlockIntoView } from "../../react/canvas-scroll.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBlockNode, useBuilderFeatures, useBuilderState } from "../../react/hooks.ts";
+import { useBlockNode, useBuilderFeatures, useBuilderState, useLabels } from "../../react/hooks.ts";
 
 /*
  * LayerRow — one tree row (docs/04 §LayersPanel, docs/05 §2). Uses the
@@ -75,6 +75,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
   const isSelected = useBuilderState((s) => s.selectedId === id);
   const isHovered = useBuilderState((s) => s.hoveredId === id);
   const features = useBuilderFeatures();
+  const t = useLabels();
   const isExpanded = useBuilderState((s) => s.expanded.has(id));
   const isDragSource = useBuilderState((s) => s.drag?.kind === "move-block" && s.drag.blockId === id);
 
@@ -82,7 +83,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
   const [ instruction, setInstruction ] = useState<Instruction | null>(null);
 
   const definition = registry.getDefinition(node?.type ?? "");
-  const label = (node && definition?.getDisplayName?.(node.props)) ?? definition?.label ?? node?.type ?? "";
+  const label = (node && definition?.getDisplayName?.(node.props)) ?? (node && t.blocks[node.type]?.label) ?? definition?.label ?? node?.type ?? "";
   const canDrag = Boolean(location) && definition?.canDrag !== false;
 
   // Icon tint matches the block's palette tile (shared assignment, ./tints.ts).
@@ -202,7 +203,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
         { hasChildren ? (
           <button
             type="button"
-            aria-label={ isExpanded ? "Collapse" : "Expand" }
+            aria-label={ isExpanded ? t.layers.collapse : t.layers.expand }
             className="mat:flex mat:shrink-0 mat:cursor-pointer mat:items-center mat:justify-center mat:bg-transparent mat:p-0"
             style={ { width: GLYPH_PX, height: GLYPH_PX } }
             onClick={ (event) => {
@@ -226,11 +227,11 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
           <IconFilter
             className="mat:size-3.5 mat:shrink-0"
             style={ { color: isSelected ? mutedColor : "var(--mat-builder-color-conditional-fg)" } }
-            aria-label="Shown conditionally"
+            aria-label={ t.layers.shownConditionally }
           />
         ) }
         { isRoot && (
-          <span className="mat:shrink-0 mat:text-xs mat:mr-1" style={ { color: mutedColor } }>Root</span>
+          <span className="mat:shrink-0 mat:text-xs mat:mr-1" style={ { color: mutedColor } }>{ t.layers.root }</span>
         ) }
         { instruction && <InstructionIndicator instruction={ instruction } depth={ depth }/> }
       </div>
@@ -247,7 +248,7 @@ export function LayerRow({ id, depth, location }: LayerRowProps) {
                   fontFamily: "var(--mat-builder-font-family-eyebrow)",
                 } }
               >
-                { definition?.containers?.find((c) => c.name === containerName)?.label ?? containerName }
+                { t.blocks[node.type]?.containers?.[containerName]?.label ?? definition?.containers?.find((c) => c.name === containerName)?.label ?? containerName }
               </p>
             ) }
             { childIds.map((childId, index) => (

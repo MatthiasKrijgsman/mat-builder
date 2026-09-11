@@ -3,31 +3,35 @@ import { defaultEffects, type EffectsValue, type ShadowType } from "../../style-
 import * as Fields from "../fields/index.ts";
 import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
+import { useLabels } from "../../react/hooks.ts";
+import type { BuilderLabels } from "../../react/labels.ts";
 import type { StyleGroupProps } from "./types.ts";
 
-const SHADOW_OPTIONS: SegmentedFieldOption<ShadowType>[] = [
-    { label: "None", value: "none", Icon: IconSquare },
-    { label: "Drop", value: "drop", Icon: IconShadow },
-    { label: "Inner", value: "inner", Icon: IconBoxModel },
+const shadowOptionsFor = (t: BuilderLabels): SegmentedFieldOption<ShadowType>[] => [
+    { label: t.styleGroups.effects.none, value: "none", Icon: IconSquare },
+    { label: t.styleGroups.effects.drop, value: "drop", Icon: IconShadow },
+    { label: t.styleGroups.effects.inner, value: "inner", Icon: IconBoxModel },
 ];
 
-export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }: StyleGroupProps<EffectsValue>) {
+export function EffectsGroup({ value, onChange, label, defaultOpen }: StyleGroupProps<EffectsValue>) {
+    const t = useLabels();
+    const s = t.styleGroups.effects;
     const v = value ?? defaultEffects;
     const set = (patch: Partial<EffectsValue>) => onChange({ ...v, ...patch });
     const setShadow = (patch: Partial<EffectsValue["shadow"]>) => set({ shadow: { ...v.shadow, ...patch } });
     return (
-        <InspectorGroup label={label} defaultOpen={defaultOpen}>
+        <InspectorGroup label={label ?? s.heading} defaultOpen={defaultOpen}>
             <Fields.NumberField
-                label="Opacity"
+                label={s.opacity}
                 value={v.opacity}
                 min={0}
                 max={100}
                 onChange={(opacity) => set({ opacity })}
             />
             <Fields.SegmentedField
-                label="Shadow"
+                label={s.shadow}
                 value={v.shadow.type}
-                options={SHADOW_OPTIONS}
+                options={shadowOptionsFor(t)}
                 onChange={(type) => setShadow({ type })}
             />
             {v.shadow.type !== "none" && (
@@ -36,20 +40,20 @@ export function EffectsGroup({ value, onChange, label = "Effects", defaultOpen }
                         <Fields.NumberField label="X" value={v.shadow.x} onChange={(x) => setShadow({ x })} />
                         <Fields.NumberField label="Y" value={v.shadow.y} onChange={(y) => setShadow({ y })} />
                         <Fields.NumberField
-                            label="Blur"
+                            label={s.blur}
                             value={v.shadow.blur}
                             min={0}
                             onChange={(blur) => setShadow({ blur })}
                         />
                         <Fields.NumberField
-                            label="Spread"
+                            label={s.spread}
                             value={v.shadow.spread}
                             onChange={(spread) => setShadow({ spread })}
                         />
                     </div>
-                    <Fields.ColorField label="Color" value={v.shadow.color} onChange={(color) => setShadow({ color })} />
+                    <Fields.ColorField label={s.color} value={v.shadow.color} onChange={(color) => setShadow({ color })} />
                     <Fields.NumberField
-                        label="Shadow opacity"
+                        label={s.shadowOpacity}
                         value={v.shadow.opacity}
                         min={0}
                         max={100}

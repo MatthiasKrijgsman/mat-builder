@@ -8,6 +8,7 @@ import {
     useLexicalToolbar,
 } from "@matthiaskrijgsman/mat-ui";
 import { defaultTypography, EMAIL_FONT_STACKS, type TypographyValue } from "../../style-props/index.ts";
+import { useLabels } from "../../react/hooks.ts";
 
 /*
  * Block-level typography controls for inline toolbars: the same seven fields
@@ -26,38 +27,43 @@ const FONT_OPTIONS = EMAIL_FONT_STACKS.map(({ name, stack }) => ({ value: stack,
 
 function AlignButtons({ value, onChange }: { value: TypographyValue["align"]; onChange: (align: TypographyValue["align"]) => void }) {
     const { tone } = useLexicalToolbar();
+    const t = useLabels();
     return (
         <>
-            <LexicalToolbarButton Icon={IconAlignLeft} tone={tone} active={value === "left"} aria-label="Align left" onClick={() => onChange("left")} />
-            <LexicalToolbarButton Icon={IconAlignCenter} tone={tone} active={value === "center"} aria-label="Align center" onClick={() => onChange("center")} />
-            <LexicalToolbarButton Icon={IconAlignRight} tone={tone} active={value === "right"} aria-label="Align right" onClick={() => onChange("right")} />
+            <LexicalToolbarButton Icon={IconAlignLeft} tone={tone} active={value === "left"} aria-label={t.typography.alignLeft} onClick={() => onChange("left")} />
+            <LexicalToolbarButton Icon={IconAlignCenter} tone={tone} active={value === "center"} aria-label={t.typography.alignCenter} onClick={() => onChange("center")} />
+            <LexicalToolbarButton Icon={IconAlignRight} tone={tone} active={value === "right"} aria-label={t.typography.alignRight} onClick={() => onChange("right")} />
         </>
     );
 }
 
-/** Flat fragment of toolbar building blocks (pass as FloatingToolbarShell children). */
-export const blockTypographyItems = ({ value, onChange }: BlockTypographyItemsProps) => {
+/** A component (it reads the labels), wrapped below in the item-factory shape the toolbars take. */
+function BlockTypographyItems({ value, onChange }: BlockTypographyItemsProps) {
+    const t = useLabels();
     const current = value ?? defaultTypography;
     const patch = (partial: Partial<TypographyValue>) => onChange({ ...current, ...partial });
 
     return (
         <>
             <LexicalToolbarSelect
-                title="Font family"
+                title={t.typography.fontFamily}
                 options={FONT_OPTIONS}
                 value={current.fontFamily || null}
                 onChange={(stack) => patch({ fontFamily: stack ?? "" })}
-                placeholder="Font"
+                placeholder={t.typography.font}
                 clearable
                 minWidth={200}
             />
-            <LexicalToolbarNumber title="Font size (px)" prefix="Aa" value={current.fontSize} onChange={(fontSize) => patch({ fontSize })} min={8} max={96} />
-            <LexicalToolbarNumber title="Line height (multiplier)" prefix="Lh" value={current.lineHeight} onChange={(lineHeight) => patch({ lineHeight })} min={0.5} max={3} step={0.1} />
-            <LexicalToolbarNumber title="Letter spacing (px)" prefix="Ls" value={current.letterSpacing} onChange={(letterSpacing) => patch({ letterSpacing })} min={-2} max={10} step={0.5} />
-            <LexicalToolbarColor title="Text color" value={current.color} onChange={(color) => patch({ color })} />
-            <LexicalToolbarNumber title="Text opacity (%)" prefix="%" value={current.opacity} onChange={(opacity) => patch({ opacity })} min={0} max={100} step={5} />
+            <LexicalToolbarNumber title={t.typography.fontSize} prefix="Aa" value={current.fontSize} onChange={(fontSize) => patch({ fontSize })} min={8} max={96} />
+            <LexicalToolbarNumber title={t.typography.lineHeight} prefix="Lh" value={current.lineHeight} onChange={(lineHeight) => patch({ lineHeight })} min={0.5} max={3} step={0.1} />
+            <LexicalToolbarNumber title={t.typography.letterSpacing} prefix="Ls" value={current.letterSpacing} onChange={(letterSpacing) => patch({ letterSpacing })} min={-2} max={10} step={0.5} />
+            <LexicalToolbarColor title={t.typography.textColor} value={current.color} onChange={(color) => patch({ color })} />
+            <LexicalToolbarNumber title={t.typography.textOpacity} prefix="%" value={current.opacity} onChange={(opacity) => patch({ opacity })} min={0} max={100} step={5} />
             <LexicalToolbarDivider />
             <AlignButtons value={current.align} onChange={(align) => patch({ align })} />
         </>
     );
-};
+}
+
+/** Flat fragment of toolbar building blocks (pass as FloatingToolbarShell children). */
+export const blockTypographyItems = (props: BlockTypographyItemsProps) => <BlockTypographyItems {...props} />;

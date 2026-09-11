@@ -2,6 +2,8 @@ import { Component, useEffect, useMemo, useRef, useState, type ComponentType, ty
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
 import type { BuilderFeatures } from "../../react/features.ts";
+import { formatLabel, resolveLabels, type BuilderLabelOverrides } from "../../react/labels.ts";
+import { useLabels } from "../../react/hooks.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
 import { BuilderProvider, type BuilderProviderProps } from "../../react/provider.tsx";
 import { colorSchemeAttr, themeToStyle, type BuilderColorScheme, type BuilderTheme } from "../../react/theme.ts";
@@ -66,6 +68,9 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     /** Editor feature switches, all on by default — see `BuilderFeatures`.
      * `{ visibility: false }` hides the conditional-visibility UI. */
     features?: BuilderFeatures;
+    /** UI strings — any subset of `DEFAULT_LABELS`, deep-merged over the
+     * English (docs/07 §B3). Pass a stable object. */
+    labels?: BuilderLabelOverrides;
 
     /* ── Chrome ─────────────────────────────────────────────────────── */
     /** App name — the fixed first breadcrumb segment in the top bar */
@@ -139,6 +144,7 @@ export function BuilderShell(props: BuilderShellProps) {
         mergeTags,
         patterns,
         features,
+        labels,
         onSave,
         autoSaveMs,
         onError,
@@ -184,7 +190,7 @@ export function BuilderShell(props: BuilderShellProps) {
     };
 
     return (
-        <ShellErrorBoundary onError={onRenderError} className={className} style={style}>
+        <ShellErrorBoundary onError={onRenderError} className={className} style={style} message={resolveLabels(labels).shell.editorFailed}>
             <BuilderProvider
                 blocks={blocks}
                 value={value}
@@ -194,6 +200,7 @@ export function BuilderShell(props: BuilderShellProps) {
                 mergeTags={mergeTags}
                 patterns={patterns}
                 features={features}
+                labels={labels}
                 onDocumentIssues={onDocumentIssues}
                 onBlockError={onBlockError}
             >
@@ -226,6 +233,8 @@ export function BuilderShell(props: BuilderShellProps) {
 
 interface ShellErrorBoundaryProps {
     onError?: (error: unknown, info: { componentStack?: string }) => void;
+    /** The heading of the fallback — resolved outside the provider, which the boundary wraps */
+    message: string;
     className?: string;
     style?: CSSProperties;
     children: ReactNode;
@@ -264,7 +273,7 @@ class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, { error: unk
                         className="mat:max-w-lg mat:rounded-lg mat:border mat:p-4 mat:text-sm"
                         style={{ ...dockedPanel, color: "var(--mat-builder-color-panel-fg)" }}
                     >
-                        <div className="mat:font-semibold">The editor could not be shown</div>
+                        <div className="mat:font-semibold">{this.props.message}</div>
                         <pre
                             className="mat:mt-2 mat:whitespace-pre-wrap mat:break-words mat:text-xs"
                             style={{ color: "var(--mat-builder-color-missing-fg)" }}
@@ -341,6 +350,7 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
     } = props;
     const rootRef = useRef<HTMLDivElement>(null);
     const tooNarrow = useTooNarrow(rootRef, minWidth);
+    const t = useLabels();
     const showPalette = panels?.palette ?? true;
     const showLayers = panels?.layers ?? true;
     const showInspector = panels?.inspector ?? true;
@@ -372,9 +382,9 @@ function BuilderShellLayout(props: BuilderShellLayoutProps) {
                     >
                         {smallScreenNotice ?? (
                             <>
-                                <div className="mat:font-semibold">This editor needs more room</div>
+                                <div className="mat:font-semibold">{t.shell.needsRoomTitle}</div>
                                 <p className="mat:mt-1" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                                    Widen the window to at least {minWidth}px, or open it on a larger screen.
+                                    {formatLabel(t.shell.needsRoom, { minWidth })}
                                 </p>
                             </>
                         )}

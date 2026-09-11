@@ -1,6 +1,6 @@
 {
   "name": "@matthiaskrijgsman/mat-builder",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Headless-first React drag-and-drop block builder: document model, undo/redo, Pragmatic drag and drop, and composable editor UI. Ships an email builder preset.",
   "keywords": [
     "react",

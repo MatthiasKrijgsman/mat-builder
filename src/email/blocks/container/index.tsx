@@ -11,13 +11,15 @@ import {
   SizeGroup,
   SpacingGroup,
 } from "../../../components/style-groups/index.ts";
-import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
+import { SIZE_BOX_CLASS, useLabels } from "../../../react/hooks.ts";
+import { formatLabel, type BuilderLabels } from "../../../react/labels.ts";
 import {
   type ContainerDirection,
   emailContainerDefaults,
   emailContainerEditStyles,
   type EmailContainerProps,
   emailContainerSlotStyles,
+  MOBILE_BREAKPOINT,
 } from "./styles.ts";
 
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
@@ -28,9 +30,9 @@ export const EMAIL_LEAF_TYPES = [ "text", "button", "image", "divider", "spacer"
 const CONTAINER_ACCEPTS = acceptsEmailContent;
 
 // Figma-style: flow direction as arrows (icon-only segments with tooltips)
-const DIRECTION_OPTIONS: Fields.SegmentedFieldOption<ContainerDirection>[] = [
-  { label: "Vertical", value: "vertical", Icon: IconArrowDown },
-  { label: "Horizontal", value: "horizontal", Icon: IconArrowRight },
+const directionOptions = (t: BuilderLabels): Fields.SegmentedFieldOption<ContainerDirection>[] => [
+  { label: t.email.container.vertical, value: "vertical", Icon: IconArrowDown },
+  { label: t.email.container.horizontal, value: "horizontal", Icon: IconArrowRight },
 ];
 
 export const containerBlock = defineBlock<EmailContainerProps>({
@@ -57,15 +59,25 @@ export const containerBlock = defineBlock<EmailContainerProps>({
   editRender: ({ props, containers }) => (
     <section className={ SIZE_BOX_CLASS } style={ emailContainerEditStyles(props) }>{ containers.content }</section>
   ),
-  inspector: ({ props, update }) => (
+  inspector: function ContainerInspector({ props, update }) {
+    const t = useLabels();
+    return (
     <>
       <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
         <Fields.SegmentedField
-          label="Direction"
+          label={ t.email.container.direction }
           value={ props.direction }
-          options={ DIRECTION_OPTIONS }
+          options={ directionOptions(t) }
           onChange={ (direction) => update({ direction }) }
         />
+        { props.direction === "horizontal" && (
+          <Fields.ToggleField
+            label={ t.email.container.stackOnMobile }
+            description={ formatLabel(t.email.container.stackOnMobileHint, { breakpoint: MOBILE_BREAKPOINT }) }
+            value={ props.stackOnMobile ?? true }
+            onChange={ (stackOnMobile) => update({ stackOnMobile }) }
+          />
+        ) }
       </div>
       <Divider/>
       <SizeGroup value={ props.size } onChange={ (size) => update({ size }) }/>
@@ -84,5 +96,6 @@ export const containerBlock = defineBlock<EmailContainerProps>({
       <Divider/>
       <EffectsGroup value={ props.effects } onChange={ (effects) => update({ effects }) }/>
     </>
-  ),
+    );
+  },
 });

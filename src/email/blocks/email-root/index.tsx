@@ -3,7 +3,7 @@ import { defineBlock } from "../../../core/define-block.ts";
 import { acceptsEmailContent } from "../../accepts.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { SpacingGroup, TypographyGroup } from "../../../components/style-groups/index.ts";
-import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
+import { SIZE_BOX_CLASS, useLabels } from "../../../react/hooks.ts";
 import { defaultBackground, defaultSize } from "../../../style-props/index.ts";
 import { emailRootBodyStyles, emailRootContainerStyles, emailRootDefaults, type EmailRootProps } from "./styles.ts";
 import { Divider } from '@matthiaskrijgsman/mat-ui';
@@ -37,12 +37,14 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
       </div>
     </div>
   ),
-  inspector: ({ props, update }) => (
+  inspector: function EmailRootInspector({ props, update }) {
+    const t = useLabels();
+    return (
     <>
       <div className={'mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2'}>
         <Fields.DimensionField
           axis="width"
-          label="Content width"
+          label={ t.email.root.contentWidth }
           value={ {
             ...defaultSize,
             width: props.contentWidthMode === "full" ? "full" : "fixed",
@@ -57,25 +59,26 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
           }
         />
         <Fields.ColorField
-          label="Page background"
+          label={ t.email.root.pageBackground }
           value={ props.backgroundColor }
           onChange={ (backgroundColor) => update({ backgroundColor }) }
         />
       </div>
       <Divider />
       <TypographyGroup
-        label="Typography"
+        label={ t.email.root.typography }
         fields={ [ "fontFamily", "fontSize", "lineHeight", "letterSpacing", "color" ] }
         value={ props.typography }
         onChange={ (typography) => update({ typography }) }
       />
       <Divider />
       <SpacingGroup
-        label="Page padding"
+        label={ t.email.root.pagePadding }
         fields={ [ "padding" ] }
         value={ props.spacing }
         onChange={ (spacing) => update({ spacing }) }
       />
     </>
-  ),
+    );
+  },
 });

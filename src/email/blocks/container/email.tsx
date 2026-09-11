@@ -4,6 +4,7 @@ import type { EmailRenderer } from "../../types.ts";
 import { verticalToVerticalAlign } from "../../../style-props/index.ts";
 import {
     containerFixedHeight,
+    emailContainerCellClass,
     emailContainerCellStyles,
     emailContainerStyles,
     type EmailContainerProps,
@@ -15,13 +16,18 @@ export const containerEmail: EmailRenderer<EmailContainerProps> = (props, childr
     const height = containerFixedHeight(props);
     const vertical = props.layout?.vertical ?? "start";
 
-    // Horizontal: each direct child is an equal-width table column.
+    // Horizontal: each direct child is an equal-width table column. The class
+    // is what the root's media query stacks below MOBILE_BREAKPOINT.
     if (props.direction === "horizontal" && kids.length > 0) {
         return (
             <Section style={emailContainerStyles(props)}>
                 <Row>
                     {kids.map((child, index) => (
-                        <Column key={index} style={emailContainerCellStyles(props, index, kids.length)}>
+                        <Column
+                            key={index}
+                            className={emailContainerCellClass(props, index, kids.length)}
+                            style={emailContainerCellStyles(props, index, kids.length)}
+                        >
                             {child}
                         </Column>
                     ))}

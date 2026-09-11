@@ -6,6 +6,7 @@ import type { BlockId, ContainerDef } from "../../core/types.ts";
 import { isBuilderDrag } from "../../dnd/drag-data.ts";
 import { dragBlockType } from "../../dnd/resolve.ts";
 import { useBuilderContext } from "../../react/context.ts";
+import { useBuilderState, useLabels } from "../../react/hooks.ts";
 import { BlockView } from "./BlockView.tsx";
 
 /*
@@ -42,6 +43,8 @@ export function ContainerSlot(props: {
 }) {
     const { parentId, container, childIds, gap = 0, layout = container.layout, slotStyle, group } = props;
     const { store, registry, instanceId } = useBuilderContext();
+    const t = useLabels();
+    const parentType = useBuilderState((s) => s.document.blocks[parentId]?.type);
     const ref = useRef<HTMLElement>(null);
     const elementless = container.slotAs === "none";
     const [over, setOver] = useState<"none" | "parent" | "direct">("none");
@@ -105,7 +108,7 @@ export function ContainerSlot(props: {
                     ...highlight,
                 }}
             >
-                {container.placeholder ?? "Drop content here"}
+                {(parentType && t.blocks[parentType]?.containers?.[container.name]?.placeholder) ?? container.placeholder ?? t.canvas.dropContentHere}
             </Empty>
         );
     }

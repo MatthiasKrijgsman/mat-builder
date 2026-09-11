@@ -3,6 +3,8 @@ import { isSlotRef } from "../../core/compose.ts";
 import type { AnyBlockDefinition } from "../../core/registry.ts";
 import type { BlockContext, BlockId, BlockSpec } from "../../core/types.ts";
 import { useBuilderContext } from "../../react/context.ts";
+import { useLabels } from "../../react/hooks.ts";
+import { formatLabel } from "../../react/labels.ts";
 import { ComposedFieldProvider } from "../inline/composed-field.tsx";
 
 /*
@@ -149,6 +151,7 @@ function SpecNode({
 /** A spec naming a type the registry does not have — the composed twin of
  * BlockView's missing-block placeholder, and just as non-fatal. */
 function MissingComposedBlock({ type, reason }: { type: string; reason?: string }) {
+    const t = useLabels();
     return (
         <div
             className="mat:rounded mat:border mat:border-dashed mat:p-3 mat:text-xs"
@@ -158,7 +161,7 @@ function MissingComposedBlock({ type, reason }: { type: string; reason?: string 
                 color: "var(--mat-builder-color-missing-fg)",
             }}
         >
-            Composed block &ldquo;{type}&rdquo; {reason ?? "is not registered"}
+            {formatLabel(t.canvas.missingComposed, { type, reason: reason ?? t.canvas.notRegistered })}
         </div>
     );
 }

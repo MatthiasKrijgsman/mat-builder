@@ -2,7 +2,7 @@ import { IconFilter } from "@tabler/icons-react";
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import type { BlockId } from "../../core/types.ts";
 import { describeVisibility, hasVisibilityRules } from "../../core/visibility.ts";
-import { useBuilderFeatures, useBuilderState, useMergeTags } from "../../react/hooks.ts";
+import { useBuilderFeatures, useBuilderState, useLabels, useMergeTags } from "../../react/hooks.ts";
 import { computeMarkerGeometry, markerChanged, type MarkerGeometry } from "./chrome-geometry.ts";
 
 /*
@@ -33,6 +33,11 @@ export function ConditionalMarkers({ scrollerRef }: { scrollerRef: RefObject<HTM
     const actions = useBuilderState((s) => s.actions);
     const tags = useMergeTags();
     const { visibility: enabled } = useBuilderFeatures();
+    const t = useLabels();
+    const phrasing = useMemo(
+        () => ({ operators: t.visibility.operators, shownWhen: t.visibility.shownWhen, and: t.visibility.joinAnd, or: t.visibility.joinOr }),
+        [t],
+    );
 
     const marked = useMemo(
         () =>
@@ -110,7 +115,7 @@ export function ConditionalMarkers({ scrollerRef }: { scrollerRef: RefObject<HTM
                 <Marker
                     key={id}
                     id={id}
-                    title={describeVisibility(document.blocks[id]?.visibility, labelOf)}
+                    title={describeVisibility(document.blocks[id]?.visibility, labelOf, phrasing)}
                     onSelect={() => actions.select(id)}
                     register={(element) => {
                         if (element) elements.current.set(id, element);

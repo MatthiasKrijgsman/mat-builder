@@ -3,13 +3,13 @@ import { IconPlus, IconTag, IconX } from "@tabler/icons-react";
 import { type ReactNode, useMemo } from "react";
 import {
     defaultVisibility,
-    OPERATOR_LABELS,
     VALUE_OPERATORS,
     type BlockVisibility,
     type VisibilityOperator,
     type VisibilityRule,
 } from "../../core/visibility.ts";
-import { useBuilderState, useMergeTags } from "../../react/hooks.ts";
+import { useBuilderState, useLabels, useMergeTags } from "../../react/hooks.ts";
+import { formatLabel, type BuilderLabels } from "../../react/labels.ts";
 import type { MergeTag } from "../../react/merge-tags.ts";
 import type { BlockId } from "../../core/types.ts";
 import { InspectorGroup } from "./InspectorGroup.tsx";
@@ -26,11 +26,13 @@ import { InspectorGroup } from "./InspectorGroup.tsx";
  * block has no rules to show: with no tags there is nothing to test.
  */
 
-/* Phrasing is shared with the canvas badge's summary (core/visibility.ts), so
- * a rule reads identically in the inspector and in its tooltip. */
-const OPERATOR_OPTIONS: SelectItem<VisibilityOperator>[] = (
-    ["eq", "neq", "contains", "notContains", "exists", "notExists"] as const
-).map((operator) => ({ label: OPERATOR_LABELS[operator], value: operator }));
+/* Phrasing is shared with the canvas badge's summary (core/visibility.ts via
+ * the labels), so a rule reads identically in the inspector and its tooltip. */
+const operatorOptions = (t: BuilderLabels): SelectItem<VisibilityOperator>[] =>
+    (["eq", "neq", "contains", "notContains", "exists", "notExists"] as const).map((operator) => ({
+        label: t.visibility.operators[operator],
+        value: operator,
+    }));
 
 export interface VisibilityGroupProps {
     id: BlockId;
@@ -40,6 +42,7 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
     const tags = useMergeTags();
     const actions = useBuilderState((s) => s.actions);
     const visibility = useBuilderState((s) => s.document.blocks[id]?.visibility);
+    const t = useLabels();
 
     const rules = visibility?.rules ?? [];
     const mode = visibility?.mode ?? "always";
@@ -66,16 +69,16 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
     };
 
     return (
-        <InspectorGroup label="Visibility" meta={mode === "rules" ? ruleCount(rules.length) : null}>
+        <InspectorGroup label={t.visibility.heading} meta={mode === "rules" ? ruleCount(t, rules.length) : null}>
             <TabButtons
                 size="sm"
                 fullWidth
                 tabs={[
-                    { label: "Always", active: mode === "always", onClick: () => patch({ mode: "always" }) },
+                    { label: t.visibility.always, active: mode === "always", onClick: () => patch({ mode: "always" }) },
                     {
                         // "If" rather than "When": at a 300px panel the longer
                         // wording wraps inside the half-width tab.
-                        label: "If rules match",
+                        label: t.visibility.ifRulesMatch,
                         active: mode === "rules",
                         // Entering rules mode with nothing to show would look
                         // broken — seed the first row.
@@ -88,7 +91,7 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
             {mode === "rules" && (
                 <>
                     <p className="mat:text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                        Show this block when&hellip;
+                        {t.visibility.showWhen}
                     </p>
 
                     {rules.map((rule, index) => (
@@ -125,7 +128,7 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
                         }}
                     >
                         <IconPlus className="mat:size-4 mat:shrink-0" />
-                        Add rule
+                        {t.visibility.addRule}
                     </button>
                 </>
             )}
@@ -133,17 +136,19 @@ export function VisibilityGroup({ id }: VisibilityGroupProps) {
     );
 }
 
-const ruleCount = (count: number): string => `${count} ${count === 1 ? "rule" : "rules"}`;
+const ruleCount = (t: BuilderLabels, count: number): string =>
+    count === 1 ? t.visibility.oneRule : formatLabel(t.visibility.rules, { count });
 
 /** The AND/OR chip between two rule cards — clicking it flips the whole group. */
 function MatchJoiner({ match, onToggle }: { match: "all" | "any"; onToggle: () => void }) {
+    const t = useLabels();
     return (
         <div className="mat:flex mat:flex-row mat:items-center mat:gap-2 mat:py-2">
             <Hairline />
             <button
                 type="button"
                 onClick={onToggle}
-                title={match === "all" ? "Every rule must match — switch to any" : "Any rule may match — switch to every"}
+                title={match === "all" ? t.visibility.everyToAny : t.visibility.anyToEvery}
                 className={
                     "mat:cursor-pointer mat:rounded-md mat:border-none mat:px-2 mat:py-0.5 mat:text-[11px] mat:font-semibold mat:uppercase " +
                     "mat:tracking-wider mat:font-(family-name:--font-family-base) mat:transition-opacity " +
@@ -154,7 +159,7 @@ function MatchJoiner({ match, onToggle }: { match: "all" | "any"; onToggle: () =
                     color: "var(--mat-builder-color-rule-joiner-fg)",
                 }}
             >
-                {match === "all" ? "And" : "Or"}
+                {match === "all" ? t.visibility.and : t.visibility.or}
             </button>
             <Hairline />
         </div>
@@ -174,6 +179,7 @@ interface RuleCardProps {
 }
 
 function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps) {
+    const t = useLabels();
     const tag = tags.find((entry) => entry.token === rule.token);
     const takesValue = VALUE_OPERATORS.has(rule.operator);
     // A tag whose values the host declared gets a picker; anything open-ended
@@ -202,14 +208,14 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
                         options={options}
                         value={rule.token || null}
                         onChange={(token) => onChange({ token: token ?? "" })}
-                        placeholder="Select a merge tag"
+                        placeholder={t.visibility.selectTag}
                     />
                 </div>
                 <ButtonIconSquare
                     Icon={IconX}
                     variant="transparent"
                     size="sm"
-                    aria-label="Remove rule"
+                    aria-label={t.visibility.removeRule}
                     onClick={onRemove}
                 />
             </div>
@@ -219,7 +225,7 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
             <div className={takesValue ? "mat:grid mat:grid-cols-2 mat:gap-2" : undefined}>
                 <InputSelect
                     size="sm"
-                    options={OPERATOR_OPTIONS}
+                    options={operatorOptions(t)}
                     value={rule.operator}
                     onChange={(operator) => onChange({ operator: operator ?? "exists" })}
                 />
@@ -230,12 +236,12 @@ function RuleCard({ rule, tags, tagOptions, onChange, onRemove }: RuleCardProps)
                             options={declaredValues.map((value) => ({ label: value, value }))}
                             value={rule.value ?? null}
                             onChange={(value) => onChange({ value: value ?? "" })}
-                            placeholder="Value"
+                            placeholder={t.visibility.value}
                         />
                     ) : (
                         <Input
                             size="sm"
-                            placeholder="Value"
+                            placeholder={t.visibility.value}
                             value={rule.value ?? ""}
                             onChange={(event) => onChange({ value: event.target.value })}
                         />

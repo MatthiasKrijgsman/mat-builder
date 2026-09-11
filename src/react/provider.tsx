@@ -1,9 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createRegistry, loadDocument, type AnyBlockDefinition } from "../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument, ValidationIssue } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
 import { resolveFeatures, sameFeatures, type BuilderFeatures } from "./features.ts";
+import { resolveLabels, type BuilderLabelOverrides } from "./labels.ts";
 import type { MergeTag } from "./merge-tags.ts";
 import {
     createEditorStore,
@@ -56,6 +57,10 @@ export interface BuilderProviderProps {
      * hides the conditional-visibility UI for a host whose pipeline cannot
      * honour rules (see `BuilderFeatures`). */
     features?: BuilderFeatures;
+    /** UI strings — any subset of `DEFAULT_LABELS`, deep-merged over the
+     * English (docs/07 §B3). Pass a stable object: it is re-resolved when
+     * its reference changes. */
+    labels?: BuilderLabelOverrides;
     children: ReactNode;
 }
 
@@ -80,6 +85,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
         mergeTags,
         patterns,
         features,
+        labels,
         children,
     } = props;
 
@@ -97,6 +103,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
             mergeTags,
             patterns,
             features,
+            labels,
             callbacks,
         });
         return {
@@ -160,6 +167,15 @@ export function BuilderProvider(props: BuilderProviderProps) {
             instance.store.setState({ features: next });
         }
     }, [features, instance]);
+
+    // Labels re-resolve when the overrides object changes identity — a host
+    // keeps its dictionary in a module or a memo, as with `mergeTags`.
+    const lastLabels = useRef(labels);
+    useEffect(() => {
+        if (labels === lastLabels.current && instance.store.getState().labels !== undefined) return;
+        lastLabels.current = labels;
+        instance.store.setState({ labels: resolveLabels(labels) });
+    }, [labels, instance]);
 
     return <BuilderContext.Provider value={instance}>{children}</BuilderContext.Provider>;
 }

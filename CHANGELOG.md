@@ -2,6 +2,15 @@
 
 Breaking changes are allowed while on `0.x` and are listed here per release.
 
+## 0.3.0 — 2026-09-11
+
+The feature half of the first external integration's feedback.
+
+- **Responsive output** — horizontal containers stack on phones. Each cell carries `class="mb-stack"` (plus a gap class) and the root emits one `<style>` media query below 600px, derived from the document and omitted when nothing stacks. `stackOnMobile: false` per container opts out (inspector toggle on horizontal containers); older documents stack by default. Outlook on Windows ignores `<style>` and keeps the columns.
+- **Conditional emission adapter** — `renderEmail(doc, { conditionals: { wrap(html, rule, block) } })` emits conditional blocks in the host's template syntax (Liquid, Handlebars, `*|IF:|*`…) instead of resolving them: every block renders, each one with rules reaches `wrap` as its complete markup, and the return value replaces it. Wrapping runs after `pretty` and before substitution; the plain-text variant is untouched. `applyConditionals` is exported for hosts rendering the tree themselves.
+- **Keyboard block moving** — `Alt+↑/↓` swap with a sibling, `Alt+←` moves out after the parent, `Alt+→` moves into the previous sibling's first container; gated by the same `canDropAt` as drag and drop, on both surfaces.
+- **Labels** — every English string in the editor chrome comes from one `labels` dictionary (`DEFAULT_LABELS`), overridable per key through the `labels` prop on the provider, shell and `<EmailBuilder>`; preset block labels and categories included.
+
 ## 0.2.0 — 2026-09-11
 
 CSS packaging for hosts that are not on Tailwind v4. Requires `@matthiaskrijgsman/mat-ui@0.0.68`.

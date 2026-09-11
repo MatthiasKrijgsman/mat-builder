@@ -4,7 +4,7 @@ import { $getRoot, $getSelection, $insertNodes, $isRangeSelection } from "lexica
 import { IconBraces } from "@tabler/icons-react";
 import { DropdownMenu, LexicalToolbarButton, LexicalToolbarDivider, useLexicalToolbar } from "@matthiaskrijgsman/mat-ui";
 import type { MergeTag } from "../../react/merge-tags.ts";
-import { useMergeTags } from "../../react/hooks.ts";
+import { useLabels, useMergeTags } from "../../react/hooks.ts";
 import { MergeTagList } from "./MergeTagList.tsx";
 import { $createMergeTagNode } from "./MergeTagNode.tsx";
 
@@ -19,6 +19,7 @@ import { $createMergeTagNode } from "./MergeTagNode.tsx";
 function MergeTagMenu({ onInsert, divider = true }: { onInsert: (tag: MergeTag) => void; divider?: boolean }) {
     const tags = useMergeTags();
     const { tone } = useLexicalToolbar();
+    const t = useLabels();
     if (tags.length === 0) return null;
     return (
         <>
@@ -26,7 +27,7 @@ function MergeTagMenu({ onInsert, divider = true }: { onInsert: (tag: MergeTag) 
             <DropdownMenu
                 placement="bottom-start"
                 minWidth={220}
-                trigger={<LexicalToolbarButton Icon={IconBraces} tone={tone} title="Insert merge tag" aria-label="Insert merge tag" />}
+                trigger={<LexicalToolbarButton Icon={IconBraces} tone={tone} title={t.mergeTags.insert} aria-label={t.mergeTags.insert} />}
             >
                 <MergeTagList tags={tags} onInsert={onInsert} />
             </DropdownMenu>

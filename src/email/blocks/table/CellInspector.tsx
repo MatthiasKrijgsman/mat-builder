@@ -9,7 +9,8 @@ import {
 import * as Fields from "../../../components/fields/index.ts";
 import { findLocation } from "../../../core/traversal.ts";
 import type { BlockId, InspectorProps } from "../../../core/types.ts";
-import { useBuilderState } from "../../../react/hooks.ts";
+import { useBuilderState, useLabels } from "../../../react/hooks.ts";
+import type { BuilderLabels } from "../../../react/labels.ts";
 import type { SideValues } from "../../../style-props/index.ts";
 import { InheritableField } from "./InheritableField.tsx";
 import {
@@ -26,16 +27,16 @@ import {
  * override it.
  */
 
-const ALIGN_OPTIONS: Fields.SegmentedFieldOption<EmailTableCellProps["align"]>[] = [
-    { label: "Left", value: "left", Icon: IconAlignLeft },
-    { label: "Center", value: "center", Icon: IconAlignCenter },
-    { label: "Right", value: "right", Icon: IconAlignRight },
+const alignOptions = (t: BuilderLabels): Fields.SegmentedFieldOption<EmailTableCellProps["align"]>[] => [
+    { label: t.email.table.left, value: "left", Icon: IconAlignLeft },
+    { label: t.email.table.center, value: "center", Icon: IconAlignCenter },
+    { label: t.email.table.right, value: "right", Icon: IconAlignRight },
 ];
 
-const VALIGN_OPTIONS: Fields.SegmentedFieldOption<EmailTableCellProps["verticalAlign"]>[] = [
-    { label: "Top", value: "top", Icon: IconLayoutAlignTop },
-    { label: "Middle", value: "middle", Icon: IconLayoutAlignMiddle },
-    { label: "Bottom", value: "bottom", Icon: IconLayoutAlignBottom },
+const valignOptions = (t: BuilderLabels): Fields.SegmentedFieldOption<EmailTableCellProps["verticalAlign"]>[] => [
+    { label: t.email.table.top, value: "top", Icon: IconLayoutAlignTop },
+    { label: t.email.table.middle, value: "middle", Icon: IconLayoutAlignMiddle },
+    { label: t.email.table.bottom, value: "bottom", Icon: IconLayoutAlignBottom },
 ];
 
 /**
@@ -54,19 +55,21 @@ function useInheritedPadding(id: BlockId): SideValues {
 
 export function CellInspector({ id, props, update }: InspectorProps<EmailTableCellProps>) {
     const inheritedPadding = useInheritedPadding(id);
+    const t = useLabels();
+    const s = t.email.table;
     return (
         <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
             <InheritableField
-                label="Background"
-                inheritLabel="Inherit from row"
+                label={s.background}
+                inheritLabel={s.inheritFromRow}
                 overridden={Boolean(props.background)}
                 onOverriddenChange={(on) => update({ background: on ? ROW_VARIANT_FILL.header : "" })}
             >
                 <Fields.ColorField value={props.background} onChange={(background) => update({ background })} />
             </InheritableField>
             <InheritableField
-                label="Padding"
-                inheritLabel="Inherit from table"
+                label={s.padding}
+                inheritLabel={s.inheritFromTable}
                 overridden={props.padding !== null}
                 // Overriding starts from what the cell already shows — the
                 // table's cell padding — so switching it on changes nothing yet.
@@ -80,33 +83,33 @@ export function CellInspector({ id, props, update }: InspectorProps<EmailTableCe
                 />
             </InheritableField>
             <Fields.SegmentedField
-                label="Align"
+                label={s.align}
                 value={props.align}
-                options={ALIGN_OPTIONS}
+                options={alignOptions(t)}
                 onChange={(align) => update({ align })}
             />
             <Fields.SegmentedField
-                label="Vertical align"
+                label={s.verticalAlign}
                 value={props.verticalAlign}
-                options={VALIGN_OPTIONS}
+                options={valignOptions(t)}
                 onChange={(verticalAlign) => update({ verticalAlign })}
             />
             <Fields.TextField
-                label="Width"
+                label={s.width}
                 value={props.width}
-                placeholder="auto, 30% or 120px"
+                placeholder={s.widthPlaceholder}
                 onChange={(width) => update({ width })}
             />
             <div className="mat:grid mat:grid-cols-2 mat:gap-1.5">
                 <Fields.NumberField
-                    label="Column span"
+                    label={s.columnSpan}
                     value={props.colSpan}
                     min={1}
                     max={12}
                     onChange={(colSpan) => update({ colSpan })}
                 />
                 <Fields.NumberField
-                    label="Row span"
+                    label={s.rowSpan}
                     value={props.rowSpan}
                     min={1}
                     max={12}

@@ -1,6 +1,6 @@
 import { Button, Divider, Input, InputSelect, TableEmpty } from "@matthiaskrijgsman/mat-ui";
 import { IconBraces, IconEyeOff, IconTag } from "@tabler/icons-react";
-import { useBuilderState, useMergeTagUsage, useMergeTagValues } from "../../react/hooks.ts";
+import { useBuilderState, useLabels, useMergeTagUsage, useMergeTagValues } from "../../react/hooks.ts";
 import type { MergeTagUsage } from "../../react/merge-tags.ts";
 
 /*
@@ -21,6 +21,7 @@ export interface MergeTagValuesPanelProps {
 }
 
 export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
+    const t = useLabels();
     const usage = useMergeTagUsage();
     const values = useMergeTagValues();
     const actions = useBuilderState((s) => s.actions);
@@ -34,10 +35,10 @@ export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
                         className="mat:size-5 mat:shrink-0 mat:stroke-2"
                         style={{ color: "var(--mat-builder-color-rule-accent)" }}
                     />
-                    <div className="mat:line-clamp-1 mat:flex-1 mat:py-2 mat:font-semibold">Preview data</div>
+                    <div className="mat:line-clamp-1 mat:flex-1 mat:py-2 mat:font-semibold">{t.previewData.heading}</div>
                     {filled > 0 && (
                         <Button size="sm" variant="transparent" onClick={() => actions.setPreviewValues({})}>
-                            Clear
+                            {t.previewData.clear}
                         </Button>
                     )}
                 </div>
@@ -48,14 +49,14 @@ export function MergeTagValuesPanel({ className }: MergeTagValuesPanelProps) {
                 <div className="mat:grid mat:flex-1 mat:place-items-center mat:p-2">
                     <TableEmpty
                         Icon={IconTag}
-                        title="No merge tags in use"
-                        description="Insert a merge tag, or add a visibility rule, and it shows up here to preview with."
+                        title={t.previewData.none}
+                        description={t.previewData.noneHint}
                     />
                 </div>
             ) : (
                 <div className="mat:flex mat:min-h-0 mat:flex-1 mat:flex-col mat:gap-3 mat:overflow-y-auto mat:p-3">
                     <p className="mat:text-xs" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
-                        Stand-in values for this preview only. Tags left empty stay visible as their token.
+                        {t.previewData.hint}
                     </p>
                     {usage.map((entry) => (
                         <ValueField
@@ -78,6 +79,7 @@ interface ValueFieldProps {
 }
 
 function ValueField({ usage, value, onChange }: ValueFieldProps) {
+    const t = useLabels();
     const { tag } = usage;
     const declaredValues = tag.values ?? [];
     return (
@@ -92,7 +94,7 @@ function ValueField({ usage, value, onChange }: ValueFieldProps) {
                     <IconEyeOff
                         className="mat:size-3.5 mat:shrink-0"
                         style={{ color: "var(--mat-builder-color-conditional-fg)" }}
-                        aria-label="Used by visibility rules only"
+                        aria-label={t.previewData.rulesOnly}
                     />
                 )}
                 <code className="mat:ml-auto mat:shrink-0 mat:truncate mat:text-[11px]" style={{ color: "var(--mat-builder-color-panel-muted-fg)" }}>
@@ -106,13 +108,13 @@ function ValueField({ usage, value, onChange }: ValueFieldProps) {
                     options={declaredValues.map((option) => ({ label: option, value: option }))}
                     value={value || null}
                     onChange={(next) => onChange(next ?? "")}
-                    placeholder="No value"
+                    placeholder={t.previewData.noValue}
                 />
             ) : (
                 <Input
                     size="sm"
                     variant="flat"
-                    placeholder="No value"
+                    placeholder={t.previewData.noValue}
                     value={value}
                     onChange={(event) => onChange(event.target.value)}
                 />

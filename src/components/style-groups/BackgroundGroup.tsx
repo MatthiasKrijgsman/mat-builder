@@ -10,19 +10,21 @@ import {
 import * as Fields from "../fields/index.ts";
 import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
+import { useLabels } from "../../react/hooks.ts";
+import type { BuilderLabels } from "../../react/labels.ts";
 import type { StyleGroupProps } from "./types.ts";
 
-const TYPE_OPTIONS: SegmentedFieldOption<BackgroundType>[] = [
-    { label: "None", value: "none", Icon: IconSquareOff },
-    { label: "Solid", value: "solid", Icon: IconSquareFilled },
-    { label: "Gradient", value: "gradient", Icon: IconGradienter },
-    { label: "Image", value: "image", Icon: IconPhoto },
+const typeOptionsFor = (t: BuilderLabels): SegmentedFieldOption<BackgroundType>[] => [
+    { label: t.styleGroups.background.none, value: "none", Icon: IconSquareOff },
+    { label: t.styleGroups.background.solid, value: "solid", Icon: IconSquareFilled },
+    { label: t.styleGroups.background.gradient, value: "gradient", Icon: IconGradienter },
+    { label: t.styleGroups.background.image, value: "image", Icon: IconPhoto },
 ];
 
-const SIZE_OPTIONS: { label: string; value: BackgroundImageSize }[] = [
-    { label: "Cover", value: "cover" },
-    { label: "Contain", value: "contain" },
-    { label: "Auto", value: "auto" },
+const sizeOptionsFor = (t: BuilderLabels): { label: string; value: BackgroundImageSize }[] => [
+    { label: t.styleGroups.background.cover, value: "cover" },
+    { label: t.styleGroups.background.contain, value: "contain" },
+    { label: t.styleGroups.background.auto, value: "auto" },
 ];
 
 const POSITION_OPTIONS: BackgroundImagePosition[] = ["center", "top", "bottom", "left", "right"];
@@ -32,26 +34,29 @@ export interface BackgroundGroupProps extends StyleGroupProps<BackgroundValue> {
     modes?: BackgroundType[];
 }
 
-export function BackgroundGroup({ value, onChange, label = "Background", defaultOpen, modes }: BackgroundGroupProps) {
+export function BackgroundGroup({ value, onChange, label, defaultOpen, modes }: BackgroundGroupProps) {
+    const t = useLabels();
+    const s = t.styleGroups.background;
     const v = value ?? defaultBackground;
     const image = v.image ?? defaultBackgroundImage;
     const set = (patch: Partial<BackgroundValue>) => onChange({ ...v, ...patch });
     const setGradient = (patch: Partial<BackgroundValue["gradient"]>) =>
         set({ gradient: { ...v.gradient, ...patch } });
     const setImage = (patch: Partial<typeof image>) => set({ image: { ...image, ...patch } });
-    const typeOptions = modes ? TYPE_OPTIONS.filter((option) => modes.includes(option.value)) : TYPE_OPTIONS;
+    const allTypes = typeOptionsFor(t);
+    const typeOptions = modes ? allTypes.filter((option) => modes.includes(option.value)) : allTypes;
     return (
-        <InspectorGroup label={label} defaultOpen={defaultOpen}>
+        <InspectorGroup label={label ?? s.heading} defaultOpen={defaultOpen}>
             <Fields.SegmentedField value={v.type} options={typeOptions} onChange={(type) => set({ type })} />
             {v.type === "solid" && (
-                <Fields.ColorField label="Color" value={v.color} onChange={(color) => set({ color })} />
+                <Fields.ColorField label={s.color} value={v.color} onChange={(color) => set({ color })} />
             )}
             {v.type === "gradient" && (
                 <>
-                    <Fields.ColorField label="From" value={v.gradient.from} onChange={(from) => setGradient({ from })} />
-                    <Fields.ColorField label="To" value={v.gradient.to} onChange={(to) => setGradient({ to })} />
+                    <Fields.ColorField label={s.from} value={v.gradient.from} onChange={(from) => setGradient({ from })} />
+                    <Fields.ColorField label={s.to} value={v.gradient.to} onChange={(to) => setGradient({ to })} />
                     <Fields.NumberField
-                        label="Angle"
+                        label={s.angle}
                         value={v.gradient.angle}
                         min={0}
                         max={360}
@@ -61,27 +66,27 @@ export function BackgroundGroup({ value, onChange, label = "Background", default
             )}
             {v.type === "image" && (
                 <>
-                    <Fields.TextField label="Image URL" value={image.url} onChange={(url) => setImage({ url })} />
+                    <Fields.TextField label={s.imageUrl} value={image.url} onChange={(url) => setImage({ url })} />
                     <Fields.SegmentedField
-                        label="Size"
+                        label={s.size}
                         value={image.size}
-                        options={SIZE_OPTIONS}
+                        options={sizeOptionsFor(t)}
                         onChange={(size) => setImage({ size })}
                     />
                     <Fields.SelectField
-                        label="Position"
+                        label={s.position}
                         value={image.position}
                         options={POSITION_OPTIONS}
                         onChange={(position) => setImage({ position: position as BackgroundImagePosition })}
                     />
                     <Fields.ToggleField
-                        label="Repeat"
+                        label={s.repeat}
                         value={image.repeat}
                         onChange={(repeat) => setImage({ repeat })}
                     />
                     <Fields.ColorField
-                        label="Fallback color"
-                        description="Shown while the image loads and in clients that ignore background images"
+                        label={s.fallbackColor}
+                        description={s.fallbackHint}
                         value={v.color}
                         onChange={(color) => set({ color })}
                     />

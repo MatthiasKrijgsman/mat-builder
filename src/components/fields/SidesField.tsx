@@ -25,6 +25,7 @@ import {
 import { uniformCorners, type CornerValues } from "../../style-props/border.ts";
 import { uniformSides, type SideValues } from "../../style-props/spacing.ts";
 import { NumberField } from "./NumberField.tsx";
+import { useLabels } from "../../react/hooks.ts";
 
 /*
  * Figma-style linked side inputs (docs/04 §Inspector):
@@ -87,9 +88,10 @@ interface SideInputProps {
 }
 
 /** One linked input: icon, no visible label, "Mix" when values differ. */
-const SideInput = ({ Icon, title, value, onChange, min, max }: SideInputProps) => (
-    <NumberField Icon={Icon} title={title} placeholder="Mix" value={value} onChange={onChange} min={min} max={max} />
-);
+const SideInput = ({ Icon, title, value, onChange, min, max }: SideInputProps) => {
+    const t = useLabels();
+    return <NumberField Icon={Icon} title={title} placeholder={t.fields.mix} value={value} onChange={onChange} min={min} max={max} />;
+};
 
 const pair = (a: number, b: number): number | undefined => (a === b ? a : undefined);
 const all = (s: SideValues): number | undefined =>

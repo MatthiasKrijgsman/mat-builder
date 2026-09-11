@@ -1,7 +1,7 @@
 import { ButtonIconSquare } from "@matthiaskrijgsman/mat-ui";
 import { IconArrowBackUp, IconArrowForwardUp } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { useEditor } from "../../react/hooks.ts";
+import { useEditor, useLabels } from "../../react/hooks.ts";
 
 /*
  * Toolbar — see docs/04 §Toolbar. A convenience assembly of independent,
@@ -27,13 +27,14 @@ export function Toolbar({ className, children }: ToolbarProps) {
 
 export function UndoRedoButtons() {
     const { undo, redo, canUndo, canRedo } = useEditor();
+    const t = useLabels();
     return (
         <div className="mat:flex mat:items-center mat:gap-1">
             <ButtonIconSquare
                 Icon={IconArrowBackUp}
                 variant={canUndo ? 'primary' : 'transparent'}
                 size="sm"
-                aria-label="Undo"
+                aria-label={t.toolbar.undo}
                 disabled={!canUndo}
                 onClick={undo}
             />
@@ -41,7 +42,7 @@ export function UndoRedoButtons() {
                 Icon={IconArrowForwardUp}
                 variant={canRedo ? 'primary' : 'transparent'}
                 size="sm"
-                aria-label="Redo"
+                aria-label={t.toolbar.redo}
                 disabled={!canRedo}
                 onClick={redo}
             />

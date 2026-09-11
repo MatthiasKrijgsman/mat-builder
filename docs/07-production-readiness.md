@@ -151,9 +151,9 @@ Button `href`, image `href`, rich-text links: free text everywhere. Consumers wa
 
 Grepped across `src/components` and `src/email`: ~230 literal UI strings ("Duplicate block", "Font family", "No block selected", "Set an image URL in the inspector"…). Only save labels and the Edit/Preview toggle are configurable. Two of the four target consumers are other companies; Dutch UI is a near-certain ask.
 
-- [ ] One exported `labels` dictionary with the current English as `DEFAULT_LABELS`, merged shallowly from a `labels` prop on the provider/shell — the pattern `DEFAULT_SAVE_LABELS` already establishes, applied library-wide.
-- [ ] Keep it a flat dictionary, not an i18n framework: consumers already have theirs.
-- [ ] Block labels/categories come from `defineBlock`, so preset blocks need their labels routed through the same dictionary.
+- [x] One exported `labels` dictionary with the current English as `DEFAULT_LABELS`, merged from a `labels` prop on the provider/shell/`<EmailBuilder>` — `src/react/labels.ts`, read through `useLabels()` *(0.3.0: deep-merged rather than shallow, because the dictionary is grouped by surface)*.
+- [x] Keep it a dictionary, not an i18n framework: consumers already have theirs.
+- [x] Block labels/categories come from `defineBlock`, so they are overridden by type (`labels.blocks[type].label`, `.containers[name].placeholder`) and by category name (`labels.categories`) and resolved where they are displayed — palette, layer tree, inspector header, empty-container placeholders. The visibility operators are in the dictionary too and phrase the canvas badge's tooltip (`describeVisibility` takes the phrasing).
 
 ### B4. Fonts are a fixed email-safe list
 
@@ -234,7 +234,7 @@ Already flagged as open questions in `docs/README.md`; worth pricing now so we c
 | Ask | Effort | Note |
 |---|---|---|
 | Saved/reusable sections | M | Document model already supports serializing a subtree |
-| ESP conditionals (`{{#if}}`/Liquid) | M | Needs the consumer-supplied syntax adapter described in 06 |
+| ESP conditionals (`{{#if}}`/Liquid) | M | ✅ 0.3.0 — `renderEmail(doc, { conditionals: { wrap } })`, 06 §Conditional visibility |
 | Template thumbnails/previews | S–M | For a template gallery in the host |
 | Multi-select + copy/paste | M | Deferred from v1 |
 | Import an existing HTML email | L | Say no early and clearly — it is a different product |
@@ -254,12 +254,12 @@ A Next 16 / React 19 / **Tailwind 3** host embedding the editor and compiling wi
 - [x] `minWidth` + `smallScreenNotice` on the shell (04 §Shell).
 - [x] Docs: the email peers are optional only for a core-only consumer — a bundler resolves the preview's dynamic import at build time.
 - [x] **CSS packaging for a non-Tailwind-4 host** (the largest item) — **0.2.0 / mat-ui 0.0.68.** Both packages build with `prefix(mat)` (`.mat\:flex`, `--mat-*`), so no utility can collide with the host's, and both ship a second entry `./style-flat`: the layered output flattened and every selector scoped (`:where(roots, roots *)`, zero extra specificity) to the builder's roots / mat-ui's `.mat-ui` marker plus `[data-floating-ui-portal]`. With layers intact a Tailwind 3 host's unlayered rules beat every vendor rule; flattened without a prefix, the vendor's utilities would leak into the host — hence both halves. `scripts/check-css.mjs` in each repo guards both promises at build time; getting-started §2.2 says which entry to import. `site/public/flat-check.html` is the live proof: an unlayered host whose `input { padding: 0 }` beats our utility on `?entry=layered` (0px) and loses to it on `?entry=flat` (40px), with the host's own `.flex`, `--font-sans` and body font identical to the baseline in both.
-- [ ] Responsive stacking in the output: a `<style>` media query stacking horizontal-container columns below ~600px, `stackOnMobile` per container.
-- [ ] The ESP conditional-emission adapter (C5).
-- [ ] Keyboard block moving — `moveBlock` exists, nothing binds it.
-- [ ] `labels` dictionary (B3).
-- [ ] A real-client pass (C1).
-- [ ] `--font-family-numeric` in mat-ui for number fields, with `font-variant-numeric: tabular-nums`.
+- [x] Responsive stacking in the output — **0.3.0**: `mb-stack` cells plus one `<style>` media query from the root, `stackOnMobile` per container (06 §Responsive output).
+- [x] The ESP conditional-emission adapter — **0.3.0**: `renderEmail(doc, { conditionals: { wrap } })`, attribute-marked blocks wrapped after `pretty` (06 §Conditional visibility, C5).
+- [x] Keyboard block moving — **0.3.0**: `Alt` + arrows through `moveTargetFor` (04 §Keyboard).
+- [x] `labels` dictionary — **0.3.0** (B3).
+- [ ] A real-client pass (C1) — still nobody's opened it in Outlook; needs a Litmus / Email on Acid account.
+- [x] `--font-family-numeric` in mat-ui for number fields, with `font-variant-numeric: tabular-nums` — mat-ui 0.0.68.
 
 ---
 

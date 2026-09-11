@@ -11,6 +11,8 @@ import {
     useLexicalToolbar,
 } from "@matthiaskrijgsman/mat-ui";
 import { defaultTypography, EMAIL_FONT_STACKS, hexToRgba, parseColorToHexOpacity } from "../../style-props/index.ts";
+import { useLabels } from "../../react/hooks.ts";
+import type { BuilderLabels } from "../../react/labels.ts";
 import { $setLineHeightOnSelection, useSelectionLineHeight } from "./LineHeightPlugin.tsx";
 import { $patchSelectedMergeTags } from "./MergeTagNode.tsx";
 
@@ -27,12 +29,12 @@ import { $patchSelectedMergeTags } from "./MergeTagNode.tsx";
 const FONT_OPTIONS = EMAIL_FONT_STACKS.map(({ name, stack }) => ({ value: stack, label: name }));
 
 /** Numeric weights that survive email clients on system/web-safe stacks. */
-const FONT_WEIGHT_OPTIONS = [
-    { value: "300", label: "Light" },
-    { value: "400", label: "Regular" },
-    { value: "500", label: "Medium" },
-    { value: "600", label: "Semibold" },
-    { value: "700", label: "Bold" },
+const fontWeightOptions = (t: BuilderLabels) => [
+    { value: "300", label: t.typography.light },
+    { value: "400", label: t.typography.regular },
+    { value: "500", label: t.typography.medium },
+    { value: "600", label: t.typography.semibold },
+    { value: "700", label: t.typography.bold },
 ];
 
 /** First family of a stack, unquoted + lowercased, for loose stack matching. */
@@ -41,16 +43,16 @@ const firstFamily = (stack: string): string =>
 
 /** Display label for an inherited font-family: the matching option's name,
  * or the stack's first family verbatim when it's not one of ours. */
-const inheritedFontLabel = (computedFamily: string): string => {
+const inheritedFontLabel = (computedFamily: string, t: BuilderLabels): string => {
     const first = firstFamily(computedFamily).toLowerCase();
     const option = FONT_OPTIONS.find((o) => firstFamily(o.value).toLowerCase() === first);
-    return option?.label ?? (firstFamily(computedFamily) || "Font");
+    return option?.label ?? (firstFamily(computedFamily) || t.typography.font);
 };
 
 /** Display label for an inherited font-weight ("400" → "Regular"). */
-const inheritedWeightLabel = (computedWeight: string): string => {
+const inheritedWeightLabel = (computedWeight: string, t: BuilderLabels): string => {
     const normalized = computedWeight === "normal" ? "400" : computedWeight === "bold" ? "700" : computedWeight;
-    return FONT_WEIGHT_OPTIONS.find((o) => o.value === normalized)?.label ?? normalized;
+    return fontWeightOptions(t).find((o) => o.value === normalized)?.label ?? normalized;
 };
 
 interface InheritedTextStyle {
@@ -125,14 +127,15 @@ function useInheritedTextStyle(): InheritedTextStyle {
 }
 
 function FontFamilyItem() {
+    const t = useLabels();
     const { values, patch } = useLexicalSelectionStyle(["font-family"]);
     const inherited = useInheritedTextStyle();
     // No inline style on the selection → show the font the text actually
     // renders with (the inherited one), not a "Font" placeholder.
-    const label = inheritedFontLabel(inherited.fontFamily);
+    const label = inheritedFontLabel(inherited.fontFamily, t);
     return (
         <LexicalToolbarSelect
-            title="Font family"
+            title={t.typography.fontFamily}
             options={FONT_OPTIONS}
             value={values["font-family"] || null}
             onChange={(stack) => patch({ "font-family": stack })}
@@ -157,15 +160,16 @@ const focusPreservingTag = (editor: LexicalEditor): { tag: string } | undefined 
  * unless an explicit inline weight overrides it, and choosing a non-bold
  * weight clears the bit (or the lit B button would contradict the text). */
 function FontWeightItem() {
+    const t = useLabels();
     const [editor] = useLexicalComposerContext();
     const { values, patch } = useLexicalSelectionStyle(["font-weight"]);
     const { state } = useLexicalToolbar();
     const inherited = useInheritedTextStyle();
-    const label = inheritedWeightLabel(inherited.fontWeight);
+    const label = inheritedWeightLabel(inherited.fontWeight, t);
     return (
         <LexicalToolbarSelect
-            title="Font weight"
-            options={FONT_WEIGHT_OPTIONS}
+            title={t.typography.fontWeight}
+            options={fontWeightOptions(t)}
             value={values["font-weight"] || (state.isBold ? "700" : null)}
             onChange={(weight) => {
                 patch({ "font-weight": weight });
@@ -185,13 +189,14 @@ function FontWeightItem() {
 }
 
 function FontSizeItem() {
+    const t = useLabels();
     const [editor] = useLexicalComposerContext();
     const { values, patch } = useLexicalSelectionStyle(["font-size"]);
     const inherited = useInheritedTextStyle();
     const parsed = Number.parseFloat(values["font-size"]);
     return (
         <LexicalToolbarNumber
-            title="Font size (px)"
+            title={t.typography.fontSize}
             prefix="Aa"
             value={Number.isNaN(parsed) ? inherited.fontSize : parsed}
             onChange={(size) => {
@@ -210,12 +215,13 @@ function FontSizeItem() {
 }
 
 function LineHeightItem() {
+    const t = useLabels();
     const [editor] = useLexicalComposerContext();
     const inherited = useInheritedTextStyle();
     const value = useSelectionLineHeight(editor);
     return (
         <LexicalToolbarNumber
-            title="Line height (multiplier)"
+            title={t.typography.lineHeight}
             prefix="Lh"
             value={value ?? inherited.lineHeight}
             onChange={(multiplier) =>
@@ -229,12 +235,13 @@ function LineHeightItem() {
 }
 
 function LetterSpacingItem() {
+    const t = useLabels();
     const { values, patch } = useLexicalSelectionStyle(["letter-spacing"]);
     const inherited = useInheritedTextStyle();
     const parsed = Number.parseFloat(values["letter-spacing"]);
     return (
         <LexicalToolbarNumber
-            title="Letter spacing (px)"
+            title={t.typography.letterSpacing}
             prefix="Ls"
             value={Number.isNaN(parsed) ? inherited.letterSpacing : parsed}
             onChange={(spacing) => patch({ "letter-spacing": spacing === 0 ? null : `${spacing}px` })}
@@ -248,18 +255,19 @@ function LetterSpacingItem() {
 /** Color + opacity edit the same `color` style — opacity folds into rgba
  * (a separate opacity property would also fade backgrounds; docs/06). */
 function TextColorItem() {
+    const t = useLabels();
     const { values, patch } = useLexicalSelectionStyle(["color"]);
     const inherited = useInheritedTextStyle();
     const current = parseColorToHexOpacity(values["color"]) ?? inherited.color;
     return (
         <>
             <LexicalToolbarColor
-                title="Text color"
+                title={t.typography.textColor}
                 value={current.hex}
                 onChange={(hex) => patch({ color: hexToRgba(hex, current.opacity) })}
             />
             <LexicalToolbarNumber
-                title="Text opacity (%)"
+                title={t.typography.textOpacity}
                 prefix="%"
                 value={current.opacity}
                 onChange={(opacity) => patch({ color: hexToRgba(current.hex, opacity) })}

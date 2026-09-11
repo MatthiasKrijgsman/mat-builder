@@ -11,7 +11,7 @@ import {
     SizeGroup,
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
-import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
+import { SIZE_BOX_CLASS, useLabels } from "../../../react/hooks.ts";
 import { defaultLayout } from "../../../style-props/index.ts";
 import { emailButtonDefaults, emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } from "./styles.ts";
 
@@ -47,16 +47,18 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
             />
         </div>
     ),
-    inspector: ({ props, update }) => (
+    inspector: function ButtonInspector({ props, update }) {
+        const t = useLabels();
+        return (
         <>
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
-                <Fields.MergeTagTextField label="Link" value={props.href} onChange={(href) => update({ href })} />
+                <Fields.MergeTagTextField label={t.email.button.link} value={props.href} onChange={(href) => update({ href })} />
             </div>
             <Divider />
             <SizeGroup fields={["width"]} value={props.size} onChange={(size) => update({ size })} />
             <Divider />
             <LayoutGroup
-                label="Alignment"
+                label={t.email.button.alignment}
                 fields={["horizontal", "vertical"]}
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
@@ -74,5 +76,6 @@ export const buttonBlock = defineBlock<EmailButtonProps>({
             <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
-    ),
+        );
+    },
 });

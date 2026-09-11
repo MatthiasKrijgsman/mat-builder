@@ -134,11 +134,30 @@ export function isBlockVisible(node: BlockNode | undefined, values: MergeTagValu
 export function describeVisibility(
     visibility: BlockVisibility | undefined,
     labelOf: (token: string) => string,
+    /** The wording, for a host that translates the editor (react/labels.ts); English by default. */
+    phrasing: VisibilityPhrasing = DEFAULT_PHRASING,
 ): string {
     if (!hasVisibilityRules(visibility)) return "";
     const parts = visibility!.rules.map((rule) => {
-        const phrase = `${labelOf(rule.token)} ${OPERATOR_LABELS[rule.operator] ?? rule.operator}`;
+        const phrase = `${labelOf(rule.token)} ${phrasing.operators[rule.operator] ?? rule.operator}`;
         return VALUE_OPERATORS.has(rule.operator) ? `${phrase} “${rule.value ?? ""}”` : phrase;
     });
-    return `Shown when ${parts.join(visibility!.match === "any" ? " or " : " and ")}`;
+    return phrasing.shownWhen.replace("{rules}", parts.join(visibility!.match === "any" ? phrasing.or : phrasing.and));
 }
+
+/** The words `describeVisibility` puts around a rule set. */
+export interface VisibilityPhrasing {
+    operators: Record<VisibilityOperator, string>;
+    /** With a `{rules}` placeholder */
+    shownWhen: string;
+    /** Joiners, spaces included */
+    and: string;
+    or: string;
+}
+
+const DEFAULT_PHRASING: VisibilityPhrasing = {
+    operators: OPERATOR_LABELS,
+    shownWhen: "Shown when {rules}",
+    and: " and ",
+    or: " or ",
+};

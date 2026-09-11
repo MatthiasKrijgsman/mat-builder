@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Artboard } from "../components/canvas/Artboard.tsx";
 import { useBuilderContext } from "../react/context.ts";
-import { useBuilderState } from "../react/hooks.ts";
+import { useBuilderState, useLabels } from "../react/hooks.ts";
 import type { EmailBlockOverride } from "./types.ts";
 
 /*
@@ -76,6 +76,7 @@ export function EmailPreview({
     const { store, registry } = useBuilderContext();
     const document = useBuilderState((s) => s.document);
     const actions = useBuilderState((s) => s.actions);
+    const t = useLabels();
     // Stand-in merge-tag data (docs/06 §Preview data): substituted into the
     // copy and evaluated by conditional blocks, so the preview shows what a
     // recipient with this data would get. Always passed — even empty, which
@@ -160,7 +161,7 @@ export function EmailPreview({
                 // HTML would run as the app. The empty allow-list blocks
                 // scripts, forms and top navigation; the preview needs none of
                 // them (the scrollbar styling above travels inside the srcDoc).
-                <iframe title="Email preview" srcDoc={html} sandbox="" className="mat:h-full mat:w-full mat:border-0" />
+                <iframe title={t.email.previewTitle} srcDoc={html} sandbox="" className="mat:h-full mat:w-full mat:border-0" />
             )}
         </Artboard>
     );

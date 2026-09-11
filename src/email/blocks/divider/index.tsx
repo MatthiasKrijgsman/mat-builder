@@ -3,6 +3,7 @@ import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
 import { SpacingGroup } from "../../../components/style-groups/index.ts";
+import { useLabels } from "../../../react/hooks.ts";
 import { emailDividerDefaults, emailDividerStyles, type EmailDividerProps } from "./styles.ts";
 
 export const dividerBlock = defineBlock<EmailDividerProps>({
@@ -13,12 +14,14 @@ export const dividerBlock = defineBlock<EmailDividerProps>({
     keywords: ["line", "rule", "hr", "separator"],
     defaultProps: emailDividerDefaults,
     editRender: ({ props }) => <hr style={emailDividerStyles(props)} />,
-    inspector: ({ props, update }) => (
+    inspector: function DividerInspector({ props, update }) {
+        const t = useLabels();
+        return (
         <>
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
-                <Fields.ColorField label="Color" value={props.color} onChange={(color) => update({ color })} />
+                <Fields.ColorField label={t.email.divider.color} value={props.color} onChange={(color) => update({ color })} />
                 <Fields.NumberField
-                    label="Thickness"
+                    label={t.email.divider.thickness}
                     value={props.thickness}
                     min={1}
                     max={8}
@@ -28,5 +31,6 @@ export const dividerBlock = defineBlock<EmailDividerProps>({
             <Divider />
             <SpacingGroup fields={["margin"]} value={props.spacing} onChange={(spacing) => update({ spacing })} />
         </>
-    ),
+        );
+    },
 });

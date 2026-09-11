@@ -2,6 +2,7 @@ import { IconSearch } from "@tabler/icons-react";
 import { DropdownButton, DropdownButtonGroup, Input } from "@matthiaskrijgsman/mat-ui";
 import { useState } from "react";
 import type { MergeTag } from "../../react/merge-tags.ts";
+import { useLabels } from "../../react/hooks.ts";
 
 /*
  * Searchable, grouped merge-tag menu body (docs/06 §merge tags) — shared by
@@ -17,6 +18,7 @@ export interface MergeTagListProps {
 }
 
 export function MergeTagList({ tags, onInsert }: MergeTagListProps) {
+    const t = useLabels();
     const [query, setQuery] = useState("");
     const q = query.trim().toLowerCase();
     const filtered = q
@@ -51,7 +53,7 @@ export function MergeTagList({ tags, onInsert }: MergeTagListProps) {
                     variant="flat"
                     Icon={IconSearch}
                     type="search"
-                    placeholder="Search tags…"
+                    placeholder={t.mergeTags.search}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                 />

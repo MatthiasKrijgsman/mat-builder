@@ -134,6 +134,19 @@ Used from a Next.js route handler / server action: load document JSON → `rende
 
 The two are independent: `values` alone resolves conditions while still handing tokens to the ESP; both together produce a finished, recipient-specific email. `buildEmailTree` takes the same options as its fourth argument.
 
+## Responsive output
+
+Email has no flexbox: a horizontal container is a table row of equal cells, and a three-column row stays three columns on a 320px phone unless something says otherwise. Roughly half of opens are mobile, so the something is on by default. Each cell of a horizontal container carries `class="mb-stack"` (plus `mb-stack-gap-<n>` on every cell but the last, when the row has a gap), and the root renderer emits one `<style>` in the head — `responsiveStackingCss`, derived from the document so it names exactly the gap values in use, and omitted entirely when nothing stacks:
+
+```css
+@media only screen and (max-width: 600px) {
+  .mb-stack { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
+  .mb-stack-gap-12 { padding-bottom: 12px !important; }
+}
+```
+
+`stackOnMobile: false` on a container keeps its columns (the inspector shows the toggle for horizontal containers only); documents written before the prop existed read as `true`. The breakpoint is `MOBILE_BREAKPOINT` (600px), the phone/desktop line most email CSS uses. Outlook on Windows ignores `<style>` and keeps the columns — the documented degradation — and a container that exists only inside a composed block's spec stacks without its gap, because the scan sees stored nodes, not specs. Mobile *editing* is deliberately absent: the canvas is the desktop truth, the output is what stacks.
+
 ## Merge tags
 
 Consumer-provided personalization tokens, insertable anywhere in rich text, in the Button label, and in the Button link. The tag list varies per host/ESP, so it enters through the provider — `<BuilderProvider mergeTags={[{ token: "{{first_name}}", label: "First name" }]}>` (`useMergeTags()` reads it back). Each tag carries its **literal token string**: the library assumes no delimiter syntax, so `{{x}}`, `*|FNAME|*` and `%x%` all work unmodified. With no `mergeTags` configured, every bit of merge-tag UI hides — but stored documents containing tags still load and export (node registration and walker support are unconditional).
@@ -182,7 +195,9 @@ interface VisibilityRule {
 
 The export stays free of ESP template syntax — no `{{#if}}`/Liquid/`*|IF:|*` wrappers. That is the model for a host that renders per recipient from its own backend. Emitting conditionals for the ESP to evaluate is the other half of the problem and is **not built**: it needs a consumer-supplied syntax adapter (the library assumes no delimiter syntax for tokens, so it cannot assume one for conditionals either), and React escapes `"`/`&`/`<` in text children, so a wrapper like `{{#if plan == "pro"}}` would have to be emitted as a sentinel and string-replaced after `render()`. The rule model is the same either way, so it can be added without reworking documents.
 
-Until it is, a host that compiles once and personalises afterwards has a feature it cannot honour: rules render for everyone (no `values`) or for no one (`values: {}`), and the authoring UI promises otherwise. `features={{ visibility: false }}` on the provider/shell/`<EmailBuilder>` hides that UI — the inspector group, the canvas badges, the layer-tree marker — while stored rules keep loading and exporting, so nothing is stripped from documents and the switch can be flipped back once the adapter exists. It is a `BuilderFeatures` switch (04 §Shell), not a document setting: the document does not know how it will be sent.
+**The adapter (0.3.0).** `renderEmail(document, { conditionals: { wrap } })` is that adapter. With it, `values` hides nothing — every block renders — and each block carrying rules reaches `wrap(html, rule, { id, type })` as its complete rendered markup, outer tag included; the return value replaces it verbatim, so a Liquid host returns `` `{% if … %}${html}{% endif %}` `` and translates `rule.match` / `rule.rules[].operator` itself (the library assumes no syntax for conditionals, as for tokens). Three implementation facts worth knowing: the block is found by an attribute on its own outermost element rather than a sentinel wrapper, because `pretty`'s HTML parser foster-parents anything but a `<td>` out of a `<tr>`; wrapping runs last — after prettifying (the host's syntax is not HTML), after substitution and URL sanitizing (neither may rewrite the host's syntax: a rule names its tokens, `{% if {{plan}} … %}`, and those stay literal even under `substituteTokens`); and the plain-text variant is untouched — there is no attribute to find in text, so `text` always contains every block. Column widths are static under the adapter: a hidden column is the ESP's decision, made after the split was computed. A host without an adapter and without `values` at compile time still has a feature it cannot honour, so the switch below stays.
+
+`features={{ visibility: false }}` on the provider/shell/`<EmailBuilder>` hides the authoring UI — the inspector group, the canvas badges, the layer-tree marker — while stored rules keep loading and exporting, so nothing is stripped from documents and the switch can be flipped back once an adapter is wired. It is a `BuilderFeatures` switch (04 §Shell), not a document setting: the document does not know how it will be sent.
 
 ### The editing surface
 

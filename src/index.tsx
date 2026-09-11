@@ -70,12 +70,16 @@ export type { SaveController, SaveStatus, UseDocumentSaveOptions } from "./react
 export { collectMergeTagUsage } from "./react/merge-tags.ts";
 export type { MergeTag, MergeTagUsage } from "./react/merge-tags.ts";
 export type { BuilderFeatures, ResolvedBuilderFeatures } from "./react/features.ts";
+// UI strings — the English, the override shape, and the merge (docs/07 §B3)
+export { DEFAULT_LABELS, formatLabel, resolveLabels } from "./react/labels.ts";
+export type { BuilderLabels, BuilderLabelOverrides } from "./react/labels.ts";
 export {
     useEditor,
     useSelectedBlock,
     useBlockNode,
     useBuilderState,
     useBuilderFeatures,
+    useLabels,
     useMergeTags,
     useMergeTagUsage,
     useMergeTagValues,

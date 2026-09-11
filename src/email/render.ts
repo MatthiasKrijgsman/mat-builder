@@ -1,8 +1,8 @@
 import { pretty, render } from "@react-email/render";
-import { createElement, Fragment, type ReactElement } from "react";
+import { cloneElement, createElement, Fragment, isValidElement, type ReactElement } from "react";
 import type { BlockId, BlockLocation, BuilderDocument } from "../core/types.ts";
 import { safeUrl } from "../core/safe-url.ts";
-import { isBlockVisible, type MergeTagValues } from "../core/visibility.ts";
+import { hasVisibilityRules, isBlockVisible, type BlockVisibility, type MergeTagValues } from "../core/visibility.ts";
 import { emailRootEmail } from "./blocks/email-root/email.tsx";
 import { containerEmail } from "./blocks/container/email.tsx";
 import { textEmail } from "./blocks/text/email.tsx";
@@ -44,6 +44,9 @@ export * from "../style-props/index.ts";
 // walks plain JSON, no lexical import; docs/06).
 export * from "./rich-text/index.ts";
 export { withVerticalGap } from "./gap.ts";
+// Responsive stacking (docs/06 §Responsive output): what a custom root or
+// container renderer needs to keep the output stacking on phones.
+export { MOBILE_BREAKPOINT, STACK_CLASS, stackGapClass, responsiveStackingCss } from "./blocks/container/styles.ts";
 // The URL allow-list the renderers apply to every href/src, for custom
 // renderers to apply to theirs.
 export { safeUrl } from "../core/safe-url.ts";
@@ -208,6 +211,86 @@ export interface BuildEmailTreeOptions {
      * fail a render than ship an email with a hole in it turns this on.
      */
     strict?: boolean;
+    /**
+     * Emit conditional blocks for the ESP to evaluate instead of resolving
+     * them here (docs/06 §Conditional visibility). With an adapter, `values`
+     * no longer hides anything: every block renders, and each one carrying
+     * rules is handed to `wrap` as finished HTML to be enclosed in the host's
+     * template syntax. `substituteTokens` still works alongside it.
+     */
+    conditionals?: ConditionalAdapter;
+}
+
+/**
+ * The host's template language, as one function (docs/06 §Conditional
+ * visibility). `html` is the block's complete rendered markup — outer tag
+ * included — and the return value replaces it verbatim, so a Liquid host
+ * returns `{% if … %}${html}{% endif %}`. The library assumes no delimiter
+ * syntax for tokens and none for conditionals either; translating the rule
+ * (`rule.match`, `rule.rules[].operator`…) is the host's job.
+ */
+export interface ConditionalAdapter {
+    wrap(html: string, rule: BlockVisibility, block: { id: BlockId; type: string }): string;
+}
+
+/*
+ * How a conditional block reaches `wrap` (docs/06). React escapes `"`/`&`/`<`
+ * in text children, so the template syntax cannot be emitted from the tree;
+ * and wrapping the block in a sentinel ELEMENT would not survive `pretty`,
+ * whose HTML parser foster-parents anything but a <td> out of a <tr>. So
+ * the block's own outermost element is marked with an attribute — those
+ * survive both React and the prettifier untouched — and a pass over the
+ * final HTML finds each marked tag, walks to its matching close tag, and
+ * hands the slice to the adapter. Innermost markers are wrapped last: the
+ * adapter's output contains the inner HTML verbatim, markers included, so
+ * the loop simply continues until none are left.
+ */
+const CONDITIONAL_ATTRIBUTE = "data-mb-cond";
+const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+
+/** Marks the outermost element of a conditional block's render (no-op without an adapter or rules). */
+function markConditional(rendered: ReactElement | null, node: { id: BlockId; visibility?: BlockVisibility }, options: BuildEmailTreeOptions): ReactElement | null {
+    if (!rendered || !options.conditionals || !hasVisibilityRules(node.visibility)) return rendered;
+    // react-email's components spread unknown props onto their element; a
+    // fragment has nothing to carry the attribute, so it gets a wrapper.
+    return isValidElement(rendered) && rendered.type !== Fragment
+        ? cloneElement(rendered as ReactElement<Record<string, unknown>>, { [CONDITIONAL_ATTRIBUTE]: node.id })
+        : createElement("div", { [CONDITIONAL_ATTRIBUTE]: node.id }, rendered);
+}
+
+/** Replaces every marked element in the rendered HTML with the adapter's wrapping of it. */
+export function applyConditionals(html: string, adapter: ConditionalAdapter, document: BuilderDocument): string {
+    const marker = new RegExp(`\\s${CONDITIONAL_ATTRIBUTE}=(?:"([^"]*)"|'([^']*)')`);
+    for (let guard = 0; guard < 10_000; guard++) {
+        const match = marker.exec(html);
+        if (!match) return html;
+        const id = match[1] ?? match[2] ?? "";
+        const node = document.blocks[id];
+        const start = html.lastIndexOf("<", match.index);
+        const tag = /^<([a-zA-Z][\w-]*)/.exec(html.slice(start))?.[1]?.toLowerCase() ?? "";
+        const openEnd = html.indexOf(">", match.index + match[0].length) + 1;
+        let end = openEnd;
+        if (!VOID_ELEMENTS.has(tag)) {
+            // Walk to the matching close tag, counting nested same-name tags
+            const tags = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
+            tags.lastIndex = openEnd;
+            let depth = 1;
+            let found: RegExpExecArray | null;
+            while ((found = tags.exec(html))) {
+                depth += found[1] ? -1 : 1;
+                if (depth === 0) {
+                    end = found.index + found[0].length;
+                    break;
+                }
+            }
+            if (depth !== 0) throw new Error(`applyConditionals: no closing </${tag}> for block "${id}"`);
+        }
+        // The attribute is ours, not the author's — it leaves with the marker
+        const element = html.slice(start, end).replace(match[0], "");
+        const wrapped = node?.visibility ? adapter.wrap(element, node.visibility, { id, type: node.type }) : element;
+        html = html.slice(0, start) + wrapped + html.slice(end);
+    }
+    throw new Error("applyConditionals: too many conditional markers");
 }
 
 /** The one place an unknown block type is decided: skipped, or refused under `strict`. */
@@ -259,14 +342,17 @@ export function buildEmailTree(
     const compose = resolve.compose(node.type);
     const renderer = compose ? undefined : resolve.render(node.type);
     if (!compose && !renderer) return unknownBlock(node.type, id, options);
+    // With an adapter the ESP decides, so nothing is hidden here — every
+    // block renders and the conditional ones get marked (markConditional).
+    const values = options.conditionals ? undefined : options.values;
     // Child lists are pre-filtered below, so this only fires for a hidden
     // block the caller asked for directly (including the root).
-    if (!isBlockVisible(node, options.values)) return null;
+    if (!isBlockVisible(node, values)) return null;
 
     const children = Object.fromEntries(
         Object.keys(node.children).map((container) => [
             container,
-            visibleChildIds(document, id, container, options.values).map((childId, index) =>
+            visibleChildIds(document, id, container, values).map((childId, index) =>
                 createElement(
                     Fragment,
                     { key: childId },
@@ -276,7 +362,7 @@ export function buildEmailTree(
         ]),
     );
     const siblingCount = location
-        ? (visibleChildIds(document, location.parentId, location.container, options.values).length || 1)
+        ? (visibleChildIds(document, location.parentId, location.container, values).length || 1)
         : 1;
     const ctx: BlockContext = { document, location, siblingCount };
     // Defaults under the stored props, for both paths alike. `materializeBlock`
@@ -288,9 +374,9 @@ export function buildEmailTree(
     if (compose) {
         // Composed: the node's children are its SLOT children, spliced into
         // the tree wherever the spec references them.
-        return renderSpec(compose(props, ctx), children, ctx, resolve, 0, options);
+        return markConditional(renderSpec(compose(props, ctx), children, ctx, resolve, 0, options), node, options);
     }
-    return renderer!(props, children, ctx);
+    return markConditional(renderer!(props, children, ctx), node, options);
 }
 
 export interface RenderedEmail {
@@ -406,11 +492,16 @@ export async function renderEmail(
         throw new Error(`renderEmail: no email renderer for root block type "${rootType}"`);
     }
     const rendered = await render(tree);
-    const html = options.pretty === false ? rendered : await pretty(rendered);
+    const prettified = options.pretty === false ? rendered : await pretty(rendered);
     const text = await render(tree, { plainText: true });
     const values = options.substituteTokens ? (options.values ?? {}) : null;
+    const personalized = sanitizeUrlAttributes(values ? substitute(prettified, values, true) : prettified);
+    // Conditionals wrap LAST: after prettifying, because the adapter's syntax
+    // is not HTML and must not go through an HTML parser; after substitution
+    // and sanitizing, so neither pass ever rewrites the host's own syntax
+    // (a rule names its tokens — `{% if {{plan}} … %}` — and those must stay).
     return {
-        html: sanitizeUrlAttributes(values ? substitute(html, values, true) : html),
+        html: options.conditionals ? applyConditionals(personalized, options.conditionals, document) : personalized,
         text: values ? substitute(text, values, false) : text,
     };
 }

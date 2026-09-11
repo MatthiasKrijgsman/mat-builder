@@ -1,6 +1,7 @@
 import { IconArrowsVertical } from "@tabler/icons-react";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
+import { useLabels } from "../../../react/hooks.ts";
 import { emailSpacerDefaults, emailSpacerStyles, type EmailSpacerProps } from "./styles.ts";
 
 export const spacerBlock = defineBlock<EmailSpacerProps>({
@@ -21,15 +22,18 @@ export const spacerBlock = defineBlock<EmailSpacerProps>({
             }}
         />
     ),
-    inspector: ({ props, update }) => (
-        <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
-            <Fields.NumberField
-                label="Height"
-                value={props.height}
-                min={4}
-                max={160}
-                onChange={(height) => update({ height })}
-            />
-        </div>
-    ),
+    inspector: function SpacerInspector({ props, update }) {
+        const t = useLabels();
+        return (
+            <div className="mat:flex mat:flex-col mat:gap-4 mat:px-3 mat:pb-4 mat:pt-2">
+                <Fields.NumberField
+                    label={t.email.spacer.height}
+                    value={props.height}
+                    min={4}
+                    max={160}
+                    onChange={(height) => update({ height })}
+                />
+            </div>
+        );
+    },
 });

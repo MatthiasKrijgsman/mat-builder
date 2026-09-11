@@ -6,7 +6,7 @@ import type { BlockPattern, NewBlockSpec } from "../../core/types.ts";
 import { makeNewBlockDrag, makeNewPatternDrag } from "../../dnd/drag-data.ts";
 import { setChipDragPreview } from "../../dnd/preview.ts";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBuilderState } from "../../react/hooks.ts";
+import { useBuilderState, useLabels } from "../../react/hooks.ts";
 import { IconGripVertical, IconSearch } from "@tabler/icons-react";
 import { PATTERN_CATEGORY, tintByCategory, tintCssVar } from "./tints.ts";
 
@@ -48,6 +48,7 @@ const haystack = (...parts: (string | undefined)[]) => parts.filter(Boolean).joi
 export function Palette({ className }: PaletteProps) {
   const { registry } = useBuilderContext();
   const patterns = useBuilderState((s) => s.patterns);
+  const t = useLabels();
   const [ query, setQuery ] = useState("");
 
   // Category → tint index (shared with the layer tree, see ./tints.ts).
@@ -58,11 +59,11 @@ export function Palette({ className }: PaletteProps) {
       .filter((definition) => !definition.hidden)
       .map((definition) => ({
         key: `block:${definition.type}`,
-        label: definition.label,
+        label: t.blocks[definition.type]?.label ?? definition.label,
         icon: definition.icon,
         category: definition.category ?? "Blocks",
         type: definition.type,
-        search: haystack(definition.label, definition.type, definition.keywords?.join(" ")),
+        search: haystack(definition.label, t.blocks[definition.type]?.label, definition.type, definition.keywords?.join(" ")),
       }));
     // A pattern whose root type is not registered can never be dropped, so it
     // is dropped from the palette rather than offered as a dead row.
@@ -78,7 +79,14 @@ export function Palette({ className }: PaletteProps) {
         search: haystack(pattern.label, pattern.id, pattern.keywords?.join(" ")),
       }));
     return [ ...blocks, ...stamps ];
-  }, [ registry, patterns ]);
+  }, [ registry, patterns, t ]);
+
+  // Category names are `defineBlock` data; a host translates them by name.
+  // The two defaults have their own keys, so they translate without the host
+  // knowing the English fallbacks.
+  const categoryLabel = (category: string) =>
+    t.categories[category] ??
+    (category === "Blocks" ? t.palette.uncategorized : category === PATTERN_CATEGORY ? t.palette.patterns : category);
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -98,7 +106,7 @@ export function Palette({ className }: PaletteProps) {
           variant={'flat'}
           Icon={IconSearch}
           type="search"
-          placeholder="Search blocks…"
+          placeholder={ t.palette.search }
           value={ query }
           onChange={ (event) => setQuery(event.target.value) }
         />
@@ -113,7 +121,7 @@ export function Palette({ className }: PaletteProps) {
               fontFamily: "var(--mat-builder-font-family-eyebrow)",
             } }
           >
-            { category }
+            { categoryLabel(category) }
           </p>
           { groupEntries.map((entry) => (
             <PaletteItem

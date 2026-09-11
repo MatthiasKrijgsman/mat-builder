@@ -145,7 +145,21 @@ With no `values`, nothing is hidden — that is what makes the pass-through path
 
 Hidden blocks are removed from their parent's **child list**, not returned as null from their own render. That matters more than it sounds: surviving siblings still see a correct index and sibling count, so a horizontal container splits its width across the blocks that actually remain, and a table cell picks its corner radii from where it really ended up.
 
-If your ESP has its own conditional syntax and you would rather emit that than resolve it here, you can: read the rules yourself with the vocabulary this entry re-exports (`hasVisibilityRules`, `describeVisibility`, `evaluateRule`, `isVisible`, `OPERATOR_LABELS`, `VALUE_OPERATORS`) and write your own adapter.
+**If your ESP has its own conditional syntax**, emit that instead of resolving here — the compile-once, personalise-later pipeline:
+
+```ts
+const { html } = await renderEmail(document, {
+    conditionals: {
+        wrap: (html, rule, block) => {
+            const clauses = rule.rules.map(liquidClause);            // your translation of each rule
+            const test = clauses.join(rule.match === "all" ? " and " : " or ");
+            return `{% if ${test} %}${html}{% endif %}`;
+        },
+    },
+});
+```
+
+With `conditionals` set, nothing is hidden at render time — `values` only feeds `substituteTokens` — and every block carrying rules reaches `wrap` as its complete rendered markup, outer tag included; whatever you return replaces it verbatim. Rules use the vocabulary this entry exports (`VisibilityRule`, `OPERATOR_LABELS`, `VALUE_OPERATORS`): `match` is `"all"`/`"any"`, each rule is `{ token, operator, value? }` with `operator` one of `exists`, `notExists`, `eq`, `neq`, `contains`, `notContains`, compared trimmed and case-insensitively by the editor's own evaluator — mirror that in your syntax or accept the difference. Wrapping happens last — after `pretty`, and after `substituteTokens` if you set it, so the host's syntax is never rewritten (the tokens a rule names stay literal). The plain-text variant is untouched (there is nothing to anchor a wrapper to in text), so `text` always contains every block. Nested conditionals nest.
 
 **If your pipeline cannot honour rules at all** — you compile once and personalise afterwards, with no values at compile time and no adapter — the feature is a trap for authors: a block they marked "only for Pro" goes to everyone. Switch the UI off with `features={{ visibility: false }}` on `<EmailBuilder>` / `<BuilderShell>` / `<BuilderProvider>`. Rules already stored keep loading and exporting; only the inspector group, the canvas badges and the layer-tree marker disappear.
 

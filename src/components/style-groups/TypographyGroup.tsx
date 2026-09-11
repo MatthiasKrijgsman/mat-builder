@@ -3,12 +3,14 @@ import { defaultTypography, type TypographyValue } from "../../style-props/typog
 import * as Fields from "../fields/index.ts";
 import type { SegmentedFieldOption } from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
+import { useLabels } from "../../react/hooks.ts";
+import type { BuilderLabels } from "../../react/labels.ts";
 import type { StyleGroupProps } from "./types.ts";
 
-const ALIGN_OPTIONS: SegmentedFieldOption<TypographyValue["align"]>[] = [
-    { label: "Left", value: "left", Icon: IconAlignLeft },
-    { label: "Center", value: "center", Icon: IconAlignCenter },
-    { label: "Right", value: "right", Icon: IconAlignRight },
+const alignOptionsFor = (t: BuilderLabels): SegmentedFieldOption<TypographyValue["align"]>[] => [
+    { label: t.styleGroups.typography.left, value: "left", Icon: IconAlignLeft },
+    { label: t.styleGroups.typography.center, value: "center", Icon: IconAlignCenter },
+    { label: t.styleGroups.typography.right, value: "right", Icon: IconAlignRight },
 ];
 
 type TypographyField = "fontFamily" | "fontSize" | "lineHeight" | "letterSpacing" | "color" | "opacity" | "align";
@@ -18,22 +20,24 @@ export interface TypographyGroupProps extends StyleGroupProps<TypographyValue> {
     fields?: TypographyField[];
 }
 
-export function TypographyGroup({ value, onChange, label = "Typography", defaultOpen, fields }: TypographyGroupProps) {
+export function TypographyGroup({ value, onChange, label, defaultOpen, fields }: TypographyGroupProps) {
+    const t = useLabels();
+    const s = t.styleGroups.typography;
     const v = value ?? defaultTypography;
     const set = (patch: Partial<TypographyValue>) => onChange({ ...v, ...patch });
     const show = (field: TypographyField) => !fields || fields.includes(field);
     return (
-        <InspectorGroup label={label} defaultOpen={defaultOpen}>
+        <InspectorGroup label={label ?? s.heading} defaultOpen={defaultOpen}>
             {show("fontFamily") && (
                 <Fields.FontFamilyField
-                    label="Font family"
+                    label={s.fontFamily}
                     value={v.fontFamily}
                     onChange={(fontFamily) => set({ fontFamily })}
                 />
             )}
             {show("fontSize") && (
                 <Fields.NumberField
-                    label="Size"
+                    label={s.size}
                     value={v.fontSize}
                     min={8}
                     max={96}
@@ -42,7 +46,7 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
             )}
             {show("lineHeight") && (
                 <Fields.NumberField
-                    label="Line height"
+                    label={s.lineHeight}
                     value={v.lineHeight}
                     min={0.5}
                     max={3}
@@ -52,7 +56,7 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
             )}
             {show("letterSpacing") && (
                 <Fields.NumberField
-                    label="Letter spacing"
+                    label={s.letterSpacing}
                     value={v.letterSpacing}
                     min={-2}
                     max={10}
@@ -60,10 +64,10 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
                     onChange={(letterSpacing) => set({ letterSpacing })}
                 />
             )}
-            {show("color") && <Fields.ColorField label="Color" value={v.color} onChange={(color) => set({ color })} />}
+            {show("color") && <Fields.ColorField label={s.color} value={v.color} onChange={(color) => set({ color })} />}
             {show("opacity") && (
                 <Fields.NumberField
-                    label="Text opacity"
+                    label={s.textOpacity}
                     value={v.opacity}
                     min={0}
                     max={100}
@@ -72,9 +76,9 @@ export function TypographyGroup({ value, onChange, label = "Typography", default
             )}
             {show("align") && (
                 <Fields.SegmentedField
-                    label="Align"
+                    label={s.align}
                     value={v.align}
-                    options={ALIGN_OPTIONS}
+                    options={alignOptionsFor(t)}
                     onChange={(align) => set({ align })}
                 />
             )}

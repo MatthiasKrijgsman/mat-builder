@@ -12,7 +12,7 @@ import {
     type TablerIcon,
 } from "@tabler/icons-react";
 import type { BlockId } from "../../core/types.ts";
-import { useBuilderState, useRenderedBlockSize } from "../../react/hooks.ts";
+import { useBuilderState, useLabels, useRenderedBlockSize } from "../../react/hooks.ts";
 import { DEFAULT_WIDTH_PCT, type SizeMode, type SizeValue } from "../../style-props/size.ts";
 import { NumberField } from "./NumberField.tsx";
 
@@ -73,6 +73,7 @@ export interface DimensionFieldProps {
 }
 
 export function DimensionField({ axis, label, value, onChange, modes, blockId }: DimensionFieldProps) {
+    const t = useLabels();
     const selectedId = useBuilderState((s) => s.selectedId);
     const rendered = useRenderedBlockSize(blockId ?? selectedId);
 
@@ -103,7 +104,7 @@ export function DimensionField({ axis, label, value, onChange, modes, blockId }:
     };
 
     const AxisIcon = axis === "width" ? IconLetterW : IconLetterH;
-    const axisName = axis === "width" ? "Width" : "Height";
+    const axisName = axis === "width" ? t.styleGroups.size.width : t.styleGroups.size.height;
 
     return (
         <div className="mat-builder-dimension" data-authored={authored}>
@@ -114,7 +115,7 @@ export function DimensionField({ axis, label, value, onChange, modes, blockId }:
                 value={isPercent ? pct : authored ? px : (measured ?? undefined)}
                 // No canvas to measure (or the block isn't rendered): say so
                 // rather than showing a number the document doesn't have
-                placeholder="Auto"
+                placeholder={t.fields.auto}
                 min={isPercent ? 1 : 0}
                 max={isPercent ? 100 : undefined}
                 onChange={setNumber}

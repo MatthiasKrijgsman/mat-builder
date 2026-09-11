@@ -73,6 +73,7 @@ Block-set agnostic: provider + docked layout + panels + saving. `<EmailBuilder>`
 | `mergeTags` | `MergeTag[]` | pass a stable array |
 | `patterns` | `BlockPattern[]` | pass a stable array |
 | `features` | `BuilderFeatures` | `{ visibility?: boolean }` — all on by default; `{ visibility: false }` hides the conditional-visibility UI (inspector group, canvas badges, layer marker) for a host whose pipeline cannot honour rules. Stored rules still load and export |
+| `labels` | `BuilderLabelOverrides` | any subset of `DEFAULT_LABELS`, deep-merged over the English — every string in the chrome, the inspector groups and the email preset's forms, plus `blocks[type].label` / `.containers[name].placeholder` and `categories[name]` for what `defineBlock` names ([§3 Labels](#labels)). Pass a stable object |
 
 **Saving** (from `UseDocumentSaveOptions`)
 
@@ -113,6 +114,23 @@ Types: `BuilderShellProps`, `BuilderShellPanels`, `BuilderFeatures`.
 ### Save labels
 
 `DEFAULT_SAVE_LABELS`, type `ShellSaveLabels`.
+
+### Labels
+
+`DEFAULT_LABELS` is every English string the editor shows, as one nested dictionary (`BuilderLabels`). The `labels` prop takes any subset (`BuilderLabelOverrides`) and deep-merges it; `useLabels()` returns the result to components, and `formatLabel(template, vars)` fills `{name}` placeholders in the few strings that have them.
+
+```tsx
+const nl: BuilderLabelOverrides = {
+    toolbar: { undo: "Ongedaan maken", redo: "Opnieuw" },
+    inspector: { noBlockSelected: "Geen blok geselecteerd" },
+    styleGroups: { spacing: { heading: "Ruimte", padding: "Binnenmarge", margin: "Buitenmarge" } },
+    blocks: { container: { label: "Sectie", containers: { content: { placeholder: "Sleep inhoud hierheen" } } } },
+    categories: { Layout: "Indeling", Content: "Inhoud" },
+};
+<EmailBuilder labels={nl} … />
+```
+
+Block labels, categories and container placeholders are `defineBlock` data rather than component strings, so they are overridden by type and by category name and resolved where they are shown. The email preset's own inspector strings live under `email`; the operator words of the visibility rules under `visibility.operators`, which also phrase the canvas badge's tooltip. It is a dictionary, not an i18n framework — a host with one already maps its keys onto this one.
 
 ### Merge tags
 
@@ -210,7 +228,7 @@ Drop rules: `acceptsEmailContent(childType)` — the rule every preset container
 
 Creates the per-instance store and registry; arrange the panels yourself.
 
-Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `onDocumentIssues`, `onBlockError`, `mergeTags`, `patterns`, `features`, `children`. Type `BuilderProviderProps`.
+Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `onDocumentIssues`, `onBlockError`, `mergeTags`, `patterns`, `features`, `labels`, `children`. Type `BuilderProviderProps`.
 
 ### Components
 
@@ -244,6 +262,7 @@ Surface styles used by the shell, exported so a custom layout can match: `docked
 | `useBlockNode(id)` | `BlockNode \| undefined` |
 | `useMergeTags()` | `MergeTag[]` |
 | `useBuilderFeatures()` | `ResolvedBuilderFeatures` — the provider's `features`, every switch resolved |
+| `useLabels()` | `BuilderLabels` — every UI string with the provider's `labels` merged in |
 | `useMergeTagValues()` | `MergeTagValues` — the preview data |
 | `useMergeTagUsage()` | `MergeTagUsage[]` |
 | `useRenderedBlockSize(id)` | `RenderedSize \| null` — measured px; mark the box with `SIZE_BOX_CLASS` |
@@ -332,9 +351,12 @@ From `/email/render` — see the [server-rendering guide](server-rendering.md).
 | `safeUrl(value)` | the URL scheme allow-list the preset renderers apply — use it in your own |
 | `sanitizeUrlAttributes(html)` | blanks every `href`/`src`/`background` attribute whose value fails `safeUrl`; `renderEmail` runs it after merge-tag substitution |
 | `loadDocument`, `repairDocument`, `migrateDocument`, `validateDocument`, `DOCUMENT_VERSION` | the document functions ([Documents](#documents)) with the registry optional — validate before you render without importing the editor |
+| `applyConditionals(html, adapter, document)` | the post-render pass `renderEmail` runs for `conditionals` — for a host rendering the tree itself |
+| `responsiveStackingCss(blocks)` | the `<style>` body the root emits to stack horizontal containers on phones (docs/06 §Responsive output), for a custom root renderer |
+| `MOBILE_BREAKPOINT`, `STACK_CLASS`, `stackGapClass(gap)` | the stacking vocabulary a custom container renderer reproduces |
 
 `RenderEmailOptions` = `BuildEmailTreeOptions` + `substituteTokens?` + `pretty?` (default `true`; `false` skips the prettifier, which can otherwise break a line inside a merge-tag token).
-`BuildEmailTreeOptions` = `{ values?, blocks?, strict? }` — `strict: true` throws on a block type no renderer knows instead of rendering it as nothing.
+`BuildEmailTreeOptions` = `{ values?, blocks?, strict?, conditionals? }` — `strict: true` throws on a block type no renderer knows instead of rendering it as nothing; `conditionals: { wrap(html, rule, block) }` (`ConditionalAdapter`) emits conditional blocks in the host's template syntax instead of resolving them ([server rendering §6](server-rendering.md#6-conditional-blocks)).
 `EmailBlockOverride` = `{ type, defaultProps?, compose? | render? }`.
 `RenderedEmail` = `{ html, text }`.
 `EmailRenderer<P>` = `(props, children, ctx: BlockContext) => ReactElement | null`; `AnyEmailRenderer` is `EmailRenderer<any>`, which is what the registry maps hold.

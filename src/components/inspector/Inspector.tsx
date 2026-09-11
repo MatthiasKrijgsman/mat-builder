@@ -2,7 +2,8 @@ import { ButtonIconSquare, Divider, TableEmpty } from "@matthiaskrijgsman/mat-ui
 import { IconClick, IconCopy, IconTrash } from "@tabler/icons-react";
 import { useMemo } from "react";
 import { useBuilderContext } from "../../react/context.ts";
-import { useBuilderFeatures, useBuilderState, useSelectedBlock } from "../../react/hooks.ts";
+import { useBuilderFeatures, useBuilderState, useLabels, useSelectedBlock } from "../../react/hooks.ts";
+import { formatLabel } from "../../react/labels.ts";
 import { BlockErrorBoundary, errorMessage } from "../canvas/BlockErrorBoundary.tsx";
 import { tintByCategory, tintCssVar } from "../palette/tints.ts";
 import { VisibilityGroup } from "./VisibilityGroup.tsx";
@@ -24,6 +25,7 @@ export function Inspector({ className }: InspectorPanelProps) {
   const actions = useBuilderState((s) => s.actions);
   const document = useBuilderState((s) => s.document);
   const features = useBuilderFeatures();
+  const t = useLabels();
 
   // Icon tint matches the block's palette row and layers icon (shared assignment).
   const tintMap = useMemo(() => tintByCategory(registry), [ registry ]);
@@ -33,7 +35,7 @@ export function Inspector({ className }: InspectorPanelProps) {
       <div className={ `mat-builder-inspector mat-ui mat:grid mat:place-items-center mat:p-2 ${ className ?? "" }` }>
           <TableEmpty
             Icon={ IconClick }
-            title={ 'No block selected' }
+            title={ t.inspector.noBlockSelected }
           />
       </div>
     );
@@ -43,7 +45,7 @@ export function Inspector({ className }: InspectorPanelProps) {
   const isRoot = id === document.rootId;
   const canDelete = !isRoot && definition?.canDelete !== false;
   const canDuplicate = !isRoot;
-  const label = definition?.getDisplayName?.(node.props) ?? definition?.label ?? node.type;
+  const label = definition?.getDisplayName?.(node.props) ?? t.blocks[node.type]?.label ?? definition?.label ?? node.type;
   const Icon = definition?.icon;
   const tint = definition ? tintMap.get(definition.category ?? "Blocks") : undefined;
   const InspectorForm = definition?.inspector;
@@ -65,7 +67,7 @@ export function Inspector({ className }: InspectorPanelProps) {
                 Icon={ IconCopy }
                 variant="transparent"
                 size="sm"
-                aria-label="Duplicate block"
+                aria-label={ t.inspector.duplicate }
                 onClick={ () => actions.duplicateBlock(id) }
               />
             ) }
@@ -74,7 +76,7 @@ export function Inspector({ className }: InspectorPanelProps) {
                 Icon={ IconTrash }
                 variant="transparent"
                 size="sm"
-                aria-label="Delete block"
+                aria-label={ t.inspector.delete }
                 onClick={ () => actions.removeBlock(id) }
               />
             ) }
@@ -98,7 +100,7 @@ export function Inspector({ className }: InspectorPanelProps) {
             resetKey={ node.props }
             fallback={ (error) => (
               <p className="mat:px-3 mat:py-2 mat:text-xs" style={ { color: "var(--mat-builder-color-missing-fg)" } }>
-                The settings for this block could not be rendered: { errorMessage(error) }
+                { formatLabel(t.inspector.settingsFailed, { message: errorMessage(error) }) }
               </p>
             ) }
           >
@@ -110,7 +112,7 @@ export function Inspector({ className }: InspectorPanelProps) {
           </BlockErrorBoundary>
         ) : (
           <p className="mat:px-3 mat:py-2 mat:text-xs" style={ { color: "var(--mat-builder-color-panel-muted-fg)" } }>
-            This block has no settings.
+            { t.inspector.noSettings }
           </p>
         ) }
         { !isRoot && features.visibility && (

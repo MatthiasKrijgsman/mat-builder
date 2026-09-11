@@ -2,7 +2,7 @@ import { IconPhoto } from "@tabler/icons-react";
 import { Divider } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import * as Fields from "../../../components/fields/index.ts";
-import { SIZE_BOX_CLASS } from "../../../react/hooks.ts";
+import { SIZE_BOX_CLASS, useLabels } from "../../../react/hooks.ts";
 import {
     BorderGroup,
     EffectsGroup,
@@ -20,8 +20,9 @@ export const imageBlock = defineBlock<EmailImageProps>({
     keywords: ["picture", "photo", "logo"],
     defaultProps: emailImageDefaults,
     getDisplayName: (props) => props.alt || undefined,
-    editRender: ({ props }) =>
-        props.src ? (
+    editRender: function ImageEdit({ props }) {
+        const t = useLabels();
+        return props.src ? (
             // draggable=false: browsers natively drag <img> elements, which
             // hijacks the block's Pragmatic draggable — the block must lift, not
             // a ghost of the picture
@@ -42,15 +43,18 @@ export const imageBlock = defineBlock<EmailImageProps>({
                     color: "var(--mat-builder-color-placeholder-fg)",
                 }}
             >
-                Set an image URL in the inspector
+                {t.email.image.placeholder}
             </div>
-        ),
-    inspector: ({ props, update }) => (
+        );
+    },
+    inspector: function ImageInspector({ props, update }) {
+        const t = useLabels();
+        return (
         <>
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-2 mat:pb-4 mat:pt-2">
-                <Fields.TextField label="Image URL" value={props.src} onChange={(src) => update({ src })} />
-                <Fields.TextField label="Alt text" value={props.alt} onChange={(alt) => update({ alt })} />
-                <Fields.TextField label="Link (optional)" value={props.href} onChange={(href) => update({ href })} />
+                <Fields.TextField label={t.email.image.imageUrl} value={props.src} onChange={(src) => update({ src })} />
+                <Fields.TextField label={t.email.image.altText} value={props.alt} onChange={(alt) => update({ alt })} />
+                <Fields.TextField label={t.email.image.link} value={props.href} onChange={(href) => update({ href })} />
             </div>
             <Divider />
             {/* No "full" height — for an <img> it degrades to auto, i.e. the same as hug */}
@@ -62,7 +66,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
             />
             <Divider />
             <LayoutGroup
-                label="Alignment"
+                label={t.email.image.alignment}
                 fields={["horizontal", "vertical"]}
                 value={props.layout}
                 onChange={(layout) => update({ layout })}
@@ -74,5 +78,6 @@ export const imageBlock = defineBlock<EmailImageProps>({
             <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>
-    ),
+        );
+    },
 });

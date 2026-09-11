@@ -2,6 +2,7 @@ import { defaultSize, type SizeMode, type SizeValue } from "../../style-props/si
 import type { BlockId } from "../../core/types.ts";
 import * as Fields from "../fields/index.ts";
 import { InspectorGroup } from "../inspector/InspectorGroup.tsx";
+import { useLabels } from "../../react/hooks.ts";
 import type { StyleGroupProps } from "./types.ts";
 
 const WIDTH_MODES: SizeMode[] = ["fixed", "full", "percent", "hug"];
@@ -26,18 +27,19 @@ const restrict = (offered: SizeMode[], modes?: SizeMode[]) =>
 export function SizeGroup({
     value,
     onChange,
-    label = "Size",
+    label,
     defaultOpen,
     fields,
     widthModes,
     heightModes,
     blockId,
 }: SizeGroupProps) {
+    const s = useLabels().styleGroups.size;
     const v = value ?? defaultSize;
     const show = (field: "width" | "height") => !fields || fields.includes(field);
     const both = show("width") && show("height");
     return (
-        <InspectorGroup label={label} defaultOpen={defaultOpen}>
+        <InspectorGroup label={label ?? s.heading} defaultOpen={defaultOpen}>
             {/* W and H side by side (Figma) — a lone axis takes the full row */}
             <div className={both ? "mat:grid mat:grid-cols-2 mat:gap-1.5" : undefined}>
                 {show("width") && (
