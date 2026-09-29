@@ -7,7 +7,9 @@ import {
     defaultLayout,
     defaultSpacing,
     effectsToCss,
+    cssNumber,
     paddingToCss,
+    sideShorthand,
     verticalAlignToCss,
     type BorderValue,
     type EffectsValue,
@@ -26,7 +28,8 @@ export interface EmailImageProps {
     /** horizontal = self-alignment within the parent (margin-auto technique) */
     layout: LayoutValue;
     border: BorderValue;
-    /** padding only — the margin axis is owned by the alignment auto-margins */
+    /** padding on the picture; margin = space around it, emitted as padding on
+     *  a wrapper (the picture's own margin axis is the alignment auto-margins) */
     spacing: SpacingValue;
     effects: EffectsValue;
 }
@@ -60,4 +63,13 @@ export const emailImageStyles = (props: EmailImageProps): CSSProperties => {
         ...effectsToCss(props.effects),
         ...verticalAlignToCss(props.layout),
     };
+};
+
+/** Space around the image — the wrapper's padding on both surfaces, since the
+ *  picture's own margins carry its alignment. Undefined when there is none. */
+export const emailImageMarginPadding = (props: EmailImageProps): string | undefined => {
+    const margin = props.spacing?.margin;
+    if (!margin) return undefined;
+    const sides = [margin.top, margin.right, margin.bottom, margin.left].map((n) => cssNumber(n));
+    return sides.some((n) => n !== 0) ? sideShorthand(margin) : undefined;
 };

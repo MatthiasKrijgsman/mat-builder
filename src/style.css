@@ -127,6 +127,22 @@
     padding-block: 0;
 }
 /*
+ * Selects need more than that. The rule above has zero specificity, and in
+ * `./style-flat` every rule is wrapped at zero specificity too, so there
+ * mat-ui's flat forms reset (`select:where(…)`, one element) wins and puts
+ * its .5rem back: 16px of padding plus the line box overflow the 32px
+ * control and "Solid" clips (seen in a production host). A host's own
+ * `select { padding }` or a larger font does the same in the layered entry.
+ * So: real specificity, and the line box pinned to the control's inner
+ * height, which every engine centers its glyphs in. The inspector and the
+ * palette only use the sm size, so the sm height is the one to pin.
+ */
+.mat-builder-inspector select,
+.mat-builder-palette select {
+    padding-block: 0;
+    line-height: calc(var(--control-size-sm-height) - 2 * var(--border-width-input, 1px));
+}
+/*
  * Dimension fields (Fields.DimensionField) — Figma's width/height control.
  *
  * The mode menu's chevron owns the input's right edge, so the native number

@@ -10,7 +10,7 @@ import {
     SizeGroup,
     SpacingGroup,
 } from "../../../components/style-groups/index.ts";
-import { emailImageDefaults, emailImageStyles, type EmailImageProps } from "./styles.ts";
+import { emailImageDefaults, emailImageMarginPadding, emailImageStyles, type EmailImageProps } from "./styles.ts";
 
 export const imageBlock = defineBlock<EmailImageProps>({
     type: "image",
@@ -22,7 +22,9 @@ export const imageBlock = defineBlock<EmailImageProps>({
     getDisplayName: (props) => props.alt || undefined,
     editRender: function ImageEdit({ props }) {
         const t = useLabels();
-        return props.src ? (
+        // Margins are the wrapper's padding, as in the email output (styles.ts)
+        const margin = emailImageMarginPadding(props);
+        const content = props.src ? (
             // draggable=false: browsers natively drag <img> elements, which
             // hijacks the block's Pragmatic draggable — the block must lift, not
             // a ghost of the picture
@@ -46,6 +48,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
                 {t.email.image.placeholder}
             </div>
         );
+        return margin ? <div style={{ padding: margin }}>{content}</div> : content;
     },
     inspector: function ImageInspector({ props, update }) {
         const t = useLabels();
@@ -74,7 +77,7 @@ export const imageBlock = defineBlock<EmailImageProps>({
             <Divider />
             <BorderGroup value={props.border} onChange={(border) => update({ border })} />
             <Divider />
-            <SpacingGroup fields={["padding"]} value={props.spacing} onChange={(spacing) => update({ spacing })} />
+            <SpacingGroup value={props.spacing} onChange={(spacing) => update({ spacing })} />
             <Divider />
             <EffectsGroup value={props.effects} onChange={(effects) => update({ effects })} />
         </>

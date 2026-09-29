@@ -63,6 +63,12 @@ export const emailRootBlock = defineBlock<EmailRootProps>({
           value={ props.backgroundColor }
           onChange={ (backgroundColor) => update({ backgroundColor }) }
         />
+        <Fields.ToggleField
+          label={ t.email.root.keepLightColors }
+          description={ t.email.root.keepLightColorsHint }
+          value={ props.colorScheme === "light" }
+          onChange={ (light) => update({ colorScheme: light ? "light" : "auto" }) }
+        />
       </div>
       <Divider />
       <TypographyGroup

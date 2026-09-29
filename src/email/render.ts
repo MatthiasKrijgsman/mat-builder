@@ -17,6 +17,7 @@ import { isSlotRef } from "../core/compose.ts";
 import type { BlockSpec } from "../core/types.ts";
 import { emailRootDefaults } from "./blocks/email-root/styles.ts";
 import { applyMso, elementEnd, escapeHtml } from "./mso.ts";
+import { applyLightOnly } from "./light-only.ts";
 import { emailContainerDefaults } from "./blocks/container/styles.ts";
 import { emailTextDefaults } from "./blocks/text/styles.ts";
 import { emailButtonDefaults } from "./blocks/button/styles.ts";
@@ -36,6 +37,8 @@ import { emailTableCellDefaults, emailTableDefaults, emailTableRowDefaults } fro
  */
 
 export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride, EmailBlockContext, EmailChildNode } from "./types.ts";
+// The "keep light colors" pass renderEmail runs for a root with colorScheme "light".
+export { applyLightOnly } from "./light-only.ts";
 // Outlook-only markup (conditional comments), for custom renderers.
 export { msoOnly, hideFromMso, vmlGradientAngle } from "./mso.ts";
 // Available-width resolution, for a custom parent block that sizes its children.
@@ -516,7 +519,10 @@ export async function renderEmail(
     const values = options.substituteTokens ? (options.values ?? {}) : null;
     // Outlook's conditional comments first (./mso.ts), so the substitution
     // and the URL pass below reach the markup inside them too.
-    const outlook = applyMso(prettified);
+    // "Keep light colors" (./light-only.ts) runs first, while the Outlook
+    // markup is still encoded in its markers and so left alone.
+    const root = document.blocks[document.rootId]?.props as { colorScheme?: string } | undefined;
+    const outlook = applyMso(root?.colorScheme === "light" ? applyLightOnly(prettified) : prettified);
     const personalized = sanitizeUrlAttributes(values ? substitute(outlook, values, true) : outlook);
     // Conditionals wrap LAST: after prettifying, because the adapter's syntax
     // is not HTML and must not go through an HTML parser; after substitution

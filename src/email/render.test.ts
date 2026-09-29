@@ -7,7 +7,7 @@ import type { BlockVisibility } from "../core/visibility.ts";
 import { emailBlocks } from "./index.tsx";
 import { applyMso, vmlGradientAngle } from "./mso.ts";
 import { emailContainerDefaults, emailContainerSlotStyles, rowChildLayout } from "./blocks/container/styles.ts";
-import { buildEmailTree, renderEmail, sanitizeUrlAttributes } from "./render.ts";
+import { applyLightOnly, buildEmailTree, renderEmail, sanitizeUrlAttributes } from "./render.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
 const registry = createRegistry(emailBlocks);
@@ -1090,5 +1090,66 @@ describe("auto rows (docs/06 §Rows)", () => {
         expect(rowChildLayout({ ...row, columns: "equal" }, size("hug"))).toBeUndefined();
         expect(rowChildLayout({ ...row, columns: undefined }, size("hug"))).toBeUndefined();
         expect(emailContainerSlotStyles({ ...row, layout: { ...row.layout, horizontal: "center" } })?.justifyContent).toBe("center");
+    });
+});
+
+describe("image margins", () => {
+    function buildImage(patch: Record<string, unknown>) {
+        let document = createDocument(registry, "email-root");
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const image = insertBlock(document, { type: "image", at: { parentId: containerId, container: "content", index: 0 } }, registry);
+        document = updateProps(image.document, { id: image.blockId, patch: { src: "https://example.com/a.png", ...patch } });
+        return document;
+    }
+
+    it("renders margins as the wrapper cell's padding and narrows the image by them", async () => {
+        const { html } = await renderEmail(
+            buildImage({
+                size: { width: "full", widthPx: 552, height: "hug", heightPx: 100 },
+                spacing: { padding: { top: 0, right: 0, bottom: 0, left: 0 }, margin: { top: 10, right: 20, bottom: 30, left: 40 } },
+            }),
+        );
+        expect(html).toMatch(/<td\s+align="center"\s+style="padding:10px 20px 30px 40px">/);
+        // 552 in the seeded container, less 20 + 40 of margin
+        expect(html).toMatch(/<img[^>]*width="492"/);
+    });
+
+    it("adds no wrapper for a full-width image without margins", async () => {
+        const { html } = await renderEmail(buildImage({ size: { width: "full", widthPx: 552, height: "hug", heightPx: 100 } }));
+        expect(html).not.toMatch(/<td\s+align="center"[^>]*>\s*<img/);
+    });
+});
+
+describe("keep light colors (docs/06 §Dark mode)", () => {
+    it("is off unless the root asks for it", async () => {
+        const { html } = await renderEmail(buildDemoEmail());
+        expect(html).not.toContain("color-scheme");
+    });
+
+    it("declares light-only and restores every text and background color for Outlook.com", async () => {
+        const document = buildDemoEmail();
+        const root = document.blocks[document.rootId];
+        const { html } = await renderEmail({
+            ...document,
+            blocks: { ...document.blocks, [root.id]: { ...root, props: { ...root.props, colorScheme: "light" } } },
+        });
+        expect(html).toContain('<meta name="color-scheme" content="light only" />');
+        expect(html).toContain('<meta name="supported-color-schemes" content="light only" />');
+        expect(html).toContain(":root { color-scheme: light only; supported-color-schemes: light only; }");
+        // The body's background got a class and a rule
+        const body = /<body[^>]*>/.exec(html)?.[0] ?? "";
+        const bg = /class="([^"]*)"/.exec(body)?.[1].split(" ").find((name) => name.startsWith("mb-lb"));
+        expect(bg && html.includes(`[data-ogsb] .${bg}, .${bg}[data-ogsb] { background-color: #FFFFFF !important; }`)).toBe(true);
+        // …and so did the text colors (the button label's white, say)
+        expect(html).toMatch(/\[data-ogsc\] \.mb-lc\d+, \.mb-lc\d+\[data-ogsc\] \{ color: #ffffff !important; \}/);
+        // One rule per distinct color, however many elements share it
+        const rules = html.match(/\[data-ogs[cb]\] \.mb-l[cb]\d+/g) ?? [];
+        expect(new Set(rules).size).toBe(rules.length);
+    });
+
+    it("merges into an existing class attribute", () => {
+        expect(applyLightOnly('<html><head></head><td class="mb-stack" style="color:#111">x</td></html>')).toContain(
+            '<td class="mb-stack mb-lc0" style="color:#111">',
+        );
     });
 });

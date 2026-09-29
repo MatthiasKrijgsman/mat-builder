@@ -305,6 +305,7 @@ Types: `InlineTextProps`, `InlineRichTextProps`, `BlockTypographyItemsProps`, `M
 | `migrateDocument(document)` | upgrades an older `version` |
 | `validateDocument(document, registry?)` | `ValidationIssue[]` |
 | `DOCUMENT_VERSION` | the version this release writes and migrates up to |
+| `applyLightOnly(html)` | the "keep light colors" pass `renderEmail` runs for a root with `colorScheme: "light"` ([docs/06 §Dark mode](../06-email-builder.md#dark-mode)): `color-scheme: light only` meta and CSS, plus Outlook.com `[data-ogsc]`/`[data-ogsb]` rules restoring every inline text and background color |
 | `msoOnly(html)`, `hideFromMso(element)`, `vmlGradientAngle(cssAngle)` | Outlook-only markup for a custom renderer ([docs/06 §Outlook on Windows](../06-email-builder.md#outlook-on-windows)): `msoOnly` emits raw HTML inside `<!--[if mso]>` (escape what goes in; place it inside a td or div), `hideFromMso` wraps an element in `<!--[if !mso]><!-->` so an `msoOnly` sibling can replace it (the element must not carry `[if mso]` comments of its own), `vmlGradientAngle` converts a CSS gradient angle to a VML fill's |
 | `safeUrl(value)` | `string \| undefined` — the URL when its scheme is allowed (`http`, `https`, `mailto`, `tel`, `sms`, or none), else `undefined`. What the email output applies to every `href`/`src` |
 

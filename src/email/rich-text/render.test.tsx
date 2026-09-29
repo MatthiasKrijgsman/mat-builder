@@ -135,6 +135,17 @@ describe("RichText", () => {
         expect(html).toContain("text-decoration:underline");
     });
 
+    it("keeps merge tags in link URLs for the ESP to fill in", () => {
+        const html = render(
+            doc([
+                p([{ type: "link", url: "{{ticket_url}}", children: [t("tickets")] }]),
+                p([{ type: "link", url: "https://example.com/?ref={{user_id}}", children: [t("ref")] }]),
+            ]),
+        );
+        expect(html).toContain('href="{{ticket_url}}"');
+        expect(html).toContain('href="https://example.com/?ref={{user_id}}"');
+    });
+
     it("keeps empty paragraphs one line tall", () => {
         const html = render(richTextParagraphs("a", "", "b"));
         expect(html).toMatch(/<p style="margin:0 0 12px">\u00A0<\/p>|&nbsp;/);

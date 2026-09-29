@@ -6,6 +6,7 @@ export interface TextFieldProps {
     onChange: (value: string) => void;
     placeholder?: string;
     description?: string;
+    autoFocus?: boolean;
 }
 
 export function TextField({ value, onChange, ...rest }: TextFieldProps) {

@@ -90,6 +90,14 @@ export const DEFAULT_LABELS = {
         noValue: "No value",
         rulesOnly: "Used by visibility rules only",
     },
+    link: {
+        button: "Link",
+        url: "Link URL",
+        placeholder: "https://… or a merge tag",
+        apply: "Apply",
+        remove: "Remove link",
+        selectFirst: "Select the text you want to link first.",
+    },
     mergeTags: {
         insert: "Insert merge tag",
         search: "Search tags…",
@@ -215,6 +223,8 @@ export const DEFAULT_LABELS = {
             pageBackground: "Page background",
             pagePadding: "Page padding",
             typography: "Typography",
+            keepLightColors: "Keep light colors in dark mode",
+            keepLightColorsHint: "Asks mail clients not to recolor the email. Apple Mail and Outlook.com follow it; the Gmail apps and Outlook for Windows invert regardless.",
         },
         table: {
             addRow: "Add a row",

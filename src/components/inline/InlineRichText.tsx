@@ -4,9 +4,12 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { SelectionAlwaysOnDisplay } from "@lexical/react/LexicalSelectionAlwaysOnDisplay";
 import { COMMAND_PRIORITY_HIGH, KEY_ESCAPE_COMMAND } from "lexical";
 import {
-    lexicalDefaultToolbarItems,
+    LexicalBlockTypeSelect,
     LexicalFloatingToolbar,
+    LexicalFormatButtons,
+    LexicalHistoryButtons,
     LexicalInline,
+    LexicalListButtons,
     LexicalToolbarDivider,
 } from "@matthiaskrijgsman/mat-ui";
 import type { BlockId } from "../../core/types.ts";
@@ -17,6 +20,7 @@ import { selectionTypographyItems } from "./SelectionTypographyItems.tsx";
 import { LineHeightPlugin } from "./LineHeightPlugin.tsx";
 import { MergeTagChip, MergeTagNode } from "./MergeTagNode.tsx";
 import { mergeTagItems } from "./MergeTagItems.tsx";
+import { LinkItem } from "./LinkItem.tsx";
 import { useComposedField } from "./composed-field.tsx";
 import { focusCanvas } from "./focus.ts";
 import { useSelectionDrag } from "./use-selection-drag.ts";
@@ -164,7 +168,16 @@ function ExitOnEscapePlugin({ onExit }: { onExit: () => void }) {
 // menu hides itself (divider included) when the provider has no tags.
 const renderToolbar = () => (
     <>
-        {lexicalDefaultToolbarItems()}
+        {/* mat-ui's default items, with our link control (LinkItem: merge
+            tags, editable URL) in place of its window.prompt one */}
+        <LexicalBlockTypeSelect />
+        <LexicalToolbarDivider />
+        <LexicalFormatButtons />
+        <LexicalToolbarDivider />
+        <LexicalListButtons />
+        <LinkItem />
+        <LexicalToolbarDivider />
+        <LexicalHistoryButtons />
         {mergeTagItems()}
     </>
 );

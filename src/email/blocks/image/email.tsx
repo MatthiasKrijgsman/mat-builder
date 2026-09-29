@@ -3,7 +3,7 @@ import { safeUrl } from "../../../core/safe-url.ts";
 import { cssNumber } from "../../../style-props/index.ts";
 import type { EmailRenderer } from "../../types.ts";
 import { boxWidth } from "../../width.ts";
-import { emailImageStyles, type EmailImageProps } from "./styles.ts";
+import { emailImageMarginPadding, emailImageStyles, type EmailImageProps } from "./styles.ts";
 
 const ALIGN = { start: "left", center: "center", end: "right" } as const;
 
@@ -17,7 +17,8 @@ function widthAttribute(props: EmailImageProps, available: number): number | und
     if (!props.size || props.size.width === "hug") return undefined;
     const padding = props.spacing?.padding;
     const border = cssNumber(props.border?.width?.left) + cssNumber(props.border?.width?.right);
-    const inner = boxWidth(props.size, available) - cssNumber(padding?.left) - cssNumber(padding?.right) - border;
+    // Margins subtract from the room (the wrapper's padding), as on the canvas
+    const inner = boxWidth(props.size, available, props.spacing?.margin) - cssNumber(padding?.left) - cssNumber(padding?.right) - border;
     return Math.max(1, Math.round(inner));
 }
 
@@ -41,15 +42,20 @@ export const imageEmail: EmailRenderer<EmailImageProps> = (props, _children, ctx
     const href = safeUrl(props.href);
     const content = href ? <Link href={href}>{img}</Link> : img;
 
-    // Narrower than its column: alignment. The CSS auto margins do it
-    // everywhere but Outlook on Windows, which ignores `margin: auto` — a
-    // cell's `align` attribute is what it honours, so the image gets one.
-    if (width === undefined || width < ctx.availableWidth) {
+    // A wrapper cell when the image has margins (they are its padding: the
+    // one spacing Outlook honours everywhere) or is narrower than its column
+    // (alignment: the CSS auto margins do it everywhere but Outlook on
+    // Windows, which ignores `margin: auto` — a cell's `align` it honours).
+    const margin = emailImageMarginPadding(props);
+    if (margin || width === undefined || width < ctx.availableWidth) {
         return (
             <table role="presentation" width="100%" border={0} cellPadding={0} cellSpacing={0}>
                 <tbody>
                     <tr>
-                        <td align={ALIGN[props.layout?.horizontal === "start" || props.layout?.horizontal === "end" ? props.layout.horizontal : "center"]}>
+                        <td
+                            align={ALIGN[props.layout?.horizontal === "start" || props.layout?.horizontal === "end" ? props.layout.horizontal : "center"]}
+                            style={margin ? { padding: margin } : undefined}
+                        >
                             {content}
                         </td>
                     </tr>

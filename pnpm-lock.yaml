@@ -45,6 +45,9 @@ importers:
       '@eslint/js':
         specifier: ^9.33.0
         version: 9.39.4
+      '@lexical/link':
+        specifier: 0.45.0
+        version: 0.45.0
       '@lexical/react':
         specifier: 0.45.0
         version: 0.45.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(yjs@13.6.31)
