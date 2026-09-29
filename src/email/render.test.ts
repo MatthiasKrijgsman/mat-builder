@@ -181,8 +181,8 @@ describe("renderEmail", () => {
         expect(html).toContain("border:2px solid #ff0000");
         expect(html).toContain("border-radius:8px");
         expect(html).toMatch(/box-shadow:0px 2px 8px 0px rgba\(0,\s*0,\s*0,\s*0?\.15\)/);
-        // Children gap = table-safe wrapper divs, never flex
-        expect(html).toContain("padding-bottom:12px");
+        // Children gap = a spacer-row table (Outlook ignores div padding), never flex
+        expect(html).toMatch(/<td[^>]*height="12"[^>]*style="height:12px;line-height:12px;font-size:1px;mso-line-height-rule:exactly"/);
         expect(html).not.toContain("display:flex");
     });
 
@@ -908,5 +908,55 @@ describe("conditional emission adapter", () => {
         expect(html).toContain("{% if {{plan}} eq pro %}<!--image--><img");
         expect(html).toContain('src="https://example.com/pro.png"');
         expect(html).not.toContain("data-mb-cond");
+    });
+});
+
+describe("Outlook on Windows (docs/06)", () => {
+    /** Root > seeded container (24px padding) > horizontal row (gap 16, no padding) > two images. */
+    function buildImageColumns(imageSize: Record<string, unknown>) {
+        let document = createDocument(registry, "email-root");
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const row = insertBlock(document, { type: "container", at: { parentId: containerId, container: "content", index: 0 } }, registry);
+        document = updateProps(row.document, {
+            id: row.blockId,
+            patch: {
+                direction: "horizontal",
+                spacing: { padding: { top: 0, right: 0, bottom: 0, left: 0 }, margin: { top: 0, right: 0, bottom: 0, left: 0 } },
+                layout: { horizontal: "start", vertical: "start", gap: 16 },
+            },
+        });
+        for (const index of [0, 1]) {
+            const image = insertBlock(document, { type: "image", at: { parentId: row.blockId, container: "content", index } }, registry);
+            document = updateProps(image.document, {
+                id: image.blockId,
+                patch: { src: `https://example.com/${index}.png`, size: { width: "full", widthPx: 552, height: "hug", heightPx: 100, ...imageSize } },
+            });
+        }
+        return document;
+    }
+
+    it("wraps the content column in an Outlook-only fixed-width table and pins 96 DPI", async () => {
+        const { html } = await renderEmail(buildDemoEmail());
+        expect(html).toContain('<!--[if mso]><table role="presentation" width="600" align="center"');
+        expect(html).toContain("<!--[if mso]></td></tr></table><![endif]-->");
+        expect(html).toContain("<o:PixelsPerInch>96</o:PixelsPerInch>");
+        expect(html).toMatch(/<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"/);
+        // The marker attribute never reaches the output
+        expect(html).not.toContain("data-mb-mso-width");
+    });
+
+    it("gives every sized image a px width attribute from its column", async () => {
+        // 600 − 2×24 container padding = 552, split in two less half the 16px gap
+        const { html } = await renderEmail(buildImageColumns({}));
+        expect(html.match(/<img[^>]*width="268"/g)).toHaveLength(2);
+    });
+
+    it("caps a fixed image width at its column and aligns it with a cell attribute", async () => {
+        const { html } = await renderEmail(buildImageColumns({ width: "fixed", widthPx: 500 }));
+        expect(html.match(/<img[^>]*width="268"/g)).toHaveLength(2);
+
+        const narrow = await renderEmail(buildImageColumns({ width: "fixed", widthPx: 120 }));
+        expect(narrow.html.match(/<img[^>]*width="120"/g)).toHaveLength(2);
+        expect(narrow.html).toMatch(/<td align="center">\s*<img/);
     });
 });

@@ -344,10 +344,11 @@ From `/email/render` — see the [server-rendering guide](server-rendering.md).
 | Export | Signature |
 |---|---|
 | `renderEmail(document, options?)` | `Promise<RenderedEmail>` — `{ html, text }` |
-| `buildEmailTree(document, id?, location?, options?)` | `ReactElement \| null` |
+| `buildEmailTree(document, id?, location?, options?, availableWidth?)` | `ReactElement \| null` — `availableWidth` (px, default 600) seeds a subtree render; the walk computes it for every child |
 | `emailRenderers` | preset renderers by type |
 | `emailBlockDefaults` | preset default props by type |
-| `withVerticalGap(children, gap)` | table-safe vertical gap |
+| `withVerticalGap(children, gap)` | table-safe vertical gap — a spacer-row table after every child but the last (Outlook ignores padding on a div) |
+| `emailChildWidths`, `childWidth(type, props, available, container, index, count, siblingCount)`, `boxWidth(size, available, margin?)` | available-width resolution ([docs/06 §Outlook on Windows](../06-email-builder.md#outlook-on-windows)): how wide each child is at the design width, per parent type. Add an entry to `emailChildWidths` for a custom parent block that narrows its children, or use `ctx.availableWidth` in a renderer to emit Outlook's `width` attributes |
 | `safeUrl(value)` | the URL scheme allow-list the preset renderers apply — use it in your own |
 | `sanitizeUrlAttributes(html)` | blanks every `href`/`src`/`background` attribute whose value fails `safeUrl`; `renderEmail` runs it after merge-tag substitution |
 | `loadDocument`, `repairDocument`, `migrateDocument`, `validateDocument`, `DOCUMENT_VERSION` | the document functions ([Documents](#documents)) with the registry optional — validate before you render without importing the editor |
@@ -359,7 +360,7 @@ From `/email/render` — see the [server-rendering guide](server-rendering.md).
 `BuildEmailTreeOptions` = `{ values?, blocks?, strict?, conditionals? }` — `strict: true` throws on a block type no renderer knows instead of rendering it as nothing; `conditionals: { wrap(html, rule, block) }` (`ConditionalAdapter`) emits conditional blocks in the host's template syntax instead of resolving them ([server rendering §6](server-rendering.md#6-conditional-blocks)).
 `EmailBlockOverride` = `{ type, defaultProps?, compose? | render? }`.
 `RenderedEmail` = `{ html, text }`.
-`EmailRenderer<P>` = `(props, children, ctx: BlockContext) => ReactElement | null`; `AnyEmailRenderer` is `EmailRenderer<any>`, which is what the registry maps hold.
+`EmailRenderer<P>` = `(props, children, ctx: EmailBlockContext) => ReactElement | null`, where `EmailBlockContext` = `BlockContext` + `availableWidth` (px at the design width); `AnyEmailRenderer` is `EmailRenderer<any>`, which is what the registry maps hold.
 
 ---
 

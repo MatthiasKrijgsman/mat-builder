@@ -2,6 +2,15 @@
 
 Breaking changes are allowed while on `0.x` and are listed here per release.
 
+## Unreleased
+
+Outlook for Windows fixes, found with the new client-support check (`/email-check`, `pnpm email:check`). No breaking changes for documents. A custom `EmailRenderer` now receives `ctx: EmailBlockContext` (a superset of `BlockContext`).
+
+- **Content width**: an Outlook-only fixed-width ghost table around the root's content column. Word ignores `max-width`, so the email used to stretch to the window.
+- **Images**: every sized image carries a px `width` attribute derived from its column (`ctx.availableWidth`, `emailChildWidths`), and fixed widths are capped at the column. Images narrower than their column align through a cell `align` attribute instead of `margin: auto`.
+- **Gaps**: vertical gaps are spacer-row tables instead of padded divs, which Outlook collapsed.
+- **96 DPI**: the head gains the Office settings block, and `<html>` the VML/Office namespaces.
+
 ## 0.3.0 — 2026-09-11
 
 The feature half of the first external integration's feedback.

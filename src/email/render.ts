@@ -11,10 +11,11 @@ import { imageEmail } from "./blocks/image/email.tsx";
 import { dividerEmail } from "./blocks/divider/email.tsx";
 import { spacerEmail } from "./blocks/spacer/email.tsx";
 import { tableCellEmail, tableEmail, tableRowEmail } from "./blocks/table/email.tsx";
-import type { AnyEmailRenderer, EmailBlockOverride } from "./types.ts";
+import type { AnyEmailRenderer, EmailBlockContext, EmailBlockOverride } from "./types.ts";
+import { childWidth } from "./width.ts";
 import { isSlotRef } from "../core/compose.ts";
-import type { BlockContext, BlockSpec } from "../core/types.ts";
-import { emailRootDefaults } from "./blocks/email-root/styles.ts";
+import type { BlockSpec } from "../core/types.ts";
+import { emailRootDefaults, MSO_WIDTH_ATTRIBUTE } from "./blocks/email-root/styles.ts";
 import { emailContainerDefaults } from "./blocks/container/styles.ts";
 import { emailTextDefaults } from "./blocks/text/styles.ts";
 import { emailButtonDefaults } from "./blocks/button/styles.ts";
@@ -33,7 +34,9 @@ import { emailTableCellDefaults, emailTableDefaults, emailTableRowDefaults } fro
  * (both optional peers — only consumers of the email preset install them).
  */
 
-export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride } from "./types.ts";
+export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride, EmailBlockContext } from "./types.ts";
+// Available-width resolution, for a custom parent block that sizes its children.
+export { boxWidth, childWidth, emailChildWidths, type ChildWidth } from "./width.ts";
 // Composed blocks: the spec vocabulary and its helpers (pure — docs/08).
 export { slot, isSlotRef, collectSlots, collectBindings } from "../core/compose.ts";
 export type { BlockSpec, ContainerSlotRef, BlockCompose, BlockContext } from "../core/types.ts";
@@ -160,7 +163,7 @@ function makeResolver(blocks: readonly EmailBlockOverride[] = []): Resolver {
 function renderSpec(
     spec: BlockSpec,
     slotChildren: Record<string, ReactElement[]>,
-    ctx: BlockContext,
+    ctx: EmailBlockContext,
     resolve: Resolver,
     depth: number,
     options: BuildEmailTreeOptions,
@@ -180,9 +183,11 @@ function renderSpec(
     for (const [container, value] of Object.entries(spec.children ?? {})) {
         children[container] = isSlotRef(value)
             ? (slotChildren[value.__slot] ?? [])
-            : value.map((child, index) =>
-                  createElement(Fragment, { key: index }, renderSpec(child, slotChildren, ctx, resolve, depth + 1, options)),
-              );
+            : value.map((child, index) => {
+                  const availableWidth = childWidth(spec.type, props, ctx.availableWidth, container, index, value.length, ctx.siblingCount);
+                  const childCtx = { ...ctx, availableWidth, siblingCount: value.length };
+                  return createElement(Fragment, { key: index }, renderSpec(child, slotChildren, childCtx, resolve, depth + 1, options));
+              });
     }
     return renderer(props, children, ctx);
 }
@@ -258,6 +263,56 @@ function markConditional(rendered: ReactElement | null, node: { id: BlockId; vis
         : createElement("div", { [CONDITIONAL_ATTRIBUTE]: node.id }, rendered);
 }
 
+/** Where the element whose open tag ends at `openEnd` closes — counting
+ * nested same-name tags — or -1 when it never does. */
+function elementEnd(html: string, tag: string, openEnd: number): number {
+    if (VOID_ELEMENTS.has(tag)) return openEnd;
+    const tags = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
+    tags.lastIndex = openEnd;
+    let depth = 1;
+    let found: RegExpExecArray | null;
+    while ((found = tags.exec(html))) {
+        depth += found[1] ? -1 : 1;
+        if (depth === 0) return found.index + found[0].length;
+    }
+    return -1;
+}
+
+/*
+ * Outlook on Windows (docs/06 §Outlook). Word ignores `max-width`, so the
+ * root's content column would stretch to the window; the fix every email
+ * framework ships is a "ghost table" — a fixed-width table only Outlook
+ * sees, inside `<!--[if mso]>` comments. React cannot emit comments, so the
+ * root renderer marks its content table with an attribute (the same trick
+ * as conditionals above) and this pass wraps it. The head gains the Office
+ * settings block that pins Outlook to 96 DPI: without it, a Windows machine
+ * at 120 DPI scales attribute widths and CSS widths differently and the
+ * layout comes apart.
+ */
+const MSO_NAMESPACES = ' xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"';
+const MSO_HEAD =
+    "<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>" +
+    "</o:OfficeDocumentSettings></xml></noscript><![endif]-->";
+
+function applyOutlookFixes(html: string): string {
+    let out = html.replace(/<html\b/i, (open) => open + MSO_NAMESPACES).replace(/<head\b[^>]*>/i, (open) => open + MSO_HEAD);
+    const marker = new RegExp(`\\s${MSO_WIDTH_ATTRIBUTE}="(\\d+)"`);
+    const match = marker.exec(out);
+    if (!match) return out;
+    const start = out.lastIndexOf("<", match.index);
+    const tag = /^<([a-zA-Z][\w-]*)/.exec(out.slice(start))?.[1]?.toLowerCase() ?? "";
+    const openEnd = out.indexOf(">", match.index + match[0].length) + 1;
+    const end = elementEnd(out, tag, openEnd);
+    if (end < 0) return out.replace(match[0], "");
+    const element = out.slice(start, end).replace(match[0], "");
+    const open =
+        `<!--[if mso]><table role="presentation" width="${match[1]}" align="center" border="0" cellpadding="0" cellspacing="0">` +
+        `<tr><td><![endif]-->`;
+    const close = "<!--[if mso]></td></tr></table><![endif]-->";
+    out = out.slice(0, start) + open + element + close + out.slice(end);
+    return out;
+}
+
 /** Replaces every marked element in the rendered HTML with the adapter's wrapping of it. */
 export function applyConditionals(html: string, adapter: ConditionalAdapter, document: BuilderDocument): string {
     const marker = new RegExp(`\\s${CONDITIONAL_ATTRIBUTE}=(?:"([^"]*)"|'([^']*)')`);
@@ -269,22 +324,8 @@ export function applyConditionals(html: string, adapter: ConditionalAdapter, doc
         const start = html.lastIndexOf("<", match.index);
         const tag = /^<([a-zA-Z][\w-]*)/.exec(html.slice(start))?.[1]?.toLowerCase() ?? "";
         const openEnd = html.indexOf(">", match.index + match[0].length) + 1;
-        let end = openEnd;
-        if (!VOID_ELEMENTS.has(tag)) {
-            // Walk to the matching close tag, counting nested same-name tags
-            const tags = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
-            tags.lastIndex = openEnd;
-            let depth = 1;
-            let found: RegExpExecArray | null;
-            while ((found = tags.exec(html))) {
-                depth += found[1] ? -1 : 1;
-                if (depth === 0) {
-                    end = found.index + found[0].length;
-                    break;
-                }
-            }
-            if (depth !== 0) throw new Error(`applyConditionals: no closing </${tag}> for block "${id}"`);
-        }
+        const end = elementEnd(html, tag, openEnd);
+        if (end < 0) throw new Error(`applyConditionals: no closing </${tag}> for block "${id}"`);
         // The attribute is ours, not the author's — it leaves with the marker
         const element = html.slice(start, end).replace(match[0], "");
         const wrapped = node?.visibility ? adapter.wrap(element, node.visibility, { id, type: node.type }) : element;
@@ -335,6 +376,9 @@ export function buildEmailTree(
      * table cell) can resolve their row/table without re-searching the map. */
     location: BlockLocation | null = null,
     options: BuildEmailTreeOptions = {},
+    /** The block's available width in px at the design width (./width.ts) —
+     * computed by the walk; a caller rendering a subtree may pass its own. */
+    availableWidth: number = emailRootDefaults.contentWidth,
 ): ReactElement | null {
     const node = document.blocks[id];
     if (!node) return null;
@@ -349,27 +393,36 @@ export function buildEmailTree(
     // block the caller asked for directly (including the root).
     if (!isBlockVisible(node, values)) return null;
 
-    const children = Object.fromEntries(
-        Object.keys(node.children).map((container) => [
-            container,
-            visibleChildIds(document, id, container, values).map((childId, index) =>
-                createElement(
-                    Fragment,
-                    { key: childId },
-                    buildEmailTree(document, childId, { parentId: id, container, index }, options),
-                ),
-            ),
-        ]),
-    );
     const siblingCount = location
         ? (visibleChildIds(document, location.parentId, location.container, values).length || 1)
         : 1;
-    const ctx: BlockContext = { document, location, siblingCount };
     // Defaults under the stored props, for both paths alike. `materializeBlock`
     // makes props complete at creation, so this is normally a no-op — it earns
     // its keep on documents saved before a block gained a prop, and it must
     // match what the canvas does or the two surfaces drift (docs/08 §4).
     const props = { ...resolve.defaults(node.type), ...node.props };
+    const children = Object.fromEntries(
+        Object.keys(node.children).map((container) => {
+            const ids = visibleChildIds(document, id, container, values);
+            return [
+                container,
+                ids.map((childId, index) =>
+                    createElement(
+                        Fragment,
+                        { key: childId },
+                        buildEmailTree(
+                            document,
+                            childId,
+                            { parentId: id, container, index },
+                            options,
+                            childWidth(node.type, props, availableWidth, container, index, ids.length, siblingCount),
+                        ),
+                    ),
+                ),
+            ];
+        }),
+    );
+    const ctx: EmailBlockContext = { document, location, siblingCount, availableWidth };
 
     if (compose) {
         // Composed: the node's children are its SLOT children, spliced into
@@ -495,7 +548,7 @@ export async function renderEmail(
     const prettified = options.pretty === false ? rendered : await pretty(rendered);
     const text = await render(tree, { plainText: true });
     const values = options.substituteTokens ? (options.values ?? {}) : null;
-    const personalized = sanitizeUrlAttributes(values ? substitute(prettified, values, true) : prettified);
+    const personalized = applyOutlookFixes(sanitizeUrlAttributes(values ? substitute(prettified, values, true) : prettified));
     // Conditionals wrap LAST: after prettifying, because the adapter's syntax
     // is not HTML and must not go through an HTML parser; after substitution
     // and sanitizing, so neither pass ever rewrites the host's own syntax

@@ -18,8 +18,17 @@ import type { BlockContext, BlockSpec } from "../core/types.ts";
 export type EmailRenderer<P = Record<string, unknown>> = (
     props: P,
     children: Record<string, ReactElement[]>,
-    ctx: BlockContext,
+    ctx: EmailBlockContext,
 ) => ReactElement | null;
+
+/**
+ * The walk's context for an output render: the block's place in the document
+ * plus its available width in px at the design width (./width.ts) — what a
+ * renderer puts in the `width` attributes Outlook on Windows reads instead of CSS.
+ */
+export interface EmailBlockContext extends BlockContext {
+    availableWidth: number;
+}
 
 // Renderers with different P coexist in the registry map — P is erased there.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

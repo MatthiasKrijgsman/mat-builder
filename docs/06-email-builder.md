@@ -147,6 +147,24 @@ Email has no flexbox: a horizontal container is a table row of equal cells, and 
 
 `stackOnMobile: false` on a container keeps its columns (the inspector shows the toggle for horizontal containers only); documents written before the prop existed read as `true`. The breakpoint is `MOBILE_BREAKPOINT` (600px), the phone/desktop line most email CSS uses. Outlook on Windows ignores `<style>` and keeps the columns — the documented degradation — and a container that exists only inside a composed block's spec stacks without its gap, because the scan sees stored nodes, not specs. Mobile *editing* is deliberately absent: the canvas is the desktop truth, the output is what stacks.
 
+## Outlook on Windows
+
+Classic Outlook for Windows renders with Word's HTML engine, the client where builder and inbox disagree most. Found with the client-support check (`pnpm email:check`, [Playground host](#playground-host)) on the two samples, the output now handles:
+
+- **Content width.** Word ignores `max-width`, so the 600px column stretched to the window. The root's content table is marked (`data-mb-mso-width`), and `renderEmail` wraps it in an Outlook-only fixed-width "ghost table" inside `<!--[if mso]>` comments. React cannot emit comments, hence the post-render pass, the same technique as conditionals. Full-bleed roots get no ghost table.
+- **96 DPI.** The head gains the `o:OfficeDocumentSettings` block (`PixelsPerInch` 96, plus the `xmlns:v`/`xmlns:o` namespaces on `<html>`). Without it, on a 120-DPI Windows display Outlook scales attribute widths and CSS widths differently.
+- **Image widths.** Word ignores CSS widths on `<img>` and draws the file at its pixel size (a 1104px photo in a 600px email). Every sized image carries a `width` attribute in px. The walk threads an **available width** down the tree (`ctx.availableWidth`, `src/email/width.ts`): the root's content width, minus each container's margin, padding and border, split across horizontal cells less their half-gaps, and through tables to cells. These are design-width numbers. CSS clients keep their fluid percentages, so phones still scale. Hug images have no size to state and keep none. Fixed widths are capped at the column.
+- **Image alignment.** Word ignores `margin: auto`, so an image narrower than its column is wrapped in a full-width table whose cell carries `align`, the attribute Outlook honours.
+- **Vertical gaps.** Word only honours padding on table cells, so gaps (`withVerticalGap`) were padded divs that collapsed to nothing. They are now spacer-row tables with a pinned height (`height` attribute, matching `line-height`, 1px font, `mso-line-height-rule: exactly`).
+
+Known degradations, not fixed:
+- **Rounded corners.** Containers, images and buttons are square in Outlook for Windows. Round buttons would need VML (`v:roundrect`).
+- **`@media` stacking.** It is ignored by Outlook for Windows (desktop keeps the columns, which is fine) and by the Gmail apps with non-Gmail accounts, where columns do not stack on phones.
+- **Font weight.** Outlook rounds numeric weights: 500 renders normal and 600 bold.
+- **Gradients.** They fall back to the solid `background-color` the container already emits.
+
+The rest of the report is react-email's standard markup (`role="presentation"`, `target`, the `<body>` swap, image resets such as `outline:none`), which is harmless.
+
 ## Merge tags
 
 Consumer-provided personalization tokens, insertable anywhere in rich text, in the Button label, and in the Button link. The tag list varies per host/ESP, so it enters through the provider — `<BuilderProvider mergeTags={[{ token: "{{first_name}}", label: "First name" }]}>` (`useMergeTags()` reads it back). Each tag carries its **literal token string**: the library assumes no delimiter syntax, so `{{x}}`, `*|FNAME|*` and `%x%` all work unmodified. With no `mergeTags` configured, every bit of merge-tag UI hides — but stored documents containing tags still load and export (node registration and walker support are unconditional).
