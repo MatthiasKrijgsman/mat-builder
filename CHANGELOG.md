@@ -2,10 +2,17 @@
 
 Breaking changes are allowed while on `0.x` and are listed here per release.
 
-## Unreleased
+## 0.4.0 — 2026-09-29
 
-Outlook for Windows and Gmail-app fixes, found with the new client-support check (`/email-check`, `pnpm email:check`). No breaking changes for documents. A custom `EmailRenderer` now receives `ctx: EmailBlockContext` (a superset of `BlockContext`).
+Email-client fidelity (Outlook for Windows, the Gmail apps, dark mode), Figma-style rows, and a client-support check. Requires the `@lexical/link` peer (`^0.45.0`), which mat-ui already required.
 
+**Breaking:**
+- A custom `EmailRenderer` receives `ctx: EmailBlockContext` (a superset of `BlockContext`: adds `availableWidth` and `childNodes`), and `ChildWidth`/`childWidth` take the siblings' nodes instead of a count.
+- The output markup changes. Stacking rows are inline-block divs (hybrid columns) instead of table cells. Gaps are spacer tables instead of padded divs. Images carry `width` attributes and may sit in a wrapper table. Buttons, gradients and the content column gain Outlook-only conditional comments. And, by default, colours carry `mb-lc`/`mb-lb` classes with a `color-scheme: light only` head. Anything that parses or post-processes the HTML should be re-checked.
+- Emails now keep light colours in dark mode by default, stored documents included. Set the root's `colorScheme: "auto"` (the inspector toggle) to let clients adapt as before.
+- New containers are auto rows. Stored rows read as `"equal"` and render unchanged.
+
+**Changes:**
 - **Content width**: an Outlook-only fixed-width ghost table around the root's content column. Word ignores `max-width`, so the email used to stretch to the window.
 - **Images**: every sized image carries a px `width` attribute derived from its column (`ctx.availableWidth`, `emailChildWidths`), and fixed widths are capped at the column. Images narrower than their column align through a cell `align` attribute instead of `margin: auto`.
 - **Gaps**: vertical gaps are spacer-row tables instead of padded divs, which Outlook collapsed.
@@ -16,7 +23,7 @@ Outlook for Windows and Gmail-app fixes, found with the new client-support check
 - **Auto rows (Figma-style)**: a horizontal container's new `columns: "auto" | "equal"` prop. In an auto row each child's width claims its column: Fill shares the rest, Fixed and Percent take their size, and Hug fits its content. The row's horizontal alignment places the group, on the canvas and in the output (including Outlook). New containers are created with `"auto"`. Stored containers without the prop read as `"equal"`, the old behaviour, so existing documents render unchanged. There is an inspector control ("Columns: Auto / Equal") for horizontal containers. The core gains `ContainerDef.getChildLayout`, and the output walk hands renderers `ctx.childNodes`.
 - **Merge tags in text links**: the rich-text toolbar's link button opens a panel with a URL field and the merge-tag menu, prefilled with the current link so it can be edited in place (it replaces mat-ui's `window.prompt`). New peer dependency `@lexical/link` (`^0.45.0`), which mat-ui already required.
 - **Image margins**: images take margins like other blocks, as the wrapper cell's padding in the output and the wrapper's padding on the canvas. They narrow the room the image's width and alignment resolve against.
-- **Keep light colors in dark mode**: a root option (`colorScheme: "light"`) that emits `color-scheme: light only` (Apple Mail honours it) and Outlook.com `[data-ogsc]`/`[data-ogsb]` rules restoring every text and background color. The Gmail apps and Outlook for Windows invert regardless. `applyLightOnly` is exported from `/email/render`.
+- **Keep light colors in dark mode**, on by default: a root option (`colorScheme`, `"light"` unless set to `"auto"`, including for stored documents) that emits `color-scheme: light only` (Apple Mail honours it) and Outlook.com `[data-ogsc]`/`[data-ogsb]` rules restoring every text and background color. The Gmail apps and Outlook for Windows invert regardless. `applyLightOnly` is exported from `/email/render`.
 - **Inspector select clipping**: in hosts using `./style-flat` (or with their own `select { padding }`), mat-ui's forms reset put vertical padding back on the inspector's selects and clipped their text. The panels now pin the select's padding and line box with real specificity.
 - **Canvas fix**: horizontal containers laid their cells out at content width, packed left, instead of in equal columns like the email output. The slot's layout classes had lost their `mat:` prefix in 0.2.0, so they compiled to nothing, and flex only worked in hosts whose own Tailwind generated `flex`. A source scan (`src/styles/prefix.test.ts`) now catches unprefixed utilities, which the built-CSS check cannot see.
 - `msoOnly`, `hideFromMso` and `vmlGradientAngle` are exported from `/email/render` for custom renderers.

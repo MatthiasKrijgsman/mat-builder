@@ -194,7 +194,7 @@ Output: the walker's `merge-tag` case emits the literal token as escaped text, w
 
 ## Dark mode
 
-Mail clients recolor emails in dark mode on their own terms, and no email can switch that off everywhere. The root's **Keep light colors in dark mode** option (`colorScheme: "light"`; absent or `"auto"` leaves it to each client) asks as firmly as the HTML allows. `renderEmail` then runs `applyLightOnly` (`src/email/light-only.ts`) on the output:
+Mail clients recolor emails in dark mode on their own terms, and no email can switch that off everywhere. The root's **Keep light colors in dark mode** option (`colorScheme`) is on by default: `"light"`, which a document stored without the prop also reads as. `"auto"` leaves it to each client. When on, it asks as firmly as the HTML allows. `renderEmail` then runs `applyLightOnly` (`src/email/light-only.ts`) on the output:
 
 - **`color-scheme: light only`**: the `color-scheme` and `supported-color-schemes` meta tags plus a `:root` rule. Apple Mail on macOS and iOS honours it and shows the email as designed.
 - **Outlook.com overrides.** Outlook.com recolors partially and marks each element it changed with `data-ogsc` (text) or `data-ogsb` (background). Every inline `color` and `background-color` in the output gets a class naming its value (`mb-lc<n>`, `mb-lb<n>`), and the head gets one `!important` rule per distinct value on those markers, restoring the original.

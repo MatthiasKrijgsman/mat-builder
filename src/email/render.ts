@@ -522,7 +522,8 @@ export async function renderEmail(
     // "Keep light colors" (./light-only.ts) runs first, while the Outlook
     // markup is still encoded in its markers and so left alone.
     const root = document.blocks[document.rootId]?.props as { colorScheme?: string } | undefined;
-    const outlook = applyMso(root?.colorScheme === "light" ? applyLightOnly(prettified) : prettified);
+    // On unless the root opts out: absent reads as the default, "light"
+    const outlook = applyMso(root?.colorScheme === "auto" ? prettified : applyLightOnly(prettified));
     const personalized = sanitizeUrlAttributes(values ? substitute(outlook, values, true) : outlook);
     // Conditionals wrap LAST: after prettifying, because the adapter's syntax
     // is not HTML and must not go through an HTML parser; after substitution

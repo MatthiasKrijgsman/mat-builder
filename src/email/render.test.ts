@@ -822,11 +822,12 @@ describe("responsive stacking", () => {
         expect(gapless).not.toContain("mb-stack-gap");
 
         const { html: optedOut } = await renderEmail(withRow(12, false), { pretty: false });
-        expect(optedOut).not.toContain("<style>");
+        // The head still has the (default) light-colors style — just no stacking rule
+        expect(optedOut).not.toContain("@media");
         expect(optedOut).not.toContain("mb-stack");
 
         const { html: vertical } = await renderEmail(buildDemoEmail(), { pretty: false });
-        expect(vertical).not.toContain("<style>");
+        expect(vertical).not.toContain("@media");
     });
 
     it("stacks by default on documents written before the option existed", async () => {
@@ -984,7 +985,7 @@ describe("Outlook on Windows (docs/06)", () => {
         // The preset button is rounded (6px) — Outlook gets the shape, everyone else the anchor
         expect(html).toMatch(/<!--\[if mso\]><v:roundrect [^>]*href="https:\/\/example.com\/buy"[^>]*arcsize="\d+%"/);
         expect(html).toMatch(/<v:roundrect[\s\S]*>Buy now<\/center><\/v:roundrect><!\[endif\]-->/);
-        expect(html).toMatch(/<!--\[if !mso\]><!-->\s*<a\s+href="https:\/\/example.com\/buy"/);
+        expect(html).toMatch(/<!--\[if !mso\]><!-->\s*<a\s+(class="[^"]*"\s+)?href="https:\/\/example.com\/buy"/);
     });
 
     it("paints gradient container backgrounds with VML, padding moved into the inset", async () => {
@@ -1121,8 +1122,14 @@ describe("image margins", () => {
 });
 
 describe("keep light colors (docs/06 §Dark mode)", () => {
-    it("is off unless the root asks for it", async () => {
-        const { html } = await renderEmail(buildDemoEmail());
+    it("is on by default, and off when the root opts out", async () => {
+        expect((await renderEmail(buildDemoEmail())).html).toContain('content="light only"');
+        const document = buildDemoEmail();
+        const root = document.blocks[document.rootId];
+        const { html } = await renderEmail({
+            ...document,
+            blocks: { ...document.blocks, [root.id]: { ...root, props: { ...root.props, colorScheme: "auto" } } },
+        });
         expect(html).not.toContain("color-scheme");
     });
 

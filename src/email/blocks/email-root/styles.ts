@@ -38,9 +38,10 @@ export interface EmailRootProps {
     /** Base typography inherited by all content (alignment is per-block) */
     typography: TypographyValue;
     /**
-     * "light" asks mail clients not to recolor the email in dark mode
-     * (color-scheme: light only, plus Outlook.com overrides — docs/06 §Dark
-     * mode). Absent or "auto" leaves it to each client, as before.
+     * "light" (the default, also for documents stored without the prop) asks
+     * mail clients not to recolor the email in dark mode (color-scheme: light
+     * only, plus Outlook.com overrides — docs/06 §Dark mode). "auto" leaves
+     * it to each client.
      */
     colorScheme?: "auto" | "light";
 }
@@ -49,6 +50,7 @@ export const emailRootDefaults: EmailRootProps = {
     backgroundColor: "#FFFFFF",
     contentWidthMode: "fixed",
     contentWidth: 600,
+    colorScheme: "light",
     spacing: { padding: symmetricSides(24, 12), margin: uniformSides(0) },
     typography: { ...defaultTypography, fontFamily: SYSTEM_FONT_STACK },
 };

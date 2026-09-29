@@ -224,7 +224,7 @@ export const DEFAULT_LABELS = {
             pagePadding: "Page padding",
             typography: "Typography",
             keepLightColors: "Keep light colors in dark mode",
-            keepLightColorsHint: "Asks mail clients not to recolor the email. Apple Mail and Outlook.com follow it; the Gmail apps and Outlook for Windows invert regardless.",
+            keepLightColorsHint: "Asks mail clients not to recolor the email. On by default. Apple Mail and Outlook.com follow it; the Gmail apps and Outlook for Windows invert regardless.",
         },
         table: {
             addRow: "Add a row",
