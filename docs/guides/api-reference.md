@@ -305,6 +305,7 @@ Types: `InlineTextProps`, `InlineRichTextProps`, `BlockTypographyItemsProps`, `M
 | `migrateDocument(document)` | upgrades an older `version` |
 | `validateDocument(document, registry?)` | `ValidationIssue[]` |
 | `DOCUMENT_VERSION` | the version this release writes and migrates up to |
+| `msoOnly(html)`, `hideFromMso(element)`, `vmlGradientAngle(cssAngle)` | Outlook-only markup for a custom renderer ([docs/06 §Outlook on Windows](../06-email-builder.md#outlook-on-windows)): `msoOnly` emits raw HTML inside `<!--[if mso]>` (escape what goes in; place it inside a td or div), `hideFromMso` wraps an element in `<!--[if !mso]><!-->` so an `msoOnly` sibling can replace it (the element must not carry `[if mso]` comments of its own), `vmlGradientAngle` converts a CSS gradient angle to a VML fill's |
 | `safeUrl(value)` | `string \| undefined` — the URL when its scheme is allowed (`http`, `https`, `mailto`, `tel`, `sms`, or none), else `undefined`. What the email output applies to every `href`/`src` |
 
 Everything but `createDocument` is also exported from `/email/render`, and there the `registry` is optional: a server has no block definitions, so without one the structural invariants are checked (ids resolve, one parent each, the root exists, the version is supported) and the definition-dependent ones — unknown types, container names, `accepts`, `defaultProps` backfill — are skipped. See the [server-rendering guide](server-rendering.md#3-validate-before-you-render).

@@ -4,12 +4,16 @@ Breaking changes are allowed while on `0.x` and are listed here per release.
 
 ## Unreleased
 
-Outlook for Windows fixes, found with the new client-support check (`/email-check`, `pnpm email:check`). No breaking changes for documents. A custom `EmailRenderer` now receives `ctx: EmailBlockContext` (a superset of `BlockContext`).
+Outlook for Windows and Gmail-app fixes, found with the new client-support check (`/email-check`, `pnpm email:check`). No breaking changes for documents. A custom `EmailRenderer` now receives `ctx: EmailBlockContext` (a superset of `BlockContext`).
 
 - **Content width**: an Outlook-only fixed-width ghost table around the root's content column. Word ignores `max-width`, so the email used to stretch to the window.
 - **Images**: every sized image carries a px `width` attribute derived from its column (`ctx.availableWidth`, `emailChildWidths`), and fixed widths are capped at the column. Images narrower than their column align through a cell `align` attribute instead of `margin: auto`.
 - **Gaps**: vertical gaps are spacer-row tables instead of padded divs, which Outlook collapsed.
 - **96 DPI**: the head gains the Office settings block, and `<html>` the VML/Office namespaces.
+- **Hybrid columns**: stacking rows render inline-block columns with a px `max-width` that wrap on narrow screens without a media query, so they now stack in the Gmail apps with non-Gmail accounts too. Outlook gets a ghost table of fixed cells. Output markup of horizontal containers changes: cells are divs, not `td`s. `stackOnMobile: false` rows keep the table row.
+- **Rounded/gradient buttons**: a VML `v:roundrect` for Outlook, with the anchor hidden from it.
+- **Gradient/image container backgrounds**: a VML `v:rect` fill for Outlook, padding moved into its inset. Direction per the Maizzle convention (VML = CSS − 90); unverified in a real Outlook.
+- `msoOnly`, `hideFromMso` and `vmlGradientAngle` are exported from `/email/render` for custom renderers.
 
 ## 0.3.0 — 2026-09-11
 

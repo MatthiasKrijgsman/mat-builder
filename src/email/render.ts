@@ -15,7 +15,8 @@ import type { AnyEmailRenderer, EmailBlockContext, EmailBlockOverride } from "./
 import { childWidth } from "./width.ts";
 import { isSlotRef } from "../core/compose.ts";
 import type { BlockSpec } from "../core/types.ts";
-import { emailRootDefaults, MSO_WIDTH_ATTRIBUTE } from "./blocks/email-root/styles.ts";
+import { emailRootDefaults } from "./blocks/email-root/styles.ts";
+import { applyMso, elementEnd, escapeHtml } from "./mso.ts";
 import { emailContainerDefaults } from "./blocks/container/styles.ts";
 import { emailTextDefaults } from "./blocks/text/styles.ts";
 import { emailButtonDefaults } from "./blocks/button/styles.ts";
@@ -35,6 +36,8 @@ import { emailTableCellDefaults, emailTableDefaults, emailTableRowDefaults } fro
  */
 
 export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride, EmailBlockContext } from "./types.ts";
+// Outlook-only markup (conditional comments), for custom renderers.
+export { msoOnly, hideFromMso, vmlGradientAngle } from "./mso.ts";
 // Available-width resolution, for a custom parent block that sizes its children.
 export { boxWidth, childWidth, emailChildWidths, type ChildWidth } from "./width.ts";
 // Composed blocks: the spec vocabulary and its helpers (pure — docs/08).
@@ -251,7 +254,6 @@ export interface ConditionalAdapter {
  * the loop simply continues until none are left.
  */
 const CONDITIONAL_ATTRIBUTE = "data-mb-cond";
-const VOID_ELEMENTS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
 
 /** Marks the outermost element of a conditional block's render (no-op without an adapter or rules). */
 function markConditional(rendered: ReactElement | null, node: { id: BlockId; visibility?: BlockVisibility }, options: BuildEmailTreeOptions): ReactElement | null {
@@ -261,56 +263,6 @@ function markConditional(rendered: ReactElement | null, node: { id: BlockId; vis
     return isValidElement(rendered) && rendered.type !== Fragment
         ? cloneElement(rendered as ReactElement<Record<string, unknown>>, { [CONDITIONAL_ATTRIBUTE]: node.id })
         : createElement("div", { [CONDITIONAL_ATTRIBUTE]: node.id }, rendered);
-}
-
-/** Where the element whose open tag ends at `openEnd` closes — counting
- * nested same-name tags — or -1 when it never does. */
-function elementEnd(html: string, tag: string, openEnd: number): number {
-    if (VOID_ELEMENTS.has(tag)) return openEnd;
-    const tags = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
-    tags.lastIndex = openEnd;
-    let depth = 1;
-    let found: RegExpExecArray | null;
-    while ((found = tags.exec(html))) {
-        depth += found[1] ? -1 : 1;
-        if (depth === 0) return found.index + found[0].length;
-    }
-    return -1;
-}
-
-/*
- * Outlook on Windows (docs/06 §Outlook). Word ignores `max-width`, so the
- * root's content column would stretch to the window; the fix every email
- * framework ships is a "ghost table" — a fixed-width table only Outlook
- * sees, inside `<!--[if mso]>` comments. React cannot emit comments, so the
- * root renderer marks its content table with an attribute (the same trick
- * as conditionals above) and this pass wraps it. The head gains the Office
- * settings block that pins Outlook to 96 DPI: without it, a Windows machine
- * at 120 DPI scales attribute widths and CSS widths differently and the
- * layout comes apart.
- */
-const MSO_NAMESPACES = ' xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"';
-const MSO_HEAD =
-    "<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch>" +
-    "</o:OfficeDocumentSettings></xml></noscript><![endif]-->";
-
-function applyOutlookFixes(html: string): string {
-    let out = html.replace(/<html\b/i, (open) => open + MSO_NAMESPACES).replace(/<head\b[^>]*>/i, (open) => open + MSO_HEAD);
-    const marker = new RegExp(`\\s${MSO_WIDTH_ATTRIBUTE}="(\\d+)"`);
-    const match = marker.exec(out);
-    if (!match) return out;
-    const start = out.lastIndexOf("<", match.index);
-    const tag = /^<([a-zA-Z][\w-]*)/.exec(out.slice(start))?.[1]?.toLowerCase() ?? "";
-    const openEnd = out.indexOf(">", match.index + match[0].length) + 1;
-    const end = elementEnd(out, tag, openEnd);
-    if (end < 0) return out.replace(match[0], "");
-    const element = out.slice(start, end).replace(match[0], "");
-    const open =
-        `<!--[if mso]><table role="presentation" width="${match[1]}" align="center" border="0" cellpadding="0" cellspacing="0">` +
-        `<tr><td><![endif]-->`;
-    const close = "<!--[if mso]></td></tr></table><![endif]-->";
-    out = out.slice(0, start) + open + element + close + out.slice(end);
-    return out;
 }
 
 /** Replaces every marked element in the rendered HTML with the adapter's wrapping of it. */
@@ -460,16 +412,8 @@ export interface RenderEmailOptions extends BuildEmailTreeOptions {
  * React escapes these five in text AND in attribute values, so a token
  * containing any of them appears in the rendered HTML in escaped form —
  * `{{a&b}}` lands as `{{a&amp;b}}`. Substitution therefore looks for both
- * spellings, and escapes the value it splices in.
+ * spellings, and escapes the value it splices in (`escapeHtml`, ./mso.ts).
  */
-const HTML_ESCAPES: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#x27;",
-};
-const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -548,7 +492,10 @@ export async function renderEmail(
     const prettified = options.pretty === false ? rendered : await pretty(rendered);
     const text = await render(tree, { plainText: true });
     const values = options.substituteTokens ? (options.values ?? {}) : null;
-    const personalized = applyOutlookFixes(sanitizeUrlAttributes(values ? substitute(prettified, values, true) : prettified));
+    // Outlook's conditional comments first (./mso.ts), so the substitution
+    // and the URL pass below reach the markup inside them too.
+    const outlook = applyMso(prettified);
+    const personalized = sanitizeUrlAttributes(values ? substitute(outlook, values, true) : outlook);
     // Conditionals wrap LAST: after prettifying, because the adapter's syntax
     // is not HTML and must not go through an HTML parser; after substitution
     // and sanitizing, so neither pass ever rewrites the host's own syntax

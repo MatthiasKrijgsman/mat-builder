@@ -67,6 +67,3 @@ export const emailRootContainerStyles = (props: EmailRootProps): CSSProperties =
 /** The fixed content width in px (the design width every px figure in the output is based on). */
 export const emailRootContentWidth = (props: EmailRootProps): number =>
     Math.round(cssNumber(props.contentWidth, emailRootDefaults.contentWidth));
-
-/** Marks the content table for renderEmail's Outlook ghost-table pass (render.ts §Outlook). */
-export const MSO_WIDTH_ATTRIBUTE = "data-mb-mso-width";

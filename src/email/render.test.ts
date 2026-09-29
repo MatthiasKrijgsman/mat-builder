@@ -5,6 +5,7 @@ import { createRegistry } from "../core/registry.ts";
 import type { BuilderDocument } from "../core/types.ts";
 import type { BlockVisibility } from "../core/visibility.ts";
 import { emailBlocks } from "./index.tsx";
+import { applyMso, vmlGradientAngle } from "./mso.ts";
 import { buildEmailTree, renderEmail, sanitizeUrlAttributes } from "./render.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
@@ -100,7 +101,9 @@ describe("renderEmail", () => {
 
         expect(html).toContain("Column heading");
         expect(html).toMatch(/<h2[^>]*>[\s\S]*Column heading/);
-        expect(html).toContain("width:50.00%"); // two children → equal split
+        // Two children → equal hybrid columns: 600 − 2×24 padding, halved
+        expect(html.match(/display:inline-block;width:100%;max-width:276px/g)).toHaveLength(2);
+        expect(html).toContain('<!--[if mso]><td width="276" valign="top"');
         expect(html).toContain('src="https://example.com/pic.png"');
         expect(html).toContain('href="https://example.com/target"');
         expect(html).toContain("border-top:1px solid #e4e4e7"); // divider
@@ -367,7 +370,8 @@ describe("renderEmail", () => {
         expect(validateDocument(document, registry)).toEqual([]);
         const { html } = await renderEmail(document);
         expect(html).toContain("Nested container copy");
-        expect(html).toContain("width:50.00%"); // the nested row's equal-split cells
+        // The nested row's equal columns: 552 in the outer container, less its own 2×24, halved
+        expect(html.match(/max-width:252px/g)).toHaveLength(2);
     });
 
     it("images without a src render nothing", async () => {
@@ -516,11 +520,11 @@ describe("conditional visibility", () => {
         document = setVisibility(document, { id: ids[1], visibility: proOnly });
 
         const all = await renderEmail(document);
-        expect(all.html).toContain("width:33.33%");
+        expect(all.html.match(/max-width:184px/g)).toHaveLength(3);
 
         const trimmed = await renderEmail(document, { values: { "{{plan}}": "Free" } });
-        expect(trimmed.html).toContain("width:50.00%");
-        expect(trimmed.html).not.toContain("width:33.33%");
+        expect(trimmed.html.match(/max-width:276px/g)).toHaveLength(2);
+        expect(trimmed.html).not.toContain("max-width:184px");
     });
 
     it("returns nothing when the walk starts on a hidden block", () => {
@@ -958,5 +962,41 @@ describe("Outlook on Windows (docs/06)", () => {
         const narrow = await renderEmail(buildImageColumns({ width: "fixed", widthPx: 120 }));
         expect(narrow.html.match(/<img[^>]*width="120"/g)).toHaveLength(2);
         expect(narrow.html).toMatch(/<td align="center">\s*<img/);
+    });
+
+    it("leaves no marker behind, even where the prettifier split the tag", async () => {
+        const { html } = await renderEmail(buildImageColumns({}));
+        expect(html).not.toMatch(/data-mb-(not-)?mso/);
+        expect(applyMso('<div><span data-mb-mso="%3Cb%3E"></span\n   ></div>')).toBe("<div><!--[if mso]><b><![endif]--></div>");
+    });
+
+    it("gives stacking columns an Outlook ghost table of fixed cells", async () => {
+        const { html } = await renderEmail(buildImageColumns({}));
+        expect(html).toContain('<!--[if mso]><table role="presentation" width="552" border="0" cellpadding="0" cellspacing="0"><tr><![endif]-->');
+        expect(html.match(/<!--\[if mso\]><td width="276" valign="top"/g)).toHaveLength(2);
+        expect(html).toContain("<!--[if mso]></tr></table><![endif]-->");
+    });
+
+    it("ships a VML roundrect for a rounded button and hides the anchor from Outlook", async () => {
+        const { html } = await renderEmail(buildDemoEmail());
+        // The preset button is rounded (6px) — Outlook gets the shape, everyone else the anchor
+        expect(html).toMatch(/<!--\[if mso\]><v:roundrect [^>]*href="https:\/\/example.com\/buy"[^>]*arcsize="\d+%"/);
+        expect(html).toMatch(/<v:roundrect[\s\S]*>Buy now<\/center><\/v:roundrect><!\[endif\]-->/);
+        expect(html).toMatch(/<!--\[if !mso\]><!-->\s*<a\s+href="https:\/\/example.com\/buy"/);
+    });
+
+    it("paints gradient container backgrounds with VML, padding moved into the inset", async () => {
+        let document = buildDemoEmail();
+        const containerId = document.blocks[document.rootId].children.main[0];
+        document = updateProps(document, {
+            id: containerId,
+            patch: { background: { type: "gradient", color: "#ffffff", gradient: { from: "#111111", to: "#222222", angle: 180 } } },
+        });
+        const { html } = await renderEmail(document);
+        expect(html).toContain('<v:fill type="gradient" color="#111111" color2="#222222" angle="90" />');
+        expect(html).toContain('<v:textbox inset="24px,24px,24px,24px" style="mso-fit-shape-to-text:true">');
+        expect(html).toContain("mso-padding-alt:0px");
+        expect(vmlGradientAngle(90)).toBe(0);
+        expect(vmlGradientAngle(0)).toBe(270);
     });
 });

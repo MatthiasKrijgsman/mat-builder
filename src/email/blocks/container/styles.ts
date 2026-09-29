@@ -79,15 +79,15 @@ export const containerFixedHeight = (props: EmailContainerProps): number | undef
 /*
  * Responsive stacking (docs/06 §Responsive output).
  *
- * Email has no flexbox: a horizontal container is a table row of equal
- * cells, and a three-column row stays three columns on a 320px phone unless
- * something says otherwise. What says otherwise is the one mechanism most
- * clients honour — a `<style>` media query in the head that turns each cell
- * into a full-width block. The cells carry a class; the root renderer emits
- * the rule once (`responsiveStackingCss`), scanning the document for the
- * gaps in use so stacked cells keep their spacing as bottom padding. Outlook
- * on Windows ignores `<style>` entirely and keeps the columns, which is the
- * documented degradation.
+ * Email has no flexbox. A stacking horizontal container renders "hybrid"
+ * columns (container/email.tsx): inline-block divs with a max-width, which
+ * wrap under each other by themselves on a narrow screen, even in clients
+ * that drop `<style>`. Where a `<style>` media query does run, it makes the
+ * stacked columns full width and gives them their gap back as bottom
+ * padding. The columns carry a class; the root renderer emits the rule once
+ * (`responsiveStackingCss`), scanning the document for the gaps in use.
+ * Outlook on Windows reads neither and gets a ghost table, which keeps the
+ * columns side by side on the desktop.
  */
 
 /** Below this width (px) horizontal containers stack — the phone / desktop line of most email CSS. */
@@ -138,7 +138,7 @@ export function responsiveStackingCss(blocks: Record<string, { type: string; pro
         .join("");
     return (
         `@media only screen and (max-width: ${MOBILE_BREAKPOINT}px) {` +
-        ` .${STACK_CLASS} { display: block !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }` +
+        ` .${STACK_CLASS} { display: block !important; width: 100% !important; max-width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }` +
         `${gapRules} }`
     );
 }
