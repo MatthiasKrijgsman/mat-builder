@@ -136,7 +136,7 @@ export function ContainerSlot(props: {
     if (Slot === "div") {
         // Horizontal = equal-width cells (*:flex-1), mirroring the email output's
         // equal-split table columns. The absolute highlight overlay ignores flex.
-        if (layout === "horizontal") className = "flex flex-row *:min-w-0 *:flex-1";
+        if (layout === "horizontal") className = "mat:flex mat:flex-row mat:*:min-w-0 mat:*:flex-1";
         else if (layout === "grid") {
             layoutStyle = {
                 display: "grid",
@@ -145,7 +145,7 @@ export function ContainerSlot(props: {
         } else if (gap > 0) {
             // Only when a gap is set — at 0 the default block flow (and its margin
             // collapsing) is preserved, keeping canvas/email parity.
-            className = "flex flex-col";
+            className = "mat:flex mat:flex-col";
         }
         if (gap > 0) layoutStyle = { ...layoutStyle, gap };
         if (slotStyle) layoutStyle = { ...layoutStyle, ...slotStyle };

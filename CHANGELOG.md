@@ -13,6 +13,7 @@ Outlook for Windows and Gmail-app fixes, found with the new client-support check
 - **Hybrid columns**: stacking rows render inline-block columns with a px `max-width` that wrap on narrow screens without a media query, so they now stack in the Gmail apps with non-Gmail accounts too. Outlook gets a ghost table of fixed cells. Output markup of horizontal containers changes: cells are divs, not `td`s. `stackOnMobile: false` rows keep the table row.
 - **Rounded/gradient buttons**: a VML `v:roundrect` for Outlook, with the anchor hidden from it.
 - **Gradient/image container backgrounds**: a VML `v:rect` fill for Outlook, padding moved into its inset. Direction per the Maizzle convention (VML = CSS − 90); unverified in a real Outlook.
+- **Canvas fix**: horizontal containers laid their cells out at content width, packed left, instead of in equal columns like the email output. The slot's layout classes had lost their `mat:` prefix in 0.2.0, so they compiled to nothing, and flex only worked in hosts whose own Tailwind generated `flex`. A source scan (`src/styles/prefix.test.ts`) now catches unprefixed utilities, which the built-CSS check cannot see.
 - `msoOnly`, `hideFromMso` and `vmlGradientAngle` are exported from `/email/render` for custom renderers.
 
 ## 0.3.0 — 2026-09-11
