@@ -80,7 +80,8 @@
     "lint": "eslint .",
     "site": "pnpm --filter @matthiaskrijgsman/mat-builder-site dev",
     "site:build": "pnpm --filter @matthiaskrijgsman/mat-builder-site build",
-    "test:pack": "node scripts/smoke-test.mjs"
+    "test:pack": "node scripts/smoke-test.mjs",
+    "email:check": "node scripts/email-check.ts"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^3.1.0",

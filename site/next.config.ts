@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   trailingSlash: true,
   transpilePackages: ["@matthiaskrijgsman/mat-builder"],
+  // doiuse-email (the /email-check page) is written for Node: `css` reaches
+  // for fs/path to support source maps and picomatch reads `path.sep`. None of
+  // it runs in the paths the page uses, so the browser bundle stubs them out.
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = { ...config.resolve.fallback, fs: false, path: false, url: false, "source-map-js": false };
+    }
+    return config;
+  },
   env: {
     NEXT_PUBLIC_LIB_VERSION: libVersion,
     NEXT_PUBLIC_SITE_URL: siteUrl,

@@ -26,6 +26,7 @@ The docs are living documents: when an implementation decision deviates from the
 ## Commands
 
 - **Watch build:** `pnpm dev:watch` (rebuilds `dist/` on change — run alongside `pnpm site`, since the site consumes `dist/`)
+- **Email client-support check:** `pnpm email:check <file.html|file.json> [--clients=major|outlook|gmail|all|<glob,…>] [--json] [--out=file.html]` — renders a document/template JSON (or takes HTML) and reports caniemail support via doiuse-email. Needs a fresh `pnpm build` (renders with `dist/`). The same report is the playground page `/email-check` (template menu → "Check client support"; click a finding to outline its elements). Use it before and after changing any email renderer/`styles.ts`. To check the built-in samples, dump them first: `site/app/samples` uses extensionless imports, so load it with `node_modules/.bin/jiti` and write `EMAIL_SAMPLES.map(s => ({ name: s.name, document: s.document }))` to a JSON file. Data is a 2023 caniemail snapshot, documented support only — see docs/06 §Playground host.
 
 ## Architecture
 

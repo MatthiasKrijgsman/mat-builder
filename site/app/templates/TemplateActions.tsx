@@ -10,7 +10,8 @@ import {
     InputSelect,
     Modal,
 } from "@matthiaskrijgsman/mat-ui";
-import { IconCopy, IconDots, IconPencil, IconPlus, IconRotate, IconTrash } from "@tabler/icons-react";
+import { IconChecklist, IconCopy, IconDots, IconPencil, IconPlus, IconRotate, IconTrash } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { EMAIL_SAMPLES } from "../samples";
 import type { StoredTemplate } from "./types";
@@ -43,6 +44,7 @@ export function TemplateActions(props: TemplateActionsProps) {
     const { templates, openId, onOpen, onCreate, onDuplicate, onRename, onDelete, onReset } = props;
     const open = templates.find((template) => template.id === openId) ?? null;
 
+    const router = useRouter();
     const [dialog, setDialog] = useState<Dialog | null>(null);
     const [name, setName] = useState(DEFAULT_NAME);
     const [startFrom, setStartFrom] = useState<string>(BLANK);
@@ -88,6 +90,9 @@ export function TemplateActions(props: TemplateActionsProps) {
                     </DropdownButton>
                 </DropdownButtonGroup>
                 <DropdownButtonGroup label="Playground">
+                    <DropdownButton Icon={IconChecklist} onClick={() => router.push("/email-check/")}>
+                        Check client support
+                    </DropdownButton>
                     <DropdownButton Icon={IconRotate} onClick={() => openDialog("reset")}>
                         Reset to samples…
                     </DropdownButton>
