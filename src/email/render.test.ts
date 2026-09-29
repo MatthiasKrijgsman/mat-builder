@@ -6,6 +6,7 @@ import type { BuilderDocument } from "../core/types.ts";
 import type { BlockVisibility } from "../core/visibility.ts";
 import { emailBlocks } from "./index.tsx";
 import { applyMso, vmlGradientAngle } from "./mso.ts";
+import { emailContainerDefaults, emailContainerSlotStyles, rowChildLayout } from "./blocks/container/styles.ts";
 import { buildEmailTree, renderEmail, sanitizeUrlAttributes } from "./render.ts";
 import { richTextHeading, richTextMergeTagNode, richTextParagraph } from "./rich-text/index.ts";
 
@@ -73,7 +74,7 @@ describe("renderEmail", () => {
         const root = document.rootId;
 
         const row = insertBlock(document, { type: "container", at: { parentId: root, container: "main", index: 1 } }, registry);
-        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal" } });
+        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal", columns: "equal" } });
         const headingText = insertBlock(
             document,
             { type: "text", at: { parentId: row.blockId, container: "content", index: 0 } },
@@ -358,7 +359,7 @@ describe("renderEmail", () => {
             { type: "container", at: { parentId: outer, container: "content", index: 1 } },
             registry,
         );
-        document = updateProps(nestedRow.document, { id: nestedRow.blockId, patch: { direction: "horizontal" } });
+        document = updateProps(nestedRow.document, { id: nestedRow.blockId, patch: { direction: "horizontal", columns: "equal" } });
         for (const index of [0, 1]) {
             document = insertBlock(
                 document,
@@ -506,7 +507,7 @@ describe("conditional visibility", () => {
         // that render must split 50/50, not stay at a third each.
         let document = buildDemoEmail();
         const row = insertBlock(document, { type: "container", at: { parentId: document.rootId, container: "main", index: 1 } }, registry);
-        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal" } });
+        document = updateProps(row.document, { id: row.blockId, patch: { direction: "horizontal", columns: "equal" } });
         const ids: string[] = [];
         for (let index = 0; index < 3; index++) {
             const column = insertBlock(
@@ -925,6 +926,7 @@ describe("Outlook on Windows (docs/06)", () => {
             id: row.blockId,
             patch: {
                 direction: "horizontal",
+                columns: "equal",
                 spacing: { padding: { top: 0, right: 0, bottom: 0, left: 0 }, margin: { top: 0, right: 0, bottom: 0, left: 0 } },
                 layout: { horizontal: "start", vertical: "start", gap: 16 },
             },
@@ -972,7 +974,7 @@ describe("Outlook on Windows (docs/06)", () => {
 
     it("gives stacking columns an Outlook ghost table of fixed cells", async () => {
         const { html } = await renderEmail(buildImageColumns({}));
-        expect(html).toContain('<!--[if mso]><table role="presentation" width="552" border="0" cellpadding="0" cellspacing="0"><tr><![endif]-->');
+        expect(html).toContain('<!--[if mso]><table role="presentation" width="552" align="left" border="0" cellpadding="0" cellspacing="0"><tr><![endif]-->');
         expect(html.match(/<!--\[if mso\]><td width="276" valign="top"/g)).toHaveLength(2);
         expect(html).toContain("<!--[if mso]></tr></table><![endif]-->");
     });
@@ -998,5 +1000,95 @@ describe("Outlook on Windows (docs/06)", () => {
         expect(html).toContain("mso-padding-alt:0px");
         expect(vmlGradientAngle(90)).toBe(0);
         expect(vmlGradientAngle(0)).toBe(270);
+    });
+
+});
+
+describe("auto rows (docs/06 §Rows)", () => {
+    /** Root > seeded container (24px padding → 552 inner) > auto row (no padding) > the given children. */
+    function buildAutoRow(layout: Record<string, unknown>, children: { type: string; props: Record<string, unknown> }[], rowProps: Record<string, unknown> = {}) {
+        let document = createDocument(registry, "email-root");
+        const containerId = document.blocks[document.rootId].children.main[0];
+        const row = insertBlock(document, { type: "container", at: { parentId: containerId, container: "content", index: 0 } }, registry);
+        document = updateProps(row.document, {
+            id: row.blockId,
+            patch: {
+                direction: "horizontal",
+                spacing: { padding: { top: 0, right: 0, bottom: 0, left: 0 }, margin: { top: 0, right: 0, bottom: 0, left: 0 } },
+                layout: { horizontal: "start", vertical: "start", gap: 0, ...layout },
+                ...rowProps,
+            },
+        });
+        children.forEach((child, index) => {
+            const inserted = insertBlock(document, { type: child.type, at: { parentId: row.blockId, container: "content", index } }, registry);
+            document = updateProps(inserted.document, { id: inserted.blockId, patch: child.props });
+        });
+        return { document, rowId: row.blockId };
+    }
+
+    it("creates new containers as auto rows and reads stored ones without the prop as equal", () => {
+        const { document, rowId } = buildAutoRow({}, []);
+        expect(document.blocks[rowId].props.columns).toBe("auto");
+        expect(emailBlocks.find((block) => block.type === "container")?.defaultProps).not.toHaveProperty("columns");
+    });
+
+    it("centres a group of Hug children with the row's horizontal alignment", async () => {
+        const { document } = buildAutoRow({ horizontal: "center", gap: 12 }, [
+            { type: "button", props: { label: "One" } },
+            { type: "button", props: { label: "Two" } },
+        ]);
+        const { html } = await renderEmail(document);
+        expect(html).toMatch(/<div style="font-size:0;text-align:center">/);
+        // Hug columns shrink to their content: no width, and no stacking class
+        expect(html).toMatch(/<div\s+style="display:inline-block;vertical-align:top;padding-left:0;padding-right:6px/);
+        expect(html).not.toContain('class="mb-stack');
+        // Outlook: a ghost table without a width, placed by align
+        expect(html).toContain('<!--[if mso]><table role="presentation" align="center" border="0"');
+    });
+
+    it("gives Fixed columns their width and Fill columns what is left", async () => {
+        const { document } = buildAutoRow({ gap: 20 }, [
+            { type: "container", props: { size: { width: "fixed", widthPx: 200, height: "hug", heightPx: 100 } } },
+            { type: "container", props: { size: { width: "full", widthPx: 300, height: "hug", heightPx: 100 } } },
+        ]);
+        const { html } = await renderEmail(document);
+        // 552 − 20 gap − 200 = 332 for the Fill; each column carries its half-gap
+        expect(html).toContain("display:inline-block;width:210px;max-width:100%");
+        expect(html).toContain("display:inline-block;width:342px;max-width:100%");
+        expect(html).toContain('<!--[if mso]><td width="210"');
+        expect(html).toContain('<!--[if mso]><td width="342"');
+    });
+
+    it("sizes a Percent column from the row and fills it with the block", async () => {
+        const { document } = buildAutoRow({ horizontal: "center" }, [
+            { type: "image", props: { src: "https://example.com/a.png", size: { width: "percent", widthPct: 25, widthPx: 100, height: "hug", heightPx: 100 } } },
+        ]);
+        const { html } = await renderEmail(document);
+        // 25% of 552 = 138 for the column; the image fills it rather than taking 25% again
+        expect(html).toContain("display:inline-block;width:138px;max-width:100%");
+        const img = /<img[^>]*>/.exec(html)?.[0] ?? "";
+        expect(img).toContain('width="138"');
+        expect(img).toMatch(/style="[^"]*;width:100%/);
+    });
+
+    it("keeps an auto row that does not stack as a table row placed by align", async () => {
+        const { document } = buildAutoRow({ horizontal: "end" }, [{ type: "button", props: { label: "Go" } }], { stackOnMobile: false });
+        const { html } = await renderEmail(document);
+        expect(html).toMatch(/<table\s+role="presentation"\s+align="right"/);
+    });
+
+    it("lays children out on the canvas the way the output sizes them", () => {
+        const row = { ...emailContainerDefaults, direction: "horizontal" as const, columns: "auto" as const };
+        const size = (width: string) => ({ size: { width, widthPx: 120, widthPct: 30, height: "hug", heightPx: 10 } });
+        expect(rowChildLayout(row, size("full"))?.style).toEqual({ flex: "1 1 0%", minWidth: 0 });
+        expect(rowChildLayout(row, size("hug"))?.style).toEqual({ flex: "0 1 auto", minWidth: 0 });
+        expect(rowChildLayout(row, {})?.style).toEqual({ flex: "1 1 0%", minWidth: 0 }); // no size prop = Fill
+        const percent = rowChildLayout(row, size("percent"));
+        expect(percent?.style).toEqual({ flex: "0 1 30%", minWidth: 0 });
+        expect((percent?.props?.size as { width: string }).width).toBe("full");
+        // Equal rows (and rows stored before the option) leave the slot's equal split alone
+        expect(rowChildLayout({ ...row, columns: "equal" }, size("hug"))).toBeUndefined();
+        expect(rowChildLayout({ ...row, columns: undefined }, size("hug"))).toBeUndefined();
+        expect(emailContainerSlotStyles({ ...row, layout: { ...row.layout, horizontal: "center" } })?.justifyContent).toBe("center");
     });
 });

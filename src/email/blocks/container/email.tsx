@@ -4,7 +4,7 @@ import { safeUrl } from "../../../core/safe-url.ts";
 import { withVerticalGap } from "../../gap.ts";
 import { escapeHtml, msoOnly, vmlFill } from "../../mso.ts";
 import type { EmailBlockContext, EmailRenderer } from "../../types.ts";
-import { boxWidth } from "../../width.ts";
+import { autoRowWidths, boxWidth, containerInnerWidth } from "../../width.ts";
 import { cssNumber, horizontalToTextAlign, verticalToVerticalAlign } from "../../../style-props/index.ts";
 import { emailRootDefaults, type EmailRootProps } from "../email-root/styles.ts";
 import {
@@ -12,6 +12,7 @@ import {
     emailContainerCellClass,
     emailContainerCellStyles,
     emailContainerStyles,
+    isAutoRow,
     stacksOnMobile,
     type EmailContainerProps,
 } from "./styles.ts";
@@ -73,45 +74,74 @@ function outlookBackground(props: EmailContainerProps, ctx: EmailBlockContext): 
     };
 }
 
+const ALIGN = { start: "left", center: "center", end: "right" } as const;
+
+/**
+ * Hybrid columns: inline-block divs inside a `font-size: 0` wrapper (it kills
+ * the whitespace the prettifier puts between them; each column restores the
+ * root's base size), wrapped for Outlook in a ghost table of the same cells.
+ *
+ * Equal rows: every column `width: 100%` with a px `max-width` of its equal
+ * share, so the row fills exactly and the columns wrap once the screen is
+ * narrower. Auto rows (docs/06 §Rows): each column has the px width its child
+ * claims (`autoRowWidths`) or, for a Hug child, none — it shrinks to its
+ * content — and the row's horizontal alignment places the group, through
+ * the wrapper's text-align and the ghost table's `align`.
+ */
 function hybridColumns(props: EmailContainerProps, kids: ReactElement[], ctx: EmailBlockContext): ReactNode {
+    const auto = isAutoRow(props);
     const gap = cssNumber(props.layout?.gap);
-    const inner = Math.round(
-        boxWidth(props.size, ctx.availableWidth, props.spacing?.margin) -
-            sides(props.spacing?.padding).left -
-            sides(props.spacing?.padding).right -
-            sides(props.border?.width).left -
-            sides(props.border?.width).right,
-    );
-    // Floored so the row never sums past the container and wraps on desktop
-    const cell = Math.floor(inner / kids.length);
+    const inner = containerInnerWidth(props, ctx.availableWidth);
+    const halves = (index: number) => ({
+        left: index > 0 ? gap / 2 : 0,
+        right: index < kids.length - 1 ? gap / 2 : 0,
+    });
+    // Column widths including their half-gaps; undefined = shrink to content
+    const columns: (number | undefined)[] = auto
+        ? autoRowWidths(props, ctx.childNodes.content ?? [], ctx.availableWidth).map((width, index) =>
+              width === undefined ? undefined : Math.floor(width + halves(index).left + halves(index).right),
+          )
+        : kids.map(() => Math.floor(inner / kids.length));
     const valign = verticalToVerticalAlign(props.layout?.vertical ?? "start");
     const textAlign = horizontalToTextAlign(props.layout?.horizontal ?? "start");
+    const align = ALIGN[props.layout?.horizontal === "center" || props.layout?.horizontal === "end" ? props.layout.horizontal : "start"];
     const height = containerFixedHeight(props);
-    // The wrapper's font-size:0 removes the whitespace between inline-blocks
-    // (the prettifier adds some); each column restores the base size.
     const root = ctx.document.blocks[ctx.document.rootId]?.props as Partial<EmailRootProps> | undefined;
     const fontSize = cssNumber(root?.typography?.fontSize, emailRootDefaults.typography.fontSize);
+    const shrinks = columns.some((width) => width === undefined);
+    const total = columns.reduce<number>((sum, width) => sum + (width ?? 0), 0);
+    const ghostWidth = !auto ? inner : shrinks ? undefined : Math.min(inner, total);
 
     return (
-        // Centred: once the columns wrap (no media query to widen them) they
-        // keep their desktop width, and centred reads better than hard left.
-        // On the desktop the row fills the container exactly, so no change.
-        <div style={{ fontSize: 0, textAlign: "center" }}>
-            {msoOnly(`<table role="presentation" width="${inner}" border="0" cellpadding="0" cellspacing="0"><tr>`)}
+        // Equal rows centre once wrapped (their columns keep the desktop width
+        // there); auto rows keep their own alignment. On the desktop an equal
+        // row fills exactly, so its wrapper alignment never shows.
+        <div style={{ fontSize: 0, textAlign: auto ? textAlign : "center" }}>
+            {msoOnly(
+                `<table role="presentation"${ghostWidth === undefined ? "" : ` width="${ghostWidth}"`} align="${align}" border="0" cellpadding="0" cellspacing="0"><tr>`,
+            )}
             {kids.map((child, index) => {
-                const paddingLeft = index > 0 ? gap / 2 : 0;
-                const paddingRight = index < kids.length - 1 ? gap / 2 : 0;
+                const { left: paddingLeft, right: paddingRight } = halves(index);
+                const width = columns[index];
                 const cellStyle =
                     `padding-left:${paddingLeft}px;padding-right:${paddingRight}px;` + (height !== undefined ? `height:${height}px;` : "");
+                const sizing: CSSProperties =
+                    width === undefined ? {}
+                    : auto ? { width, maxWidth: "100%" }
+                    : { width: "100%", maxWidth: width };
                 return [
-                    msoOnly(`<td width="${cell}" valign="${valign}" style="${escapeHtml(cellStyle)}">`, `open-${index}`),
+                    msoOnly(
+                        `<td${width === undefined ? "" : ` width="${width}"`} valign="${valign}" style="${escapeHtml(cellStyle)}">`,
+                        `open-${index}`,
+                    ),
                     <div
                         key={`col-${index}`}
-                        className={emailContainerCellClass(props, index, kids.length)}
+                        // A Hug column stays its own size on phones too: it keeps
+                        // wrapping inline, rather than turning into a full-width block
+                        className={width === undefined ? undefined : emailContainerCellClass(props, index, kids.length)}
                         style={{
                             display: "inline-block",
-                            width: "100%",
-                            maxWidth: cell,
+                            ...sizing,
                             verticalAlign: valign,
                             paddingLeft,
                             paddingRight,
@@ -131,6 +161,56 @@ function hybridColumns(props: EmailContainerProps, kids: ReactElement[], ctx: Em
     );
 }
 
+/** An auto row that keeps its columns on phones: a plain table row, each
+ * cell at its column's width (none for Hug), placed by the table's `align`. */
+function autoTableRow(props: EmailContainerProps, kids: ReactElement[], ctx: EmailBlockContext): ReactNode {
+    const gap = cssNumber(props.layout?.gap);
+    const widths = autoRowWidths(props, ctx.childNodes.content ?? [], ctx.availableWidth);
+    const valign = verticalToVerticalAlign(props.layout?.vertical ?? "start");
+    const align = ALIGN[props.layout?.horizontal === "center" || props.layout?.horizontal === "end" ? props.layout.horizontal : "start"];
+    const height = containerFixedHeight(props);
+    const cells = kids.map((_child, index) => {
+        const paddingLeft = index > 0 ? gap / 2 : 0;
+        const paddingRight = index < kids.length - 1 ? gap / 2 : 0;
+        const width = widths[index];
+        return { paddingLeft, paddingRight, width: width === undefined ? undefined : Math.floor(width + paddingLeft + paddingRight) };
+    });
+    const shrinks = cells.some((cell) => cell.width === undefined);
+    const total = cells.reduce((sum, cell) => sum + (cell.width ?? 0), 0);
+    return (
+        <table
+            role="presentation"
+            align={align}
+            width={shrinks ? undefined : total}
+            border={0}
+            cellPadding="0"
+            cellSpacing="0"
+            style={shrinks ? undefined : { width: total, maxWidth: "100%" }}
+        >
+            <tbody>
+                <tr>
+                    {kids.map((child, index) => (
+                        <td
+                            key={index}
+                            width={cells[index].width}
+                            valign={valign}
+                            style={{
+                                width: cells[index].width,
+                                paddingLeft: cells[index].paddingLeft,
+                                paddingRight: cells[index].paddingRight,
+                                verticalAlign: valign,
+                                height,
+                            }}
+                        >
+                            {child}
+                        </td>
+                    ))}
+                </tr>
+            </tbody>
+        </table>
+    );
+}
+
 export const containerEmail: EmailRenderer<EmailContainerProps> = (props, children, ctx) => {
     const kids = children.content ?? [];
     const gap = props.layout?.gap ?? 0;
@@ -141,6 +221,8 @@ export const containerEmail: EmailRenderer<EmailContainerProps> = (props, childr
     if (props.direction === "horizontal" && kids.length > 0) {
         content = stacksOnMobile(props) ? (
             hybridColumns(props, kids, ctx)
+        ) : isAutoRow(props) ? (
+            autoTableRow(props, kids, ctx)
         ) : (
             // Keeps its columns everywhere: a plain row of equal cells.
             <Row>

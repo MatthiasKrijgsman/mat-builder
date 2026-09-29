@@ -169,7 +169,20 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
             ? (store.getState().document.blocks[location.parentId]?.children[location.container]?.length ?? 1)
             : 1,
     };
-    const { style: wrapperStyle, ...wrapperAttrs } = definition?.getWrapperProps?.(node.props, blockContext) ?? {};
+    const { style: ownStyle, ...wrapperAttrs } = definition?.getWrapperProps?.(node.props, blockContext) ?? {};
+    // The parent container may place this block (ContainerDef.getChildLayout):
+    // a style for the wrapper, and possibly the props to render with.
+    const parentNode = location ? blockContext.document.blocks[location.parentId] : undefined;
+    const parentDefinition = parentNode ? registry.getDefinition(parentNode.type) : undefined;
+    const childLayout = parentDefinition?.containers
+        ?.find((container) => container.name === location?.container)
+        ?.getChildLayout?.(
+            { ...parentDefinition.defaultProps, ...parentNode?.props },
+            { ...definition?.defaultProps, ...node.props },
+            node.type,
+        );
+    const wrapperStyle = childLayout?.style ? { ...ownStyle, ...childLayout.style } : ownStyle;
+    const renderProps = childLayout?.props ?? node.props;
     // Row-group tags take no flow content, so the absolutely-positioned edge
     // indicator (a div) would be hoisted out of the table — they draw the drop
     // edge as an inset shadow on themselves instead.
@@ -240,7 +253,7 @@ export function BlockView({ id, location, layout = "vertical", group }: BlockVie
                 ) : (
                     <definition.editRender
                         id={id}
-                        props={node.props}
+                        props={renderProps}
                         containers={containers}
                         isSelected={isSelected}
                         isEditing={isEditing}

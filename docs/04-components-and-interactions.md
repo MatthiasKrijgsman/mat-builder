@@ -74,7 +74,7 @@ Internal wrapper the package controls fully — this is where "we control how th
 
 Renders one named container of a block:
 
-- Applies the container's layout (`vertical` → flex-col, `horizontal` → flex-row with equal-width `*:flex-1` cells, `grid` → grid with `grid.columns`) *in editor space*. The layout can be resolved per instance from the block's props via `ContainerDef.getLayout` (e.g. the email container's direction toggle), and `ContainerDef.getSlotStyle` can add props-derived styles to the slot (e.g. flex alignment). The block's `editRender` decides where the slot sits; the slot decides how children stack.
+- Applies the container's layout (`vertical` → flex-col, `horizontal` → flex-row with equal-width `*:flex-1` cells, `grid` → grid with `grid.columns`) *in editor space*. The layout can be resolved per instance from the block's props via `ContainerDef.getLayout` (e.g. the email container's direction toggle), and `ContainerDef.getSlotStyle` can add props-derived styles to the slot (e.g. flex alignment). `ContainerDef.getChildLayout` places each child: it returns a style for the child's wrapper (overriding the `*:flex-1` split) and optionally the props the child renders with. The email container's auto rows size a column from the child's own width this way (docs/06 §Rows). The block's `editRender` decides where the slot sits; the slot decides how children stack.
 - **Empty state**: a dashed placeholder with the container's `placeholder` text (e.g. "Drop content here") — also a full-surface drop target, so empty containers are easy targets.
 - Renders drop indicators (line between children, or container highlight for "drop into") during drags.
 

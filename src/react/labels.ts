@@ -194,6 +194,11 @@ export const DEFAULT_LABELS = {
             horizontal: "Horizontal",
             stackOnMobile: "Stack on mobile",
             stackOnMobileHint: "Below {breakpoint}px the columns stack top to bottom in the sent email.",
+            columns: "Columns",
+            columnsAuto: "Auto",
+            columnsEqual: "Equal",
+            columnsAutoHint: "Each block's width sets its column: Fill shares the row, Fixed and Hug keep their size, and Horizontal alignment places the group.",
+            columnsEqualHint: "The row splits into equal columns; each block aligns itself inside its column.",
         },
         button: { label: "Label", link: "Link", alignment: "Alignment" },
         image: {

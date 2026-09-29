@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import {
     backgroundToCss,
+    cssNumber,
     borderToCss,
     DEFAULT_WIDTH_PCT,
     defaultBackground,
@@ -75,3 +76,22 @@ export const emailButtonWrapperStyles = (props: EmailButtonProps): CSSProperties
     ...verticalAlignToCss(props.layout),
     padding: props.spacing ? sideShorthand(props.spacing.margin) : undefined,
 });
+
+/** Average glyph width as a share of the font size, for a bold sans label. */
+const GLYPH_WIDTH = 0.62;
+
+/**
+ * A Hug button's width in px, estimated from its label — nothing measures
+ * text server-side. What the Outlook VML shape is sized with, and what an
+ * auto row budgets for the button's column. Capped at `room`.
+ */
+export function estimateButtonWidth(props: EmailButtonProps, room: number): number {
+    const fontSize = cssNumber(props.typography?.fontSize, defaultTypography.fontSize);
+    const letterSpacing = cssNumber(props.typography?.letterSpacing);
+    const padding = props.spacing?.padding;
+    const label = typeof props.label === "string" ? props.label : "";
+    return Math.min(
+        room,
+        Math.round(label.length * (fontSize * GLYPH_WIDTH + letterSpacing) + cssNumber(padding?.left) + cssNumber(padding?.right)),
+    );
+}

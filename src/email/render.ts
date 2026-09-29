@@ -11,8 +11,8 @@ import { imageEmail } from "./blocks/image/email.tsx";
 import { dividerEmail } from "./blocks/divider/email.tsx";
 import { spacerEmail } from "./blocks/spacer/email.tsx";
 import { tableCellEmail, tableEmail, tableRowEmail } from "./blocks/table/email.tsx";
-import type { AnyEmailRenderer, EmailBlockContext, EmailBlockOverride } from "./types.ts";
-import { childWidth } from "./width.ts";
+import type { AnyEmailRenderer, EmailBlockContext, EmailBlockOverride, EmailChildNode } from "./types.ts";
+import { childNode, childWidth } from "./width.ts";
 import { isSlotRef } from "../core/compose.ts";
 import type { BlockSpec } from "../core/types.ts";
 import { emailRootDefaults } from "./blocks/email-root/styles.ts";
@@ -35,11 +35,11 @@ import { emailTableCellDefaults, emailTableDefaults, emailTableRowDefaults } fro
  * (both optional peers — only consumers of the email preset install them).
  */
 
-export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride, EmailBlockContext } from "./types.ts";
+export type { EmailRenderer, AnyEmailRenderer, EmailBlockOverride, EmailBlockContext, EmailChildNode } from "./types.ts";
 // Outlook-only markup (conditional comments), for custom renderers.
 export { msoOnly, hideFromMso, vmlGradientAngle } from "./mso.ts";
 // Available-width resolution, for a custom parent block that sizes its children.
-export { boxWidth, childWidth, emailChildWidths, type ChildWidth } from "./width.ts";
+export { boxWidth, childNode, childWidth, emailChildProps, emailChildWidths, type ChildWidth } from "./width.ts";
 // Composed blocks: the spec vocabulary and its helpers (pure — docs/08).
 export { slot, isSlotRef, collectSlots, collectBindings } from "../core/compose.ts";
 export type { BlockSpec, ContainerSlotRef, BlockCompose, BlockContext } from "../core/types.ts";
@@ -170,9 +170,11 @@ function renderSpec(
     resolve: Resolver,
     depth: number,
     options: BuildEmailTreeOptions,
+    /** The props to render with when the parent adjusted them (./width.ts §childProps) */
+    resolvedProps?: Record<string, unknown>,
 ): ReactElement | null {
     if (depth > MAX_COMPOSE_DEPTH) return null;
-    const props = { ...resolve.defaults(spec.type), ...spec.props };
+    const props = resolvedProps ?? { ...resolve.defaults(spec.type), ...spec.props };
 
     // A composed block may compose another — recurse before looking for a
     // renderer it does not have.
@@ -183,16 +185,30 @@ function renderSpec(
     if (!renderer) return unknownBlock(spec.type, undefined, options);
 
     const children: Record<string, ReactElement[]> = {};
+    const childNodes: Record<string, EmailChildNode[]> = {};
     for (const [container, value] of Object.entries(spec.children ?? {})) {
-        children[container] = isSlotRef(value)
-            ? (slotChildren[value.__slot] ?? [])
-            : value.map((child, index) => {
-                  const availableWidth = childWidth(spec.type, props, ctx.availableWidth, container, index, value.length, ctx.siblingCount);
-                  const childCtx = { ...ctx, availableWidth, siblingCount: value.length };
-                  return createElement(Fragment, { key: index }, renderSpec(child, slotChildren, childCtx, resolve, depth + 1, options));
-              });
+        if (isSlotRef(value)) {
+            // Slot children were built with the composite; their sizes are not
+            // known here, so a row sizing its columns sees them as Fill.
+            children[container] = slotChildren[value.__slot] ?? [];
+            childNodes[container] = children[container].map(() => ({ type: "", props: {}, ownProps: {} }));
+            continue;
+        }
+        const nodes = value.map((child) =>
+            childNode(spec.type, props, child.type, { ...resolve.defaults(child.type), ...child.props }),
+        );
+        childNodes[container] = nodes;
+        children[container] = value.map((child, index) => {
+            const availableWidth = childWidth(spec.type, props, ctx.availableWidth, container, index, nodes, ctx.siblingCount);
+            const childCtx = { ...ctx, availableWidth, siblingCount: value.length, childNodes: {} };
+            return createElement(
+                Fragment,
+                { key: index },
+                renderSpec(child, slotChildren, childCtx, resolve, depth + 1, options, nodes[index].props),
+            );
+        });
     }
-    return renderer(props, children, ctx);
+    return renderer(props, children, { ...ctx, childNodes });
 }
 
 export interface BuildEmailTreeOptions {
@@ -331,6 +347,8 @@ export function buildEmailTree(
     /** The block's available width in px at the design width (./width.ts) —
      * computed by the walk; a caller rendering a subtree may pass its own. */
     availableWidth: number = emailRootDefaults.contentWidth,
+    /** The props to render with when the parent adjusted them (./width.ts §childProps) */
+    resolvedProps?: Record<string, unknown>,
 ): ReactElement | null {
     const node = document.blocks[id];
     if (!node) return null;
@@ -352,29 +370,33 @@ export function buildEmailTree(
     // makes props complete at creation, so this is normally a no-op — it earns
     // its keep on documents saved before a block gained a prop, and it must
     // match what the canvas does or the two surfaces drift (docs/08 §4).
-    const props = { ...resolve.defaults(node.type), ...node.props };
-    const children = Object.fromEntries(
-        Object.keys(node.children).map((container) => {
-            const ids = visibleChildIds(document, id, container, values);
-            return [
-                container,
-                ids.map((childId, index) =>
-                    createElement(
-                        Fragment,
-                        { key: childId },
-                        buildEmailTree(
-                            document,
-                            childId,
-                            { parentId: id, container, index },
-                            options,
-                            childWidth(node.type, props, availableWidth, container, index, ids.length, siblingCount),
-                        ),
-                    ),
+    const props = resolvedProps ?? { ...resolve.defaults(node.type), ...node.props };
+    const children: Record<string, ReactElement[]> = {};
+    const childNodes: Record<string, EmailChildNode[]> = {};
+    for (const container of Object.keys(node.children)) {
+        const ids = visibleChildIds(document, id, container, values);
+        const nodes = ids.map((childId) => {
+            const child = document.blocks[childId];
+            const type = child?.type ?? "";
+            return childNode(node.type, props, type, { ...resolve.defaults(type), ...child?.props });
+        });
+        childNodes[container] = nodes;
+        children[container] = ids.map((childId, index) =>
+            createElement(
+                Fragment,
+                { key: childId },
+                buildEmailTree(
+                    document,
+                    childId,
+                    { parentId: id, container, index },
+                    options,
+                    childWidth(node.type, props, availableWidth, container, index, nodes, siblingCount),
+                    nodes[index].props,
                 ),
-            ];
-        }),
-    );
-    const ctx: EmailBlockContext = { document, location, siblingCount, availableWidth };
+            ),
+        );
+    }
+    const ctx: EmailBlockContext = { document, location, siblingCount, availableWidth, childNodes };
 
     if (compose) {
         // Composed: the node's children are its SLOT children, spliced into

@@ -132,6 +132,20 @@ export interface ContainerDef {
      * container). The output render applies its own equivalent.
      */
     getSlotStyle?: (props: Record<string, unknown>) => CSSProperties | undefined;
+    /**
+     * How one child sits in this container on the canvas, from the parent's
+     * and the child's props (both with defaults filled in): `style` goes on
+     * the child's wrapper (its flex item in a horizontal slot) and `props`,
+     * when given, replaces the props the child renders with — never what is
+     * stored or what the inspector edits. The email preset's auto rows use it
+     * to size a column from the child's own width. The output render applies
+     * its own equivalent.
+     */
+    getChildLayout?: (
+        parentProps: Record<string, unknown>,
+        childProps: Record<string, unknown>,
+        childType: string,
+    ) => { style?: CSSProperties; props?: Record<string, unknown> } | undefined;
 }
 
 export interface EditRenderProps<P = Record<string, unknown>> {

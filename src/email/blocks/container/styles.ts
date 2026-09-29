@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import {
     backgroundToCss,
+    cssNumber,
+    DEFAULT_WIDTH_PCT,
     borderToCss,
     defaultBackground,
     defaultBorder,
@@ -32,6 +34,8 @@ import {
 
 export type ContainerDirection = "vertical" | "horizontal";
 
+export type RowColumns = "equal" | "auto";
+
 export interface EmailContainerProps {
     direction: ContainerDirection;
     /**
@@ -41,6 +45,16 @@ export interface EmailContainerProps {
      * existed, which read as `true`: stacking is the shippable default.
      */
     stackOnMobile?: boolean;
+    /**
+     * Horizontal only: how the row sizes its columns (docs/06 §Rows).
+     * "auto" is Figma's auto layout: each child's own width decides its
+     * column (Fill shares what is left, Fixed/Percent take their size, Hug
+     * fits its content) and `layout.horizontal` places the group when nothing
+     * fills. "equal" splits the row into equal columns whatever the children
+     * say. Absent reads as "equal", which is how every row worked before the
+     * option existed; new containers are created with "auto" (onCreate).
+     */
+    columns?: RowColumns;
     size: SizeValue;
     background: BackgroundValue;
     border: BorderValue;
@@ -179,8 +193,117 @@ export const emailContainerEditStyles = (props: EmailContainerProps): CSSPropert
     justifyContent: VERTICAL_TO_FLEX[props.layout?.vertical ?? "start"],
 });
 
-/** Canvas-only slot styles — cell cross-axis alignment for a horizontal row. */
+/** Canvas-only slot styles — cell cross-axis alignment for a horizontal row,
+ * and for an auto row the group's placement along it. */
 export const emailContainerSlotStyles = (props: EmailContainerProps): CSSProperties | undefined =>
     props.direction === "horizontal"
-        ? { alignItems: props.layout?.vertical === "stretch" ? "stretch" : VERTICAL_TO_FLEX[props.layout?.vertical ?? "start"] }
+        ? {
+              alignItems: props.layout?.vertical === "stretch" ? "stretch" : VERTICAL_TO_FLEX[props.layout?.vertical ?? "start"],
+              ...(isAutoRow(props) ? { justifyContent: HORIZONTAL_TO_JUSTIFY[props.layout?.horizontal ?? "start"] ?? "flex-start" } : {}),
+          }
         : undefined;
+
+/* ── Rows: column sizing (docs/06 §Rows) ────────────────────────────── */
+
+/** The row's column mode — absent is "equal" (rows written before "auto"). */
+export const rowColumns = (props: EmailContainerProps): RowColumns => (props.columns === "auto" ? "auto" : "equal");
+
+/** Is this an auto row — a horizontal container whose children size their own columns? */
+export const isAutoRow = (props: EmailContainerProps): boolean =>
+    props.direction === "horizontal" && rowColumns(props) === "auto";
+
+/** How a child claims its column in an auto row, read from its own `size`. A
+ * block without a size prop (text, divider, spacer) fills. */
+export type ColumnClaim =
+    | { kind: "fill" }
+    | { kind: "fixed"; px: number }
+    | { kind: "percent"; pct: number }
+    | { kind: "hug" };
+
+export function columnClaim(childProps: Record<string, unknown> | undefined): ColumnClaim {
+    const size = childProps?.size as Partial<SizeValue> | undefined;
+    switch (size?.width) {
+        case "fixed":
+            return { kind: "fixed", px: Math.max(0, cssNumber(size.widthPx, defaultSize.widthPx)) };
+        case "percent":
+            return { kind: "percent", pct: Math.min(100, Math.max(0, cssNumber(size.widthPct, DEFAULT_WIDTH_PCT))) };
+        case "hug":
+            return { kind: "hug" };
+        default:
+            return { kind: "fill" };
+    }
+}
+
+/**
+ * Content width (px, at the design width) of each column of an auto row, or
+ * `undefined` for a Hug column the output leaves to its content. `inner` is
+ * the row's content width; gaps sit between columns. `estimate` may supply a
+ * Hug child's width (a button's, from its label): with Fill siblings in the
+ * row the output needs every other column in px, so a Hug column without an
+ * estimate then shares like a Fill. Everything scales down together if the
+ * claims add up to more than the row.
+ */
+export function autoRowColumns(
+    claims: ColumnClaim[],
+    inner: number,
+    gap: number,
+    estimate: (index: number) => number | undefined = () => undefined,
+): (number | undefined)[] {
+    const space = Math.max(0, inner - gap * Math.max(0, claims.length - 1));
+    const fills = claims.some((claim) => claim.kind === "fill");
+    const known = claims.map((claim, index) =>
+        claim.kind === "fixed" ? Math.min(claim.px, space)
+        : claim.kind === "percent" ? (inner * claim.pct) / 100
+        // Without a Fill the Hug column is left to its content; with one, the
+        // row needs it in px to know what is left to share
+        : claim.kind === "hug" ? (fills ? estimate(index) : undefined)
+        : undefined,
+    );
+    // A Hug without an estimate shares like a Fill once something fills
+    const sharing = claims.map((claim, index) => claim.kind === "fill" || (fills && known[index] === undefined));
+    const claimed = known.reduce<number>((sum, width, index) => sum + (sharing[index] ? 0 : (width ?? 0)), 0);
+    const shares = sharing.filter(Boolean).length;
+    const share = shares > 0 ? Math.max(0, space - claimed) / shares : 0;
+    const widths = claims.map((_claim, index) => (sharing[index] ? share : known[index]));
+    const total = widths.reduce<number>((sum, width) => sum + (width ?? 0), 0);
+    const scale = total > space && total > 0 ? space / total : 1;
+    return widths.map((width) => (width === undefined ? undefined : Math.floor(width * scale)));
+}
+
+const HORIZONTAL_TO_JUSTIFY: Record<string, CSSProperties["justifyContent"]> = {
+    start: "flex-start",
+    center: "center",
+    end: "flex-end",
+};
+
+/**
+ * Canvas: the flex item style of a child in a horizontal row — the equal
+ * split for "equal" rows, the child's own claim for "auto" rows — plus,
+ * for a Percent child of an auto row, the props it renders with: its
+ * percentage sizes the COLUMN, and the block fills that column (without
+ * this the percentage would apply twice). The output walk makes the same
+ * substitution (`rowChildProps`).
+ */
+export function rowChildLayout(
+    parent: EmailContainerProps,
+    childProps: Record<string, unknown>,
+): { style?: CSSProperties; props?: Record<string, unknown> } | undefined {
+    if (!isAutoRow(parent)) return undefined;
+    const claim = columnClaim(childProps);
+    switch (claim.kind) {
+        case "fill":
+            return { style: { flex: "1 1 0%", minWidth: 0 } };
+        case "fixed":
+            return { style: { flex: "0 1 auto", minWidth: 0 } };
+        case "percent":
+            return { style: { flex: `0 1 ${claim.pct}%`, minWidth: 0 }, props: rowChildProps(parent, childProps) };
+        case "hug":
+            return { style: { flex: "0 1 auto", minWidth: 0 } };
+    }
+}
+
+/** The props a child renders with inside `parent` — a Percent child of an auto row fills its column. */
+export function rowChildProps(parent: EmailContainerProps, childProps: Record<string, unknown>): Record<string, unknown> {
+    if (!isAutoRow(parent) || columnClaim(childProps).kind !== "percent") return childProps;
+    return { ...childProps, size: { ...(childProps.size as SizeValue), width: "full" } };
+}

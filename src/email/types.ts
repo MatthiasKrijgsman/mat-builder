@@ -28,6 +28,22 @@ export type EmailRenderer<P = Record<string, unknown>> = (
  */
 export interface EmailBlockContext extends BlockContext {
     availableWidth: number;
+    /**
+     * This block's visible children per container, with the props they render
+     * with (defaults filled in, adjusted by `emailChildProps`) — what a parent
+     * that sizes its children from theirs reads (an auto row). A composite's
+     * slot children appear with an empty type and props.
+     */
+    childNodes: Record<string, EmailChildNode[]>;
+}
+
+/** A child as its parent's renderer sees it. */
+export interface EmailChildNode {
+    type: string;
+    /** What the child renders with (after `emailChildProps`) */
+    props: Record<string, unknown>;
+    /** Its own props, before the parent adjusted them — what it claims a column with */
+    ownProps: Record<string, unknown>;
 }
 
 // Renderers with different P coexist in the registry map — P is erased there.

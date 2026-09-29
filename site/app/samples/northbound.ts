@@ -351,8 +351,8 @@ const document: BuilderDocument = {
             },
             children: {},
         },
-        /* Two buttons in one row: each column hugs its button and they lean
-         * into the gap, so the pair reads as centered without a fixed width */
+        /* Two buttons in one auto row: both Hug their label, and the row's
+         * centre alignment places the pair (docs/06 §Rows) */
         "hero-actions": {
             id: "hero-actions",
             type: "container",
@@ -360,7 +360,8 @@ const document: BuilderDocument = {
                 ...containerBase,
                 direction: "horizontal" as const,
                 spacing: { padding: uniformSides(0), margin: uniformSides(0) },
-                layout: { ...defaultLayout, vertical: "middle" as const, gap: 12 },
+                columns: "auto" as const,
+                layout: { ...defaultLayout, horizontal: "center" as const, vertical: "middle" as const, gap: 12 },
             },
             children: { content: ["hero-save", "hero-programme"] },
         },
@@ -375,7 +376,7 @@ const document: BuilderDocument = {
                 border: { ...defaultBorder, radius: 10 },
                 typography: { ...defaultTypography, color: "#ffffff", align: "center" as const, fontSize: 15 },
                 spacing: { padding: symmetricSides(13, 24), margin: uniformSides(0) },
-                layout: { ...defaultLayout, horizontal: "end" as const },
+                layout: defaultLayout,
                 effects: defaultEffects,
             },
             children: {},
@@ -393,7 +394,7 @@ const document: BuilderDocument = {
                 border: { ...defaultBorder, width: uniformSides(1), color: "#c9caf5", radius: 10 },
                 typography: { ...defaultTypography, color: INDIGO, align: "center" as const, fontSize: 15 },
                 spacing: { padding: symmetricSides(12, 22), margin: uniformSides(0) },
-                layout: { ...defaultLayout, horizontal: "start" as const },
+                layout: defaultLayout,
                 effects: defaultEffects,
             },
             children: {},

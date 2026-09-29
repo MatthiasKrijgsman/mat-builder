@@ -1,6 +1,8 @@
 import { cssNumber, DEFAULT_WIDTH_PCT, uniformSides, type SizeValue } from "../style-props/index.ts";
 import { emailRootDefaults, type EmailRootProps } from "./blocks/email-root/styles.ts";
-import type { EmailContainerProps } from "./blocks/container/styles.ts";
+import { autoRowColumns, columnClaim, isAutoRow, rowChildProps, type EmailContainerProps } from "./blocks/container/styles.ts";
+import { estimateButtonWidth, type EmailButtonProps } from "./blocks/button/styles.ts";
+import type { EmailChildNode } from "./types.ts";
 import type { EmailTableCellProps } from "./blocks/table/styles.ts";
 
 /*
@@ -20,16 +22,18 @@ import type { EmailTableCellProps } from "./blocks/table/styles.ts";
 type Props = Record<string, unknown>;
 
 /**
- * How wide child `index` of `count` in `container` is, given the parent's
- * own available width. `siblingCount` is the PARENT's — how many blocks
- * share its container — which a table cell needs to split its row.
+ * How wide child `index` of `container` is, given the parent's own available
+ * width. `siblings` are that container's visible children (the child itself
+ * included) with the props they render with — a row sizing columns from its
+ * children reads them. `siblingCount` is the PARENT's — how many blocks share
+ * its container — which a table cell needs to split its row.
  */
 export type ChildWidth = (
     props: Props,
     available: number,
     container: string,
     index: number,
-    count: number,
+    siblings: EmailChildNode[],
     siblingCount: number,
 ) => number;
 
@@ -72,9 +76,11 @@ export const emailChildWidths: Record<string, ChildWidth> = {
         // Full bleed has no fixed measure; the classic 600 is the design width then.
         return cssNumber(root.contentWidth, emailRootDefaults.contentWidth);
     },
-    container: (props, available, _container, index, count) => {
+    container: (props, available, _container, index, siblings) => {
         const container = props as unknown as EmailContainerProps;
-        const inner = clamp(boxWidth(container.size, available, container.spacing?.margin) - inset(props));
+        const inner = containerInnerWidth(container, available);
+        const count = siblings.length;
+        if (isAutoRow(container)) return autoRowWidths(container, siblings, available)[index] ?? inner;
         if (container.direction !== "horizontal" || count <= 1) return inner;
         // Equal cells (emailContainerCellStyles), minus each cell's half-gaps
         const gap = cssNumber(container.layout?.gap);
@@ -104,9 +110,46 @@ export function childWidth(
     available: number,
     container: string,
     index: number,
-    count: number,
+    siblings: EmailChildNode[],
     siblingCount: number,
 ): number {
     const resolve = emailChildWidths[type];
-    return Math.round(resolve ? resolve(props, available, container, index, count, siblingCount) : available);
+    return Math.round(resolve ? resolve(props, available, container, index, siblings, siblingCount) : available);
+}
+
+/** A container's content width: its box inside `available`, less padding and border. */
+export const containerInnerWidth = (props: EmailContainerProps, available: number): number =>
+    clamp(boxWidth(props.size, available, props.spacing?.margin) - inset(props as unknown as Props));
+
+/**
+ * Content width of each column of an auto row at the design width, or
+ * `undefined` for a Hug column left to its content (container/styles.ts
+ * §autoRowColumns). A Hug button budgets its estimated width.
+ */
+export function autoRowWidths(props: EmailContainerProps, children: EmailChildNode[], available: number): (number | undefined)[] {
+    const inner = containerInnerWidth(props, available);
+    return autoRowColumns(
+        children.map((child) => columnClaim(child.ownProps)),
+        inner,
+        cssNumber(props.layout?.gap),
+        (index) =>
+            children[index].type === "button"
+                ? estimateButtonWidth(children[index].ownProps as unknown as EmailButtonProps, inner)
+                : undefined,
+    );
+}
+
+/**
+ * The props a child renders with inside its parent, per parent type — the
+ * one adjustment today: a Percent child of an auto row fills its column,
+ * whose width the percentage already set (container/styles.ts §rowChildProps).
+ */
+export const emailChildProps: Record<string, (parentProps: Props, childProps: Props) => Props> = {
+    container: (parentProps, childProps) => rowChildProps(parentProps as unknown as EmailContainerProps, childProps),
+};
+
+/** A child as its parent sees it: type plus the props it renders with. */
+export function childNode(parentType: string, parentProps: Props, type: string, props: Props): EmailChildNode {
+    const adjust = emailChildProps[parentType];
+    return { type, props: adjust ? adjust(parentProps, props) : props, ownProps: props };
 }

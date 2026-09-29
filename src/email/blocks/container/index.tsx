@@ -1,5 +1,5 @@
 import { IconArrowDown, IconArrowRight, IconGrid3x3 } from "@tabler/icons-react";
-import { Divider } from "@matthiaskrijgsman/mat-ui";
+import { Divider, InputDescription } from "@matthiaskrijgsman/mat-ui";
 import { defineBlock } from "../../../core/define-block.ts";
 import { acceptsEmailContent } from "../../accepts.ts";
 import * as Fields from "../../../components/fields/index.ts";
@@ -20,6 +20,7 @@ import {
   type EmailContainerProps,
   emailContainerSlotStyles,
   MOBILE_BREAKPOINT,
+  rowChildLayout,
 } from "./styles.ts";
 
 /** Leaf types (no containers of their own) — what containers accept besides nesting themselves. */
@@ -52,8 +53,13 @@ export const containerBlock = defineBlock<EmailContainerProps>({
       placeholder: "Drop content here",
       getGap: (props) => (props as unknown as EmailContainerProps).layout?.gap,
       getSlotStyle: (props) => emailContainerSlotStyles(props as unknown as EmailContainerProps),
+      // Auto rows: each child's own width sizes its column (docs/06 §Rows)
+      getChildLayout: (props, childProps) => rowChildLayout(props as unknown as EmailContainerProps, childProps),
     },
   ],
+  // New containers get Figma-style rows; stored ones without the prop keep
+  // the equal columns they were built with (EmailContainerProps.columns).
+  onCreate: () => ({ props: { columns: "auto" } }),
   // SIZE_BOX_CLASS: the section carries the container's size, so it is what the
   // inspector's dimension fields measure (the wrapper is the space around it)
   editRender: ({ props, containers }) => (
@@ -70,6 +76,22 @@ export const containerBlock = defineBlock<EmailContainerProps>({
           options={ directionOptions(t) }
           onChange={ (direction) => update({ direction }) }
         />
+        { props.direction === "horizontal" && (
+          <div className="mat:flex mat:flex-col mat:gap-1">
+            <Fields.SegmentedField
+              label={ t.email.container.columns }
+              value={ props.columns === "auto" ? "auto" : "equal" }
+              options={ [
+                { label: t.email.container.columnsAuto, value: "auto" },
+                { label: t.email.container.columnsEqual, value: "equal" },
+              ] }
+              onChange={ (columns) => update({ columns }) }
+            />
+            <InputDescription>
+              { props.columns === "auto" ? t.email.container.columnsAutoHint : t.email.container.columnsEqualHint }
+            </InputDescription>
+          </div>
+        ) }
         { props.direction === "horizontal" && (
           <Fields.ToggleField
             label={ t.email.container.stackOnMobile }

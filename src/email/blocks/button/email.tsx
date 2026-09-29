@@ -4,7 +4,7 @@ import { cssFontFamily, cssNumber, DEFAULT_WIDTH_PCT, defaultTypography, normali
 import { escapeHtml, hideFromMso, msoOnly, vmlColor, vmlFill } from "../../mso.ts";
 import type { EmailBlockContext, EmailRenderer } from "../../types.ts";
 import { emailRootDefaults, type EmailRootProps } from "../email-root/styles.ts";
-import { emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } from "./styles.ts";
+import { emailButtonStyles, emailButtonWrapperStyles, estimateButtonWidth, type EmailButtonProps } from "./styles.ts";
 
 /*
  * Outlook on Windows draws react-email's button square and cannot paint a
@@ -13,10 +13,6 @@ import { emailButtonStyles, emailButtonWrapperStyles, type EmailButtonProps } fr
  * sees, and the regular anchor is hidden from it. A square, solid button
  * needs none of this — react-email's own button already works there.
  */
-
-/** Average glyph width as a share of the font size, for a bold sans label.
- *  VML shapes need a width; a hug button's is estimated from its label. */
-const GLYPH_WIDTH = 0.62;
 
 function outlookButton(props: EmailButtonProps, href: string | undefined, ctx: EmailBlockContext): string | null {
     const radius = normalizeBorderRadius(props.border?.radius);
@@ -31,7 +27,7 @@ function outlookButton(props: EmailButtonProps, href: string | undefined, ctx: E
     const letterSpacing = cssNumber(type.letterSpacing);
     const padding = props.spacing?.padding;
     const margin = props.spacing?.margin;
-    const [top, right, bottom, left] = [padding?.top, padding?.right, padding?.bottom, padding?.left].map((n) => cssNumber(n));
+    const [top, bottom] = [padding?.top, padding?.bottom].map((n) => cssNumber(n));
     const room = Math.max(1, ctx.availableWidth - cssNumber(margin?.left) - cssNumber(margin?.right));
     const label = props.label ?? "";
 
@@ -39,7 +35,8 @@ function outlookButton(props: EmailButtonProps, href: string | undefined, ctx: E
         props.size?.width === "full" ? room
         : props.size?.width === "fixed" ? Math.min(room, cssNumber(props.size.widthPx, room))
         : props.size?.width === "percent" ? (room * cssNumber(props.size.widthPct, DEFAULT_WIDTH_PCT)) / 100
-        : Math.min(room, label.length * (fontSize * GLYPH_WIDTH + letterSpacing) + left + right),
+        // VML shapes need a width; a Hug button's is estimated from its label
+        : estimateButtonWidth(props, room),
     );
     const height = Math.round(fontSize * cssNumber(type.lineHeight, defaultTypography.lineHeight) + top + bottom);
     // arcsize is the corner radius as a share of the shorter side
