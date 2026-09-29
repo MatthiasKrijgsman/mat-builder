@@ -27,7 +27,24 @@ import { checkEmail, CLIENT_PRESETS, clientLabel, DATA_SNAPSHOT, formatReport, t
 // render here exactly as they do in the builder's preview.
 const RENDER_BLOCKS = [{ type: PRODUCT_CARD_TYPE, defaultProps: productCardDefaults, compose: composeProductCard }];
 
-const WIDTHS = { desktop: 600, mobile: 375 } as const;
+/*
+ * Frame widths are the frame's VIEWPORT (content-box, border outside), since
+ * that is what the email's media query measures. Desktop is the whole email:
+ * the root's content width plus its page padding. A 600px viewport would
+ * trip the `max-width: 600px` stacking rule, which is the phone layout.
+ * Pasted HTML has no root props to read, so it gets a common reading-pane width.
+ */
+const MOBILE_WIDTH = 375;
+const PASTED_DESKTOP_WIDTH = 640;
+
+function desktopWidth(document: BuilderDocument | undefined): number {
+    const props = document?.blocks[document.rootId]?.props as
+        | { contentWidth?: number; spacing?: { padding?: { left?: number; right?: number } } }
+        | undefined;
+    if (!props) return PASTED_DESKTOP_WIDTH;
+    const padding = (props.spacing?.padding?.left ?? 0) + (props.spacing?.padding?.right ?? 0);
+    return Math.max(PASTED_DESKTOP_WIDTH, (props.contentWidth ?? 600) + padding);
+}
 
 type Source = "template" | "html";
 
@@ -42,7 +59,7 @@ export default function EmailCheckPage() {
     const [source, setSource] = useState<Source>("template");
     const [pasted, setPasted] = useState("");
     const [preset, setPreset] = useState("major");
-    const [width, setWidth] = useState<keyof typeof WIDTHS>("desktop");
+    const [width, setWidth] = useState<"desktop" | "mobile">("desktop");
     const [selected, setSelected] = useState<string | null>(null);
     const [rendered, setRendered] = useState<{ html: string; error: string | null }>({ html: "", error: null });
 
@@ -72,6 +89,8 @@ export default function EmailCheckPage() {
     }, [source, template]);
 
     const html = source === "html" ? pasted : rendered.html;
+    const desktop = desktopWidth(source === "template" ? template?.document : undefined);
+    const frameWidth = width === "desktop" ? desktop : MOBILE_WIDTH;
     const clients = CLIENT_PRESETS[preset].clients;
     const report = useMemo(() => (html.trim() ? checkEmail(html, clients) : null), [html, clients]);
     const marked = useMemo(() => highlight(html, selected), [html, selected]);
@@ -171,8 +190,8 @@ export default function EmailCheckPage() {
                         size="sm"
                         className="shrink-0 self-center"
                         tabs={[
-                            { label: "Desktop 600", active: width === "desktop", onClick: () => setWidth("desktop") },
-                            { label: "Mobile 375", active: width === "mobile", onClick: () => setWidth("mobile") },
+                            { label: `Desktop ${desktop}`, active: width === "desktop", onClick: () => setWidth("desktop") },
+                            { label: `Mobile ${MOBILE_WIDTH}`, active: width === "mobile", onClick: () => setWidth("mobile") },
                         ]}
                     />
                     {rendered.error && source === "template" ? (
@@ -186,7 +205,7 @@ export default function EmailCheckPage() {
                             // can scroll to an outlined element.
                             sandbox="allow-same-origin"
                             onLoad={scrollToHit}
-                            style={{ width: WIDTHS[width] }}
+                            style={{ width: frameWidth, boxSizing: "content-box" }}
                             className="mx-auto min-h-[600px] shrink-0 grow border border-[var(--mat-builder-color-artboard-border)] bg-white shadow-sm"
                         />
                     )}
