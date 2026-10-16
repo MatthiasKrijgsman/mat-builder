@@ -1,6 +1,7 @@
 import { Component, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ErrorInfo, type ReactNode, type RefObject } from "react";
 import { createDocument, createRegistry, type AnyBlockDefinition } from "../../core/index.ts";
 import type { BlockId, BlockPattern, BuilderDocument } from "../../core/types.ts";
+import type { BuilderAssets } from "../../react/assets.ts";
 import type { BuilderFeatures } from "../../react/features.ts";
 import { formatLabel, resolveLabels, type BuilderLabelOverrides } from "../../react/labels.ts";
 import { useLabels } from "../../react/hooks.ts";
@@ -71,6 +72,9 @@ export interface BuilderShellProps extends UseDocumentSaveOptions {
     /** UI strings — any subset of `DEFAULT_LABELS`, deep-merged over the
      * English (docs/07 §B3). Pass a stable object. */
     labels?: BuilderLabelOverrides;
+    /** The host's media library — `pick` opens its picker from every image
+     * field. See `BuilderAssets`. */
+    assets?: BuilderAssets;
 
     /* ── Chrome ─────────────────────────────────────────────────────── */
     /** App name — the fixed first breadcrumb segment in the top bar */
@@ -145,6 +149,7 @@ export function BuilderShell(props: BuilderShellProps) {
         patterns,
         features,
         labels,
+        assets,
         onSave,
         autoSaveMs,
         onError,
@@ -201,6 +206,7 @@ export function BuilderShell(props: BuilderShellProps) {
                 patterns={patterns}
                 features={features}
                 labels={labels}
+                assets={assets}
                 onDocumentIssues={onDocumentIssues}
                 onBlockError={onBlockError}
             >

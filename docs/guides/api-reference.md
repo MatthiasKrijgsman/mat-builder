@@ -74,6 +74,7 @@ Block-set agnostic: provider + docked layout + panels + saving. `<EmailBuilder>`
 | `patterns` | `BlockPattern[]` | pass a stable array |
 | `features` | `BuilderFeatures` | `{ visibility?: boolean }` — all on by default; `{ visibility: false }` hides the conditional-visibility UI (inspector group, canvas badges, layer marker) for a host whose pipeline cannot honour rules. Stored rules still load and export |
 | `labels` | `BuilderLabelOverrides` | any subset of `DEFAULT_LABELS`, deep-merged over the English — every string in the chrome, the inspector groups and the email preset's forms, plus `blocks[type].label` / `.containers[name].placeholder` and `categories[name]` for what `defineBlock` names ([§3 Labels](#labels)). Pass a stable object |
+| `assets` | `BuilderAssets` | `{ pick?, urlInput? }` — the host's media library, offered by every image field ([§3 Assets](#assets)). An inline object is fine |
 
 **Saving** (from `UseDocumentSaveOptions`)
 
@@ -109,7 +110,7 @@ Throw or reject from `onSave` to signal failure: status goes to `error` and the 
 | `theme` | `BuilderTheme` — [§7](#7-theming) |
 | `colorScheme` | `"inherit" \| "light" \| "dark"` |
 
-Types: `BuilderShellProps`, `BuilderShellPanels`, `BuilderFeatures`.
+Types: `BuilderShellProps`, `BuilderShellPanels`, `BuilderFeatures`, `BuilderAssets`.
 
 ### Save labels
 
@@ -131,6 +132,30 @@ const nl: BuilderLabelOverrides = {
 ```
 
 Block labels, categories and container placeholders are `defineBlock` data rather than component strings, so they are overridden by type and by category name and resolved where they are shown. The email preset's own inspector strings live under `email`; the operator words of the visibility rules under `visibility.operators`, which also phrase the canvas badge's tooltip. It is a dictionary, not an i18n framework — a host with one already maps its keys onto this one.
+
+### Assets
+
+The host's own media picker, defined once and offered by every image field: the image block's picture, the image fill of every Background group (container, button, table), and any consumer block built with `Fields.ImageField`. The library never opens a dialog of its own.
+
+```tsx
+<EmailBuilder
+    assets={{
+        // Open your picker; resolve with the chosen image, or null on cancel
+        pick: async ({ purpose, current, blockId, blockType }) => openMediaLibrary({ selected: current }),
+        // false = the library is the only way to set an image (default true)
+        urlInput: false,
+    }}
+/>
+```
+
+```ts
+interface AssetPickRequest { purpose: "image" | "background"; current: string; blockId: BlockId | null; blockType: string | null }
+interface PickedAsset { src: string; alt?: string }
+```
+
+Without `pick` every image field is the plain URL input it always was. With it, the field shows a thumbnail, a "Choose image…" button and a remove button, and keeps the URL input underneath unless `urlInput: false`. The image block takes `alt` as its alt text when it has none yet. A picked `src` is stored as-is and goes through `safeUrl` on the way out like any other URL. Only the shape of `assets` is compared, so a fresh `pick` every render costs nothing; the latest one is always called. `useAssets()` exposes the same picker to a consumer field that needs it some other way.
+
+Types: `BuilderAssets`, `AssetPickRequest`, `AssetPurpose`, `PickedAsset`.
 
 ### Merge tags
 
@@ -228,7 +253,7 @@ Drop rules: `acceptsEmailContent(childType)` — the rule every preset container
 
 Creates the per-instance store and registry; arrange the panels yourself.
 
-Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `onDocumentIssues`, `onBlockError`, `mergeTags`, `patterns`, `features`, `labels`, `children`. Type `BuilderProviderProps`.
+Props: `blocks` (required), `value`, `defaultValue`, `onChange`, `onSelectionChange`, `onDocumentIssues`, `onBlockError`, `mergeTags`, `patterns`, `features`, `labels`, `assets`, `children`. Type `BuilderProviderProps`.
 
 ### Components
 
@@ -263,6 +288,7 @@ Surface styles used by the shell, exported so a custom layout can match: `docked
 | `useMergeTags()` | `MergeTag[]` |
 | `useBuilderFeatures()` | `ResolvedBuilderFeatures` — the provider's `features`, every switch resolved |
 | `useLabels()` | `BuilderLabels` — every UI string with the provider's `labels` merged in |
+| `useAssets()` | `UseAssetsResult` — `{ canPick, urlInput, pick(request) }`: the provider's media picker; `pick` fills `blockId`/`blockType` from the selection and resolves `null` on cancel ([§3 Assets](#assets)) |
 | `useMergeTagValues()` | `MergeTagValues` — the preview data |
 | `useMergeTagUsage()` | `MergeTagUsage[]` |
 | `useRenderedBlockSize(id)` | `RenderedSize \| null` — measured px; mark the box with `SIZE_BOX_CLASS` |
@@ -383,9 +409,9 @@ Full guide: [theming](theming.md).
 
 ### Fields — `import { Fields }`
 
-`TextField`, `MergeTagTextField`, `TextAreaField`, `NumberField`, `SliderField`, `ToggleField`, `ColorField`, `FontFamilyField`, `SelectField`, `SegmentedField`, `DimensionField`, `SidesField`, `UniformSidesField`, `CornersField`.
+`TextField`, `ImageField`, `MergeTagTextField`, `TextAreaField`, `NumberField`, `SliderField`, `ToggleField`, `ColorField`, `FontFamilyField`, `SelectField`, `SegmentedField`, `DimensionField`, `SidesField`, `UniformSidesField`, `CornersField`.
 
-All take `label?`, `value`, `onChange`. Per-field extras are tabulated in the [cookbook](custom-blocks.md#51-fields--import--fields--from-matthiaskrijgsmanmat-builder).
+All take `label?`, `value`, `onChange`. `ImageField` is a `TextField` until the provider has `assets.pick`, then the host's picker ([§3 Assets](#assets)); it adds `purpose?` and `onPick?(asset)` for when a pick sets more than the URL. Per-field extras are tabulated in the [cookbook](custom-blocks.md#51-fields--import--fields--from-matthiaskrijgsmanmat-builder).
 
 ### Style groups — `import { StyleGroups }`
 

@@ -3,6 +3,7 @@ import { createRegistry, loadDocument, type AnyBlockDefinition } from "../core/i
 import type { BlockId, BlockPattern, BuilderDocument, ValidationIssue } from "../core/types.ts";
 import { useDndMonitor } from "../dnd/monitor.ts";
 import { BuilderContext, type BuilderContextValue } from "./context.ts";
+import { resolveAssets, sameAssets, type BuilderAssets } from "./assets.ts";
 import { resolveFeatures, sameFeatures, type BuilderFeatures } from "./features.ts";
 import { resolveLabels, type BuilderLabelOverrides } from "./labels.ts";
 import type { MergeTag } from "./merge-tags.ts";
@@ -61,6 +62,11 @@ export interface BuilderProviderProps {
      * English (docs/07 §B3). Pass a stable object: it is re-resolved when
      * its reference changes. */
     labels?: BuilderLabelOverrides;
+    /** The host's media library (docs/07 §B1): `pick` opens its picker from
+     * every image field — the image block, Background groups, and consumer
+     * blocks using `Fields.ImageField`. Without it those fields are plain
+     * URL inputs. An inline object is fine: only its shape is compared. */
+    assets?: BuilderAssets;
     children: ReactNode;
 }
 
@@ -86,6 +92,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
         patterns,
         features,
         labels,
+        assets,
         children,
     } = props;
 
@@ -104,6 +111,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
             patterns,
             features,
             labels,
+            assets,
             callbacks,
         });
         return {
@@ -122,6 +130,7 @@ export function BuilderProvider(props: BuilderProviderProps) {
     instance.callbacks.onSelectionChange = onSelectionChange;
     instance.callbacks.onDocumentIssues = onDocumentIssues;
     instance.callbacks.onBlockError = onBlockError;
+    instance.callbacks.pickAsset = assets?.pick;
 
     // The mount-time load ran inside the state initializer, where a host
     // callback must not fire — report its issues once, after mount.
@@ -167,6 +176,15 @@ export function BuilderProvider(props: BuilderProviderProps) {
             instance.store.setState({ features: next });
         }
     }, [features, instance]);
+
+    // Compared by shape, like `features` — the function is read off the
+    // callbacks at call time, so a fresh `pick` every render costs nothing.
+    useEffect(() => {
+        const next = resolveAssets(assets);
+        if (!sameAssets(next, instance.store.getState().assets)) {
+            instance.store.setState({ assets: next });
+        }
+    }, [assets, instance]);
 
     // Labels re-resolve when the overrides object changes identity — a host
     // keeps its dictionary in a module or a memo, as with `mergeTags`.

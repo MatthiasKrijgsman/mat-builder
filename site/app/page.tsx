@@ -5,6 +5,7 @@ import { EmailBuilder } from "@matthiaskrijgsman/mat-builder/email";
 import { Button, Spinner } from "@matthiaskrijgsman/mat-ui";
 import { useRef } from "react";
 import { heroPattern, productCardBlock } from "./custom";
+import { useMediaLibrary } from "./media";
 import { TemplateActions, useTemplateLibrary } from "./templates";
 
 /*
@@ -21,6 +22,7 @@ const PATTERNS = [heroPattern];
 
 export default function EmailBuilderPage() {
     const library = useTemplateLibrary();
+    const media = useMediaLibrary();
     const { templates, openId } = library;
     const open = templates?.find((template) => template.id === openId) ?? null;
 
@@ -56,62 +58,67 @@ export default function EmailBuilderPage() {
     if (!open) return <EmptyLibrary onCreate={() => library.create("Untitled template")} onReset={library.reset} />;
 
     return (
-        <EmailBuilder
-            // The builder is uncontrolled: `defaultValue` is read once at
-            // mount, so switching templates opens a fresh instance — which is
-            // also what a host does when it loads another document (history
-            // and save state start clean).
-            key={open.id}
-            className="h-screen"
-            defaultValue={open.document}
-            // A consuming project's own extensions (docs/08): a composed
-            // block that stays one thing, and a pattern that expands into
-            // ordinary blocks on drop. Neither ships an email renderer.
-            blocks={CUSTOM_BLOCKS}
-            patterns={PATTERNS}
-            mergeTags={open.mergeTags}
-            documentName={open.name}
-            actions={
-                <TemplateActions
-                    templates={templates}
-                    openId={openId}
-                    onOpen={(id) => {
-                        flush();
-                        library.open(id);
-                    }}
-                    onCreate={(name, sampleId) => {
-                        flush();
-                        library.create(name, sampleId);
-                    }}
-                    // Copies what is on screen, not what was last written —
-                    // so the copy is the template you are looking at.
-                    onDuplicate={(id) => {
-                        flush();
-                        library.duplicate(id);
-                    }}
-                    onRename={library.rename}
-                    onDelete={(id) => {
-                        pending.current = null;
-                        library.remove(id);
-                    }}
-                    onReset={() => {
-                        pending.current = null;
-                        library.reset();
-                    }}
-                />
-            }
-            onChange={(document) => {
-                pending.current = document;
-            }}
-            // A host would round trip to its API here; this one writes to
-            // localStorage, which is synchronous — so the save resolves at
-            // once and a full quota surfaces as the shell's "Save failed".
-            onSave={(document) => library.saveDocument(open.id, document)}
-            // Editing an email is long and fiddly enough that losing a
-            // session to a forgotten ⌘S would be the playground's most
-            // memorable feature. Both still work.
-            autoSaveMs={1200}
-        />
+        <>
+            {media.dialog}
+            <EmailBuilder
+                // The builder is uncontrolled: `defaultValue` is read once at
+                // mount, so switching templates opens a fresh instance — which is
+                // also what a host does when it loads another document (history
+                // and save state start clean).
+                key={open.id}
+                className="h-screen"
+                defaultValue={open.document}
+                // A consuming project's own extensions (docs/08): a composed
+                // block that stays one thing, and a pattern that expands into
+                // ordinary blocks on drop. Neither ships an email renderer.
+                blocks={CUSTOM_BLOCKS}
+                patterns={PATTERNS}
+                mergeTags={open.mergeTags}
+                // The host's media library, offered by every image field (./media)
+                assets={media.assets}
+                documentName={open.name}
+                actions={
+                    <TemplateActions
+                        templates={templates}
+                        openId={openId}
+                        onOpen={(id) => {
+                            flush();
+                            library.open(id);
+                        }}
+                        onCreate={(name, sampleId) => {
+                            flush();
+                            library.create(name, sampleId);
+                        }}
+                        // Copies what is on screen, not what was last written —
+                        // so the copy is the template you are looking at.
+                        onDuplicate={(id) => {
+                            flush();
+                            library.duplicate(id);
+                        }}
+                        onRename={library.rename}
+                        onDelete={(id) => {
+                            pending.current = null;
+                            library.remove(id);
+                        }}
+                        onReset={() => {
+                            pending.current = null;
+                            library.reset();
+                        }}
+                    />
+                }
+                onChange={(document) => {
+                    pending.current = document;
+                }}
+                // A host would round trip to its API here; this one writes to
+                // localStorage, which is synchronous — so the save resolves at
+                // once and a full quota surfaces as the shell's "Save failed".
+                onSave={(document) => library.saveDocument(open.id, document)}
+                // Editing an email is long and fiddly enough that losing a
+                // session to a forgotten ⌘S would be the playground's most
+                // memorable feature. Both still work.
+                autoSaveMs={1200}
+            />
+        </>
     );
 }
 

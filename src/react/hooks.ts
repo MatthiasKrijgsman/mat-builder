@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import type { AnyBlockDefinition, BlockRegistry } from "../core/registry.ts";
 import type { BlockId, BlockNode } from "../core/types.ts";
 import type { MergeTagValues } from "../core/visibility.ts";
+import type { AssetPickRequest, PickedAsset } from "./assets.ts";
 import { useBuilderContext } from "./context.ts";
 import type { ResolvedBuilderFeatures } from "./features.ts";
 import type { BuilderLabels } from "./labels.ts";
@@ -55,6 +56,39 @@ export function useBuilderFeatures(): ResolvedBuilderFeatures {
 /** Every UI string, with the provider's `labels` overrides merged in (docs/07 §B3). */
 export function useLabels(): BuilderLabels {
     return useBuilderState((s) => s.labels);
+}
+
+export interface UseAssetsResult {
+    /** A host media picker is configured (`assets.pick`) */
+    canPick: boolean;
+    /** Image fields keep their free-text URL input (always true without a picker) */
+    urlInput: boolean;
+    /**
+     * Opens the host's picker. `blockId`/`blockType` default to the selected
+     * block. Resolves with the chosen image, or null when cancelled, when no
+     * picker is configured, or when it resolved without a `src`.
+     */
+    pick(request: Pick<AssetPickRequest, "purpose" | "current"> & Partial<AssetPickRequest>): Promise<PickedAsset | null>;
+}
+
+/** The provider's media library (docs/07 §B1) — what `Fields.ImageField` is
+ * built on, for a consumer field that needs the picker another way. */
+export function useAssets(): UseAssetsResult {
+    const { store, callbacks } = useBuilderContext();
+    const { picker, urlInput } = useBuilderState((s) => s.assets);
+    const pick = useCallback<UseAssetsResult["pick"]>(
+        async (request) => {
+            const pickAsset = callbacks.pickAsset;
+            if (!pickAsset) return null;
+            const { selectedId, document } = store.getState();
+            const blockId = request.blockId !== undefined ? request.blockId : selectedId;
+            const blockType = request.blockType ?? (blockId ? (document.blocks[blockId]?.type ?? null) : null);
+            const asset = await pickAsset({ ...request, blockId, blockType });
+            return asset && typeof asset.src === "string" && asset.src.trim() !== "" ? asset : null;
+        },
+        [store, callbacks],
+    );
+    return { canPick: picker, urlInput, pick };
 }
 
 /** Stand-in merge-tag values the preview renders with (docs/06 §Preview data). */

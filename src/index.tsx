@@ -70,6 +70,8 @@ export type { SaveController, SaveStatus, UseDocumentSaveOptions } from "./react
 export { collectMergeTagUsage } from "./react/merge-tags.ts";
 export type { MergeTag, MergeTagUsage } from "./react/merge-tags.ts";
 export type { BuilderFeatures, ResolvedBuilderFeatures } from "./react/features.ts";
+// The host's media library, offered by every image field (docs/07 §B1)
+export type { AssetPickRequest, AssetPurpose, BuilderAssets, PickedAsset } from "./react/assets.ts";
 // UI strings — the English, the override shape, and the merge (docs/07 §B3)
 export { DEFAULT_LABELS, formatLabel, resolveLabels } from "./react/labels.ts";
 export type { BuilderLabels, BuilderLabelOverrides } from "./react/labels.ts";
@@ -79,6 +81,7 @@ export {
     useBlockNode,
     useBuilderState,
     useBuilderFeatures,
+    useAssets,
     useLabels,
     useMergeTags,
     useMergeTagUsage,
@@ -86,7 +89,7 @@ export {
     useRenderedBlockSize,
     SIZE_BOX_CLASS,
 } from "./react/hooks.ts";
-export type { UseEditorResult, SelectedBlock, RenderedSize } from "./react/hooks.ts";
+export type { UseAssetsResult, UseEditorResult, SelectedBlock, RenderedSize } from "./react/hooks.ts";
 export type { EditorState, EditorActions, EditingTarget, BlockErrorContext } from "./react/store.ts";
 
 // The assembled editor: provider + docked layout + panels + saving (docs/04 §Shell).

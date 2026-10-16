@@ -5,6 +5,7 @@
  */
 
 export { TextField, type TextFieldProps } from "./TextField.tsx";
+export { ImageField, type ImageFieldProps } from "./ImageField.tsx";
 export { MergeTagTextField, type MergeTagTextFieldProps } from "./MergeTagTextField.tsx";
 export { TextAreaField, type TextAreaFieldProps } from "./TextAreaField.tsx";
 export { NumberField, type NumberFieldProps } from "./NumberField.tsx";

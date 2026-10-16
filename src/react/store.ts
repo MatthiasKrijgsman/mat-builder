@@ -29,6 +29,7 @@ import type { BlockVisibility, MergeTagValues } from "../core/visibility.ts";
 import type { MergeTag } from "./merge-tags.ts";
 import { resolveFeatures, type BuilderFeatures, type ResolvedBuilderFeatures } from "./features.ts";
 import { resolveLabels, type BuilderLabelOverrides, type BuilderLabels } from "./labels.ts";
+import { resolveAssets, type BuilderAssets, type ResolvedAssets } from "./assets.ts";
 
 /*
  * Per-instance editor store — see docs/03-architecture.md §3.
@@ -57,6 +58,8 @@ export interface EditorCallbacks {
     onDocumentIssues?: (issues: ValidationIssue[]) => void;
     /** A block's editRender/inspector threw; the block shows a fallback */
     onBlockError?: (error: unknown, context: BlockErrorContext) => void;
+    /** The host's media picker (`assets.pick`) — read at call time by `useAssets()` */
+    pickAsset?: BuilderAssets["pick"];
 }
 
 /** Live during a drag (source only — drop targets keep their own edge state). */
@@ -147,6 +150,10 @@ export interface EditorState {
     /** Every UI string, the host's overrides merged over the English
      * (provider prop) — editor configuration like `mergeTags`. */
     labels: BuilderLabels;
+    /** Whether a host media picker is configured, and whether image fields
+     * keep their URL input (provider prop) — editor configuration like
+     * `mergeTags`. The picker function itself lives on the callbacks. */
+    assets: ResolvedAssets;
     /** Stand-in merge-tag values the preview renders with, keyed by literal
      * token (docs/06 §Preview data). Editor state, never document state: they
      * are the viewer's scratch data, so they stay out of history and out of
@@ -170,6 +177,7 @@ export interface CreateEditorStoreOptions {
     patterns?: BlockPattern[];
     features?: BuilderFeatures;
     labels?: BuilderLabelOverrides;
+    assets?: BuilderAssets;
     /** Starting stand-in values for preview mode, keyed by literal token */
     previewValues?: MergeTagValues;
     /** Mutable — the provider reassigns its fields every render so callbacks never go stale */
@@ -223,6 +231,7 @@ export function createEditorStore(options: CreateEditorStoreOptions): EditorStor
             patterns: options.patterns ?? [],
             features: resolveFeatures(options.features),
             labels: resolveLabels(options.labels),
+            assets: resolveAssets(options.assets),
             previewValues: options.previewValues ?? {},
             artboardSize: null,
             history: createHistory(),

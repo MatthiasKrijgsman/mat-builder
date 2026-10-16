@@ -66,7 +66,12 @@ export function BackgroundGroup({ value, onChange, label, defaultOpen, modes }: 
             )}
             {v.type === "image" && (
                 <>
-                    <Fields.TextField label={s.imageUrl} value={image.url} onChange={(url) => setImage({ url })} />
+                    <Fields.ImageField
+                        label={s.imageUrl}
+                        purpose="background"
+                        value={image.url}
+                        onChange={(url) => setImage({ url })}
+                    />
                     <Fields.SegmentedField
                         label={s.size}
                         value={image.size}

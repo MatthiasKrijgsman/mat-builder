@@ -106,6 +106,11 @@ export const DEFAULT_LABELS = {
         auto: "Auto",
         inherit: "Inherit",
         mix: "Mix",
+        /** Image fields with a host media picker (`assets.pick`) */
+        chooseImage: "Choose image…",
+        replaceImage: "Replace image…",
+        removeImage: "Remove image",
+        imageUrlPlaceholder: "or paste an image URL",
     },
     typography: {
         font: "Font",

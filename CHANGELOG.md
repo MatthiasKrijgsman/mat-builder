@@ -2,6 +2,14 @@
 
 Breaking changes are allowed while on `0.x` and are listed here per release.
 
+## 0.5.0 — 2026-10-16
+
+A media library seam: the host's own image picker, offered by every image field. Additive — no breaking changes.
+
+**Changes:**
+- **Media library seam** (`assets`, docs/07 §B1): a new `assets={{ pick, urlInput? }}` prop on `<EmailBuilder>`, `<BuilderShell>` and `<BuilderProvider>`. `pick({ purpose, current, blockId, blockType })` opens the host's own picker and resolves `{ src, alt? }` or `null`. Every image field offers it: the image block (a picked `alt` fills an empty alt text) and the image fill of every Background group (container, button, table). `urlInput: false` drops the URL input for a library-only host. Without `assets` nothing changes.
+- `Fields.ImageField` — the field behind that, for consumer blocks; `useAssets()` for anything else that needs the picker. New label keys `fields.chooseImage`, `fields.replaceImage`, `fields.removeImage`, `fields.imageUrlPlaceholder`.
+
 ## 0.4.0 — 2026-09-29
 
 Email-client fidelity (Outlook for Windows, the Gmail apps, dark mode), Figma-style rows, and a client-support check. Requires the `@lexical/link` peer (`^0.45.0`), which mat-ui already required.

@@ -26,7 +26,7 @@ Level 2 was rated "works, undocumented" when this was written, which was too gen
 | Level | Consumer writes | Controls | Status |
 |---|---|---|---|
 | 0 | `<EmailBuilder defaultValue onSave />` | nothing — batteries included | ✅ ships |
-| 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial (theme, panels, top bar ✅) |
+| 1 | props on `<EmailBuilder>` | assets, fonts, labels/language, theme tokens, panels, top bar | ⚠️ partial (assets.pick, labels, theme, panels, top bar ✅) |
 | 2 | `blocks={[…]}` + `defineBlock` | own block types, own inspector forms, replacing preset blocks | ✅ works (see below) |
 | 3 | `<BuilderProvider>` + components | their own layout entirely | ✅ ships |
 | 4 | `./email/render`, `core` exports | server rendering, validation, migration, own pipeline | ✅ ships |
@@ -119,7 +119,7 @@ Auto-install-peers hides this on default npm/pnpm setups and *fails loudly* on s
 
 These are level-1 gaps: things a consumer will hit in week one and currently cannot solve without forking.
 
-### B1. Image handling has no seam 🔴
+### B1. Image handling has no seam 🟡 (picker ✅, upload open)
 
 `src/email/blocks/image/index.tsx` offers a bare **"Image URL" text field**. Every real consumer has a media library, an S3 bucket or a DAM. Right now their only route is replacing the whole `image` block (which `mergeBlockDefinitions` does support — but that means reimplementing size/border/spacing/effects inspectors to keep parity).
 
@@ -136,8 +136,8 @@ Proposed API, threaded through provider context so custom blocks can use it too:
 />
 ```
 
-- [ ] `assets.pick` + a "Choose image…" button in the image inspector, falling back to today's URL field when unset.
-- [ ] Expose it as `useAssets()` so consumer blocks get the same picker.
+- [x] `assets.pick` + a "Choose image…" button in the image inspector, falling back to today's URL field when unset. *(Landed as `Fields.ImageField`, used by the image block **and** every Background group's image fill, so the picker sits next to the URL it sets. The first consumer (Mailcrate) had wrapped both inspectors with a button above the whole form, far from the Background URL field and shown for every fill type. `urlInput: false` hides the URL input for a library-only host. `pick` takes `{ purpose, current, blockId, blockType }` and resolves `{ src, alt? } | null`. `width`/`height` were dropped from the sketch: the image block sizes from its column, and nothing reads them yet.)*
+- [x] Expose it as `useAssets()` so consumer blocks get the same picker — and `Fields.ImageField`, which most will want instead.
 - [ ] Optional but high-value: drag-a-file-onto-the-canvas → `assets.upload` → new image block.
 
 ### B2. Link handling has no seam

@@ -55,7 +55,14 @@ export const imageBlock = defineBlock<EmailImageProps>({
         return (
         <>
             <div className="mat:flex mat:flex-col mat:gap-4 mat:px-2 mat:pb-4 mat:pt-2">
-                <Fields.TextField label={t.email.image.imageUrl} value={props.src} onChange={(src) => update({ src })} />
+                <Fields.ImageField
+                    label={t.email.image.imageUrl}
+                    value={props.src}
+                    onChange={(src) => update({ src })}
+                    // A library asset's name beats an empty alt — but never
+                    // overwrite one the author wrote
+                    onPick={(asset) => update(props.alt || !asset.alt ? { src: asset.src } : { src: asset.src, alt: asset.alt })}
+                />
                 <Fields.TextField label={t.email.image.altText} value={props.alt} onChange={(alt) => update({ alt })} />
                 <Fields.TextField label={t.email.image.link} value={props.href} onChange={(href) => update({ href })} />
             </div>

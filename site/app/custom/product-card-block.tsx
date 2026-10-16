@@ -34,7 +34,7 @@ export const productCardBlock = defineBlock<ProductCardProps>({
         <>
             <InspectorGroup label="Product">
                 <Fields.TextField label="Price" value={props.price} onChange={(price) => update({ price })} />
-                <Fields.TextField label="Image" value={props.imageSrc} onChange={(imageSrc) => update({ imageSrc })} />
+                <Fields.ImageField label="Image" value={props.imageSrc} onChange={(imageSrc) => update({ imageSrc })} />
                 <Fields.TextField label="Button" value={props.ctaLabel} onChange={(ctaLabel) => update({ ctaLabel })} />
                 <Fields.MergeTagTextField label="Link" value={props.ctaHref} onChange={(ctaHref) => update({ ctaHref })} />
             </InspectorGroup>

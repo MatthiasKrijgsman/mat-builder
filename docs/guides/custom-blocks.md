@@ -238,7 +238,7 @@ export const productCardBlock = defineBlock<ProductCardProps>({
         <>
             <InspectorGroup label="Product">
                 <Fields.TextField label="Price" value={props.price} onChange={(price) => update({ price })} />
-                <Fields.TextField label="Image" value={props.imageSrc} onChange={(imageSrc) => update({ imageSrc })} />
+                <Fields.ImageField label="Image" value={props.imageSrc} onChange={(imageSrc) => update({ imageSrc })} />
                 <Fields.MergeTagTextField label="Link" value={props.ctaHref} onChange={(ctaHref) => update({ ctaHref })} />
             </InspectorGroup>
             <Divider />
@@ -330,6 +330,7 @@ Thin wrappers over mat-ui inputs. All take `label?`, `value`, `onChange`; most t
 |---|---|---|
 | `TextField` | `string` | `placeholder` |
 | `MergeTagTextField` | `string` | same as `TextField`; adds a merge-tag menu (falls back to `TextField` with no tags) |
+| `ImageField` | `string` (URL) | `purpose?` (`"image"` \| `"background"`), `onPick?(asset)`, `placeholder`; opens the host's media picker when the provider has `assets.pick` (falls back to `TextField` without one) |
 | `TextAreaField` | `string` | `placeholder`, `rows` |
 | `NumberField` | `number` | `min`, `max`, `step`, `Icon`, `placeholder`, `title`, `buttonTray` |
 | `SliderField` | `number` | `min`, `max`, `step`, `formatValue` |
@@ -584,6 +585,7 @@ Two ways out, in order of preference:
 You do not implement any of these:
 
 - **Conditional visibility.** A node field, not a prop, so your blocks inherit the rules UI and the render-time filtering whether or not they asked.
+- **Images.** Use `Fields.ImageField` for image URLs, so your block gets the host's media picker (`assets.pick`) like the preset's image block does.
 - **Merge tags.** Use `Fields.MergeTagTextField` for URL-ish props; `InlineRichText` gets the tag menu on its own. `collectMergeTagUsage` reports usage.
 - **Selection, hover chrome, drag and drop, the layers tree, undo/redo, duplicate, delete.**
 - **Coalesced history.** `update()` batches a typing burst into one undo step (~800 ms).
